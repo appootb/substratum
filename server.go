@@ -9,6 +9,7 @@ import (
 	"github.com/appootb/protobuf/go/service"
 	"github.com/appootb/substratum/auth"
 	"github.com/appootb/substratum/server"
+	"github.com/appootb/substratum/storage"
 	"google.golang.org/grpc"
 )
 
@@ -25,9 +26,11 @@ func NewServer(opts ...ServerOption) Service {
 		cs: make(map[string]Component),
 		ms: make(map[permission.VisibleScope]*server.ServeMux),
 	}
-	srv.ctx, srv.cancel = context.WithCancel(context.Background())
 	for _, opt := range opts {
 		opt(srv)
+	}
+	if srv.ctx == nil {
+		srv.ctx, srv.cancel = context.WithCancel(context.Background())
 	}
 	return srv
 }
@@ -111,10 +114,13 @@ func (s *Server) Register(comp Component) error {
 	s.cs[comp.Name()] = comp
 
 	// Init component.
-	if err := comp.InitStorage(); err != nil {
+	if err := comp.Init(s.ctx); err != nil {
 		return err
 	}
-	if err := comp.InitService(auth.Default, s); err != nil {
+	if err := comp.InitStorage(storage.Default); err != nil {
+		return err
+	}
+	if err := comp.RegisterService(auth.Default, s); err != nil {
 		return err
 	}
 	return nil

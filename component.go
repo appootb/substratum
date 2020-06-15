@@ -1,15 +1,23 @@
 package substratum
 
-import "github.com/appootb/protobuf/go/service"
+import (
+	"context"
+
+	"github.com/appootb/protobuf/go/service"
+	"github.com/appootb/substratum/storage"
+)
 
 // Service component.
 type Component interface {
 	// Return the component name.
 	Name() string
 
-	// Init storage.
-	InitStorage() error
+	// Init component.
+	Init(ctx context.Context) error
 
-	// Init service.
-	InitService(service.Authenticator, service.Implementor) error
+	// Init storage.
+	InitStorage(*storage.Manager) error
+
+	// Register service.
+	RegisterService(service.Authenticator, service.Implementor) error
 }
