@@ -22,7 +22,7 @@ type Dialect interface {
 	URL() string
 }
 
-func NewDialect(dialect DialectType, cfg Config, opts ...SQLOption) Dialect {
+func NewDialect(dialect DialectType, cfg Config) Dialect {
 	if cfg.Params == nil {
 		cfg.Params = map[string]string{}
 	}
