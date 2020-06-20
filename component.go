@@ -16,7 +16,7 @@ type Component interface {
 	Init(ctx context.Context) error
 
 	// Init storage.
-	InitStorage(*storage.Manager) error
+	InitStorage(storage.Storage) error
 
 	// Register service.
 	RegisterService(service.Authenticator, service.Implementor) error

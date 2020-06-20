@@ -111,13 +111,15 @@ func (s *Server) AddMux(scope permission.VisibleScope, rpcPort, gatewayPort uint
 }
 
 func (s *Server) Register(comp Component) error {
-	s.cs[comp.Name()] = comp
+	name := comp.Name()
+	s.cs[name] = comp
+	storage.DefaultManager.New(name)
 
 	// Init component.
 	if err := comp.Init(s.ctx); err != nil {
 		return err
 	}
-	if err := comp.InitStorage(storage.Default); err != nil {
+	if err := comp.InitStorage(storage.DefaultManager.Get(name)); err != nil {
 		return err
 	}
 	if err := comp.RegisterService(auth.Default, s); err != nil {

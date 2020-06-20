@@ -1,13 +1,16 @@
 package mysql
 
 import (
+	"context"
 	"time"
 
+	"github.com/appootb/substratum/storage"
 	"github.com/jinzhu/gorm"
 )
 
 type Base struct {
-	tx *gorm.DB `json:"-" gorm:"-"`
+	tx  *gorm.DB        `json:"-" gorm:"-"`
+	ctx context.Context `json:"-" gorm:"-"`
 
 	ID        uint64    `gorm:"primary_key"`
 	CreatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP;index"`
@@ -16,6 +19,10 @@ type Base struct {
 
 func (m Base) DB() *gorm.DB {
 	return m.tx
+}
+
+func (m Base) Storage(component string) storage.Storage {
+	return storage.ContextStorage(m.ctx, component)
 }
 
 func New(opts ...Option) Base {

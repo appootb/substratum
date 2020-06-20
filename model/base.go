@@ -8,16 +8,19 @@ import (
 	"github.com/appootb/protobuf/go/service"
 	"github.com/appootb/substratum/logger"
 	"github.com/appootb/substratum/metadata"
+	"github.com/appootb/substratum/storage"
 )
 
 type Base struct {
 	ctx context.Context
 }
 
-func New(ctx context.Context) Base {
-	return Base{
-		ctx: ctx,
+func New(opts ...Option) Base {
+	base := Base{}
+	for _, opt := range opts {
+		opt(&base)
 	}
+	return base
 }
 
 func (m Base) Context() context.Context {
@@ -34,4 +37,8 @@ func (m Base) AccountSecret() *permission.Secret {
 
 func (m Base) Logger() *logger.Helper {
 	return logger.ContextLogger(m.ctx)
+}
+
+func (m Base) Storage(component string) storage.Storage {
+	return storage.ContextStorage(m.ctx, component)
 }

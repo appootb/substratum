@@ -7,6 +7,7 @@ import (
 	"github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/monitor"
 	"github.com/appootb/substratum/recovery"
+	"github.com/appootb/substratum/storage"
 	"google.golang.org/grpc"
 
 	validator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
@@ -45,6 +46,7 @@ func WithDefaultUnaryInterceptors(fns ...grpc.UnaryServerInterceptor) ServerOpti
 			logger.UnaryServerInterceptor(),
 			auth.UnaryServerInterceptor(),
 			validator.UnaryServerInterceptor(),
+			storage.UnaryServerInterceptor(),
 		)
 		options.unaryChains = append(options.unaryChains, fns...)
 	}
@@ -66,6 +68,7 @@ func WithDefaultStreamInterceptors(fns ...grpc.StreamServerInterceptor) ServerOp
 			logger.StreamServerInterceptor(),
 			auth.StreamServerInterceptor(),
 			validator.StreamServerInterceptor(),
+			storage.StreamServerInterceptor(),
 		)
 		options.streamChains = append(options.streamChains, fns...)
 	}

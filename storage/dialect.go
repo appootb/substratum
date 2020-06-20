@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -66,9 +68,30 @@ type Config struct {
 	Username string       `json:"username"`
 	Password string       `json:"password"`
 	Host     string       `json:"host"`
-	Port     uint16       `json:"port"`
+	Port     string       `json:"port"`
 	Database string       `json:"database"`
 	Params   ConfigParams `json:"params"`
+}
+
+func (c *Config) Set(v string) {
+	if err := json.Unmarshal([]byte(v), c); err == nil {
+		return
+	}
+	uri, err := url.Parse(v)
+	if err != nil {
+		return
+	}
+	c.Username = uri.User.Username()
+	c.Password, _ = uri.User.Password()
+	c.Host = uri.Hostname()
+	c.Port = uri.Port()
+	c.Database = strings.Trim(uri.Path, "/")
+	if c.Params == nil {
+		c.Params = make(ConfigParams, len(uri.Query()))
+	}
+	for k, v := range uri.Query() {
+		c.Params[k] = v[0]
+	}
 }
 
 type MySQL struct {
@@ -83,7 +106,7 @@ func (d *MySQL) URL() string {
 	d.Params["charset"] = "utf8mb4"
 	d.Params["parseTime"] = "True"
 	d.Params["loc"] = "Local"
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?%s",
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?%s",
 		d.Username, d.Password, d.Host, d.Port, d.Database, d.Params.Encode(d.Type()))
 }
 
@@ -96,7 +119,7 @@ func (d *PostgreSQL) Type() DialectType {
 }
 
 func (d *PostgreSQL) URL() string {
-	return fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s %s",
+	return fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s %s",
 		d.Host, d.Port, d.Username, d.Database, d.Password, d.Params.Encode(d.Type()))
 }
 
@@ -110,7 +133,7 @@ func (d *MSSQL) Type() DialectType {
 
 func (d *MSSQL) URL() string {
 	d.Params["database"] = d.Database
-	return fmt.Sprintf("sqlserver://%s:%s@%s:%d?%s",
+	return fmt.Sprintf("sqlserver://%s:%s@%s:%s?%s",
 		d.Username, d.Password, d.Host, d.Port, d.Params.Encode(d.Type()))
 }
 
@@ -135,5 +158,5 @@ func (d *Redis) Type() DialectType {
 }
 
 func (d *Redis) URL() string {
-	return fmt.Sprintf("redis://:%v@%v:%v/%v", d.Password, d.Host, d.Port, d.Database)
+	return fmt.Sprintf("redis://:%s@%s:%s/%s", d.Password, d.Host, d.Port, d.Database)
 }
