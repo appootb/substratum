@@ -17,7 +17,6 @@ type ServeMux struct {
 	rpcListener     net.Listener
 	gatewayListener net.Listener
 
-	rpcCli     *grpc.ClientConn
 	rpcSrv     *grpc.Server
 	httpMux    *http.ServeMux
 	gatewayMux *runtime.ServeMux
@@ -38,10 +37,6 @@ func NewServeMux(rpcPort, gatewayPort uint16) (*ServeMux, error) {
 	if err != nil {
 		return nil, err
 	}
-	m.rpcCli, err = grpc.Dial(fmt.Sprintf("localhost:%v", rpcPort), grpc.WithInsecure())
-	if err != nil {
-		return nil, err
-	}
 	m.httpMux.Handle("/", m.gatewayMux)
 	return m, nil
 }
@@ -52,10 +47,6 @@ func (m *ServeMux) RPCServer() *grpc.Server {
 
 func (m *ServeMux) GatewayMux() *runtime.ServeMux {
 	return m.gatewayMux
-}
-
-func (m *ServeMux) Client() *grpc.ClientConn {
-	return m.rpcCli
 }
 
 func (m *ServeMux) Handle(pattern string, handler http.Handler) {

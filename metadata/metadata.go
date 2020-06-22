@@ -61,7 +61,7 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		Longitude:  proto.String(strings.Join(md["longitude"], "")),
 		Locale:     proto.String(strings.Join(md["locale"], "")),
 		Channel:    proto.String(strings.Join(md["channel"], "")),
-		Category:   proto.String(strings.Join(md["product"], "")),
+		Product:    proto.String(strings.Join(md["product"], "")),
 		TraceId:    proto.String(strings.Join(md["trace_id"], "")),
 	}
 }

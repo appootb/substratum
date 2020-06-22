@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/appootb/protobuf/go/permission"
-	"github.com/appootb/protobuf/go/service"
 	"github.com/appootb/substratum/auth"
 	"github.com/appootb/substratum/server"
 	"github.com/appootb/substratum/storage"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 )
 
@@ -61,6 +61,11 @@ func (s *Server) Handle(scope permission.VisibleScope, pattern string, handler h
 	}
 }
 
+// Get server context.
+func (s *Server) Context() context.Context {
+	return s.ctx
+}
+
 // Get gRPC server of the specified visible scope.
 func (s *Server) GetScopedGRPCServer(scope permission.VisibleScope) []*grpc.Server {
 	if mux, ok := s.ms[scope]; ok {
@@ -78,24 +83,21 @@ func (s *Server) GetScopedGRPCServer(scope permission.VisibleScope) []*grpc.Serv
 	return srv
 }
 
-// Register gateway handler to the specified visible scope.
-func (s *Server) RegisterGateway(scope permission.VisibleScope, handler service.GatewayHandler) error {
+// Get gateway mux of the specified visible scope.
+func (s *Server) GetScopedGatewayMux(scope permission.VisibleScope) []*runtime.ServeMux {
 	if mux, ok := s.ms[scope]; ok {
-		err := handler(s.ctx, mux.GatewayMux(), mux.Client())
-		if err != nil {
-			return err
+		return []*runtime.ServeMux{
+			mux.GatewayMux(),
 		}
 	}
 	if scope != permission.VisibleScope_ALL_SCOPES {
-		return nil
+		return []*runtime.ServeMux{}
 	}
+	srv := make([]*runtime.ServeMux, 0, len(s.ms))
 	for _, mux := range s.ms {
-		err := handler(s.ctx, mux.GatewayMux(), mux.Client())
-		if err != nil {
-			return err
-		}
+		srv = append(srv, mux.GatewayMux())
 	}
-	return nil
+	return srv
 }
 
 func (s *Server) AddMux(scope permission.VisibleScope, rpcPort, gatewayPort uint16) error {
