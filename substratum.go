@@ -22,9 +22,6 @@ type Service interface {
 	// Register component.
 	Register(Component) error
 
-	// Start the server.
-	Start()
-
-	// Stop the server.
-	Stop()
+	// Serve start the mux server.
+	Serve() error
 }

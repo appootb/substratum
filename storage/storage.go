@@ -12,6 +12,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
+// Storage interface.
 type Storage interface {
 	InitDB(dialects []Dialect, opts ...SQLOption) error
 	InitRedis(dialects []Dialect, opts ...RedisOption) error

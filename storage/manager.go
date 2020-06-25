@@ -14,7 +14,7 @@ type Manager interface {
 }
 
 type manager struct {
-	comps sync.Map
+	sync.Map
 }
 
 func newManager() Manager {
@@ -22,11 +22,11 @@ func newManager() Manager {
 }
 
 func (m *manager) New(component string) {
-	m.comps.Store(component, newStorage())
+	m.Store(component, newStorage())
 }
 
 func (m *manager) Get(component string) Storage {
-	s, ok := m.comps.Load(component)
+	s, ok := m.Load(component)
 	if ok {
 		return s.(Storage)
 	}

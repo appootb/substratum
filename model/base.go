@@ -6,9 +6,11 @@ import (
 	"github.com/appootb/protobuf/go/common"
 	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/protobuf/go/service"
+	"github.com/appootb/substratum/client"
 	"github.com/appootb/substratum/logger"
 	"github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/storage"
+	"google.golang.org/grpc"
 )
 
 type Base struct {
@@ -41,4 +43,8 @@ func (m Base) Logger() *logger.Helper {
 
 func (m Base) Storage(component string) storage.Storage {
 	return storage.ContextStorage(m.ctx, component)
+}
+
+func (m Base) ClientConn(component string) *grpc.ClientConn {
+	return client.ContextConnPool(m.ctx).Get(component)
 }

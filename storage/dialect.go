@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -22,21 +22,29 @@ type Dialect interface {
 	URL() string
 }
 
-func NewDialect(dialect DialectType, cfg Config) Dialect {
+func ParseDialect(addr string) (Dialect, error) {
+	var cfg Config
+	cfg.Set(addr)
+	return NewDialect(cfg)
+}
+
+func NewDialect(cfg Config) (Dialect, error) {
 	if cfg.Params == nil {
 		cfg.Params = map[string]string{}
 	}
-	switch dialect {
+	switch cfg.Schema {
 	case DialectSQLite:
-		return &SQLite{cfg}
+		return &SQLite{cfg}, nil
 	case DialectMySQL:
-		return &MySQL{cfg}
+		return &MySQL{cfg}, nil
 	case DialectPostgreSQL:
-		return &PostgreSQL{cfg}
+		return &PostgreSQL{cfg}, nil
 	case DialectMSSQL:
-		return &MSSQL{cfg}
+		return &MSSQL{cfg}, nil
+	case DialectRedis:
+		return &Redis{cfg}, nil
 	default:
-		return nil
+		return nil, errors.New("unknown dialect type:" + string(cfg.Schema))
 	}
 }
 
@@ -65,6 +73,7 @@ func (cp ConfigParams) Encode(dialect DialectType) string {
 }
 
 type Config struct {
+	Schema   DialectType  `json:"type"`
 	Username string       `json:"username"`
 	Password string       `json:"password"`
 	Host     string       `json:"host"`
@@ -73,14 +82,16 @@ type Config struct {
 	Params   ConfigParams `json:"params"`
 }
 
-func (c *Config) Set(v string) {
-	if err := json.Unmarshal([]byte(v), c); err == nil {
-		return
-	}
-	uri, err := url.Parse(v)
+func (c *Config) Type() DialectType {
+	return c.Schema
+}
+
+func (c *Config) Set(addr string) {
+	uri, err := url.Parse(addr)
 	if err != nil {
 		return
 	}
+	c.Schema = DialectType(uri.Scheme)
 	c.Username = uri.User.Username()
 	c.Password, _ = uri.User.Password()
 	c.Host = uri.Hostname()
@@ -98,10 +109,6 @@ type MySQL struct {
 	Config
 }
 
-func (d *MySQL) Type() DialectType {
-	return DialectMySQL
-}
-
 func (d *MySQL) URL() string {
 	d.Params["charset"] = "utf8mb4"
 	d.Params["parseTime"] = "True"
@@ -114,10 +121,6 @@ type PostgreSQL struct {
 	Config
 }
 
-func (d *PostgreSQL) Type() DialectType {
-	return DialectPostgreSQL
-}
-
 func (d *PostgreSQL) URL() string {
 	return fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s %s",
 		d.Host, d.Port, d.Username, d.Database, d.Password, d.Params.Encode(d.Type()))
@@ -125,10 +128,6 @@ func (d *PostgreSQL) URL() string {
 
 type MSSQL struct {
 	Config
-}
-
-func (d *MSSQL) Type() DialectType {
-	return DialectMSSQL
 }
 
 func (d *MSSQL) URL() string {
@@ -141,20 +140,12 @@ type SQLite struct {
 	Config
 }
 
-func (d *SQLite) Type() DialectType {
-	return DialectSQLite
-}
-
 func (d *SQLite) URL() string {
 	return d.Database
 }
 
 type Redis struct {
 	Config
-}
-
-func (d *Redis) Type() DialectType {
-	return DialectRedis
 }
 
 func (d *Redis) URL() string {
