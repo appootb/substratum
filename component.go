@@ -11,9 +11,6 @@ type Component interface {
 	// Return the component name.
 	Name() string
 
-	// Return the node gRPC address for service discovery.
-	NodeAddr() string
-
 	// Init component.
 	Init(discovery.Config) error
 

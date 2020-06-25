@@ -31,6 +31,7 @@ func NewServer(opts ...ServerOption) Service {
 		components:   make(map[string]Component),
 		serveMuxers:  make(map[permission.VisibleScope]*server.ServeMux),
 	}
+	opts = append(opts, WithDefaultMux(), WithDefaultInnerMux())
 	for _, opt := range opts {
 		opt(srv)
 	}
@@ -139,8 +140,9 @@ func (s *Server) Serve() error {
 		mux.Serve()
 	}
 	// Register node.
-	for name, comp := range s.components {
-		err := discovery.DefaultService.RegisterNode(name, comp.NodeAddr(), time.Second)
+	addr := s.serveMuxers[permission.VisibleScope_INNER_SCOPE].ConnAddr()
+	for name := range s.components {
+		err := discovery.DefaultService.RegisterNode(name, addr, s.keepAliveTTL)
 		if err != nil {
 			return err
 		}
