@@ -5,7 +5,10 @@ import (
 )
 
 var (
-	rc, _ = grc.New(grc.WithDebugProvider())
+	rc, _ = grc.New(
+		grc.WithDebugProvider(),
+		grc.WithConfigAutoCreation(),
+		grc.WithBasePath("/debug"))
 
 	DefaultConfig  Config  = rc
 	DefaultService Service = rc
