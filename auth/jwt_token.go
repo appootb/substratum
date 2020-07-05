@@ -1,19 +1,23 @@
 package auth
 
 import (
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/appootb/protobuf/go/permission"
-	"github.com/appootb/substratum/secret"
+	"github.com/appootb/protobuf/go/secret"
+	"github.com/appootb/substratum/credentials"
 	"github.com/appootb/substratum/util/datetime"
-	"github.com/appootb/substratum/util/hash"
 	"github.com/gbrlsnchs/jwt/v3"
 	"github.com/gbrlsnchs/jwt/v3/jwtutil"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type JwtToken struct{}
@@ -22,112 +26,191 @@ func NewJwtToken() Token {
 	return &JwtToken{}
 }
 
-func (t *JwtToken) sign(s *permission.Secret, seed []byte) (string, error) {
+func (t *JwtToken) sign(s *secret.Info, key []byte) (string, error) {
 	issuedAt := datetime.FromProtoTime(s.GetIssuedAt()).Time
 	payload := &jwt.Payload{
 		Issuer:         s.GetIssuer(),
-		Subject:        s.GetSubject(),
+		Subject:        s.GetSubject().String(),
 		Audience:       s.GetRoles(),
 		ExpirationTime: jwt.NumericDate(datetime.FromProtoTime(s.GetExpiredAt()).Time),
 		NotBefore:      jwt.NumericDate(issuedAt.Add(-time.Minute)),
 		IssuedAt:       jwt.NumericDate(issuedAt),
-		JWTID:          strconv.FormatUint(s.GetAccountId(), 10),
+		JWTID:          strconv.FormatUint(s.GetAccount(), 10),
 	}
-	keyID := jwt.KeyID(fmt.Sprintf("%v-%v", s.GetAccountId(), hash.Sum(s.GetKeyId())))
-	token, err := jwt.Sign(payload, jwt.NewHS256(seed), keyID)
+	alg, err := t.getAlgorithm(s.GetAlgorithm(), key)
+	if err != nil {
+		return "", err
+	}
+	contentType := jwt.ContentType(s.GetType().String())
+	keyID := jwt.KeyID(fmt.Sprintf("%v-%v", s.GetAccount(), s.GetKeyId()))
+	token, err := jwt.Sign(payload, alg, contentType, keyID)
 	if err != nil {
 		return "", err
 	}
 	return string(token), nil
 }
 
-func (t *JwtToken) TokenLevelValidator(level permission.TokenLevel) jwt.Validator {
-	return func(pl *jwt.Payload) error {
-		if level == permission.TokenLevel_NONE_TOKEN {
-			return nil
+func (t *JwtToken) getAlgorithm(alg secret.Algorithm, key []byte) (jwt.Algorithm, error) {
+	switch alg {
+	case secret.Algorithm_HMAC:
+		return jwt.NewHS512(key), nil
+	case secret.Algorithm_RSA:
+		priv, err := x509.ParsePKCS1PrivateKey(key)
+		if err != nil {
+			return nil, err
 		}
-		for _, v := range pl.Audience {
-			if !strings.HasSuffix(v, "_TOKEN") {
-				continue
-			}
-			if permission.TokenLevel_value[v] < int32(level) {
-				return status.Error(codes.PermissionDenied, fmt.Sprintf("expect: %v, actual: %v", level, v))
-			}
-			return nil
+		return jwt.NewRS512(jwt.RSAPrivateKey(priv), jwt.RSAPublicKey(&priv.PublicKey)), nil
+	case secret.Algorithm_PSS:
+		priv, err := x509.ParsePKCS1PrivateKey(key)
+		if err != nil {
+			return nil, err
 		}
-		return jwt.ErrAudValidation
+		return jwt.NewPS512(jwt.RSAPrivateKey(priv), jwt.RSAPublicKey(&priv.PublicKey)), nil
+	case secret.Algorithm_ECDSA:
+		priv, err := x509.ParseECPrivateKey(key)
+		if err != nil {
+			return nil, err
+		}
+		return jwt.NewES512(jwt.ECDSAPrivateKey(priv), jwt.ECDSAPublicKey(&priv.PublicKey)), nil
+	case secret.Algorithm_EdDSA:
+		priv := ed25519.PrivateKey(key)
+		return jwt.NewEd25519(jwt.Ed25519PrivateKey(priv), jwt.Ed25519PublicKey(priv.Public().([]byte))), nil
+	default:
+		return nil, UnsupportedAlgorithm
+	}
+}
+
+func (t *JwtToken) NewSecretKey(alg secret.Algorithm) ([]byte, error) {
+	switch alg {
+	case secret.Algorithm_HMAC:
+		var key [16]byte
+		_, err := rand.Read(key[:])
+		return key[:], err
+	case secret.Algorithm_RSA, secret.Algorithm_PSS:
+		key, err := rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			return nil, err
+		}
+		return x509.MarshalPKCS1PrivateKey(key), nil
+	case secret.Algorithm_ECDSA:
+		key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
+		if err != nil {
+			return nil, err
+		}
+		return x509.MarshalECPrivateKey(key)
+	case secret.Algorithm_EdDSA:
+		_, key, err := ed25519.GenerateKey(rand.Reader)
+		return key, err
+	default:
+		return nil, UnsupportedAlgorithm
 	}
 }
 
 // Generate a new token with specified options.
-func (t *JwtToken) Generate(s *permission.Secret) (string, error) {
-	seed, err := secret.DefaultSeed.New(s.GetAccountId(), hash.Sum(s.GetKeyId()))
+func (t *JwtToken) Generate(s *secret.Info) (string, error) {
+	if s.GetType() == secret.Type_SERVER {
+		// TODO: Server key should be added by operators.
+		key, err := credentials.DefaultServer.Get(s.GetKeyId())
+		if err != nil {
+			return "", err
+		}
+		return t.sign(s, key)
+	}
+
+	key, err := t.NewSecretKey(s.GetAlgorithm())
 	if err != nil {
 		return "", err
 	}
-	return t.sign(s, seed)
+	if err := credentials.DefaultClient.Add(s.GetAccount(), s.GetKeyId(), key); err != nil {
+		return "", err
+	}
+	return t.sign(s, key)
 }
 
 // Refresh the token with expired time renewed.
-func (t *JwtToken) Refresh(s *permission.Secret) (string, error) {
-	seed, err := secret.DefaultSeed.Get(s.GetAccountId(), hash.Sum(s.GetKeyId()))
+func (t *JwtToken) Refresh(s *secret.Info) (string, error) {
+	var (
+		err error
+		key []byte
+	)
+	if s.GetType() == secret.Type_SERVER {
+		key, err = credentials.DefaultServer.Get(s.GetKeyId())
+	} else {
+		key, err = credentials.DefaultClient.Get(s.GetAccount(), s.GetKeyId())
+	}
 	if err != nil {
 		return "", err
 	}
-	return t.sign(s, seed)
+	// Calculate new timestamp.
+	issuedAt := datetime.FromProtoTime(s.GetIssuedAt()).Time
+	expiredAt := datetime.FromProtoTime(s.GetExpiredAt()).Time
+	now := time.Now()
+	s.IssuedAt = datetime.WithTime(now).Proto()
+	s.ExpiredAt = datetime.WithTime(now.Add(expiredAt.Sub(issuedAt))).Proto()
+	return t.sign(s, key)
 }
 
 // Parse and verify the token string.
-func (t *JwtToken) Verify(token string, level permission.TokenLevel) (*permission.Secret, error) {
+func (t *JwtToken) Parse(token string) (*secret.Info, error) {
 	var (
 		accountID uint64
-		keyID     string
+		keyID     int64
 	)
 	resolver := &jwtutil.Resolver{
 		New: func(header jwt.Header) (jwt.Algorithm, error) {
+			var (
+				err error
+				key []byte
+			)
 			keyIDs := strings.Split(header.KeyID, "-")
 			if len(keyIDs) != 2 {
 				return nil, jwt.ErrAlgValidation
 			}
-			keyID = keyIDs[1]
 			accountID, _ = strconv.ParseUint(keyIDs[0], 10, 64)
-			seed, err := secret.DefaultSeed.Get(accountID, keyID)
+			keyID, _ = strconv.ParseInt(keyIDs[1], 10, 64)
+			if header.ContentType == secret.Type_SERVER.String() {
+				key, err = credentials.DefaultServer.Get(keyID)
+			} else {
+				key, err = credentials.DefaultClient.Get(accountID, keyID)
+			}
 			if err != nil {
 				return nil, err
 			}
-			return jwt.NewHS256(seed), nil
+			alg := secret.Algorithm_None
+			switch header.Algorithm {
+			case "HS512":
+				alg = secret.Algorithm_HMAC
+			case "RS512":
+				alg = secret.Algorithm_RSA
+			case "PS512":
+				alg = secret.Algorithm_PSS
+			case "ES512":
+				alg = secret.Algorithm_ECDSA
+			case "Ed25519":
+				alg = secret.Algorithm_EdDSA
+			}
+			return t.getAlgorithm(alg, key)
 		},
 	}
 	// Verify
 	now := time.Now()
 	payload := jwt.Payload{}
 	validator := jwt.ValidatePayload(&payload,
-		t.TokenLevelValidator(level),
 		jwt.NotBeforeValidator(now),
 		jwt.ExpirationTimeValidator(now))
-	_, err := jwt.Verify([]byte(token), resolver, &payload, validator)
+	header, err := jwt.Verify([]byte(token), resolver, &payload, validator)
 	if err != nil {
 		return nil, err
 	}
-
-	return &permission.Secret{
-		Issuer:    &payload.Issuer,
-		Subject:   &payload.Subject,
-		AccountId: &accountID,
-		KeyId:     &keyID,
+	return &secret.Info{
+		Type:      secret.Type(secret.Type_value[header.ContentType]),
+		Algorithm: 0,
+		Subject:   permission.Subject(permission.Subject_value[payload.Subject]),
+		Issuer:    payload.Issuer,
+		Account:   accountID,
+		KeyId:     keyID,
 		Roles:     payload.Audience,
-		Metadata:  map[string]string{},
 		IssuedAt:  datetime.WithTime(payload.IssuedAt.Time).Proto(),
 		ExpiredAt: datetime.WithTime(payload.ExpirationTime.Time).Proto(),
 	}, nil
-}
-
-// Revoke the token signed to the specified account and device.
-func (t *JwtToken) Revoke(accountID uint64, keyID string) error {
-	return secret.DefaultSeed.Revoke(accountID, hash.Sum(keyID))
-}
-
-// Revoke all tokens signed to the specified account.
-func (t *JwtToken) RevokeAll(accountID uint64) error {
-	return secret.DefaultSeed.RevokeAll(accountID)
 }

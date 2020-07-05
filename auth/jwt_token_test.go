@@ -5,32 +5,30 @@ import (
 	"time"
 
 	"github.com/appootb/protobuf/go/permission"
+	"github.com/appootb/protobuf/go/secret"
 	"github.com/appootb/substratum/util/datetime"
+	"github.com/appootb/substratum/util/hash"
 	"github.com/gbrlsnchs/jwt/v3"
-	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func TestJwtToken_Generate(t *testing.T) {
 	j := NewJwtToken()
 	now := time.Now()
-	token, err := j.Generate(&permission.Secret{
-		Issuer:    proto.String("appootb"),
-		Subject:   proto.String("unit_test"),
-		AccountId: proto.Uint64(123456789),
-		KeyId:     proto.String("TestJwtToken_Generate"),
-		Roles:     []string{permission.TokenLevel_LOW_TOKEN.String()},
-		Metadata:  map[string]string{},
+	token, err := j.Generate(&secret.Info{
+		Type:      secret.Type_CLIENT,
+		Algorithm: secret.Algorithm_HMAC,
+		Issuer:    "appootb",
+		Account:   123456789,
+		KeyId:     hash.Sum("TestJwtToken_Generate"),
+		Subject:   permission.Subject_MOBILE,
 		IssuedAt:  datetime.WithTime(now).Proto(),
 		ExpiredAt: datetime.WithTime(now.Add(time.Hour)).Proto(),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(token)
 
-	s, err := j.Verify(token, permission.TokenLevel_LOW_TOKEN)
+	s, err := j.Parse(token)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,20 +38,20 @@ func TestJwtToken_Generate(t *testing.T) {
 func TestJwtToken_Expire(t *testing.T) {
 	j := NewJwtToken()
 	now := time.Now()
-	token, err := j.Generate(&permission.Secret{
-		Issuer:    proto.String("appootb"),
-		Subject:   proto.String("unit_test"),
-		AccountId: proto.Uint64(123456789),
-		KeyId:     proto.String("TestJwtToken_Expire"),
-		Roles:     []string{permission.TokenLevel_LOW_TOKEN.String()},
-		Metadata:  map[string]string{},
+	token, err := j.Generate(&secret.Info{
+		Type:      secret.Type_SERVER,
+		Algorithm: secret.Algorithm_HMAC,
+		Issuer:    "appootb",
+		Account:   123456789,
+		KeyId:     hash.Sum("TestJwtToken_Expire"),
+		Subject:   permission.Subject_SERVER,
 		IssuedAt:  datetime.WithTime(now.Add(-time.Hour)).Proto(),
 		ExpiredAt: datetime.WithTime(now.Add(-time.Minute)).Proto(),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := j.Verify(token, permission.TokenLevel_NONE_TOKEN)
+	s, err := j.Parse(token)
 	if err != jwt.ErrExpValidation {
 		t.Fatal(s, err)
 	}
@@ -62,44 +60,42 @@ func TestJwtToken_Expire(t *testing.T) {
 func TestJwtToken_Before(t *testing.T) {
 	j := NewJwtToken()
 	now := time.Now()
-	token, err := j.Generate(&permission.Secret{
-		Issuer:    proto.String("appootb"),
-		Subject:   proto.String("unit_test"),
-		AccountId: proto.Uint64(123456789),
-		KeyId:     proto.String("TestJwtToken_Before"),
-		Roles:     []string{permission.TokenLevel_LOW_TOKEN.String()},
-		Metadata:  map[string]string{},
+	token, err := j.Generate(&secret.Info{
+		Type:      secret.Type_CLIENT,
+		Algorithm: secret.Algorithm_HMAC,
+		Issuer:    "appootb",
+		Account:   123456789,
+		KeyId:     hash.Sum("TestJwtToken_Before"),
+		Subject:   permission.Subject_PC,
 		IssuedAt:  datetime.WithTime(now.Add(time.Minute * 2)).Proto(),
 		ExpiredAt: datetime.WithTime(now.Add(time.Hour)).Proto(),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := j.Verify(token, permission.TokenLevel_NONE_TOKEN)
+	s, err := j.Parse(token)
 	if err != jwt.ErrNbfValidation {
 		t.Fatal(s, err)
 	}
 }
 
-func TestJwtToken_TokenLevel(t *testing.T) {
+func TestJwtToken_TokenNotBefore(t *testing.T) {
 	j := NewJwtToken()
 	now := time.Now()
-	token, err := j.Generate(&permission.Secret{
-		Issuer:    proto.String("appootb"),
-		Subject:   proto.String("unit_test"),
-		AccountId: proto.Uint64(123456789),
-		KeyId:     proto.String("TestJwtToken_TokenLevel"),
-		Roles:     []string{permission.TokenLevel_LOW_TOKEN.String()},
-		Metadata:  map[string]string{},
+	token, err := j.Generate(&secret.Info{
+		Algorithm: secret.Algorithm_HMAC,
+		Issuer:    "appootb",
+		Account:   123456789,
+		KeyId:     hash.Sum("TestJwtToken_TokenNotBefore"),
+		Subject:   permission.Subject_GUEST,
 		IssuedAt:  datetime.WithTime(now.Add(time.Minute * 2)).Proto(),
 		ExpiredAt: datetime.WithTime(now.Add(time.Hour)).Proto(),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = j.Verify(token, permission.TokenLevel_HIGH_TOKEN)
-	sErr, ok := status.FromError(err)
-	if !ok || sErr.Code() != codes.PermissionDenied {
-		t.Fatal(err)
+	_, err = j.Parse(token)
+	if err == nil {
+		t.Fatal("fail: invalid token")
 	}
 }

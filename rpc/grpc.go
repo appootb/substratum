@@ -8,26 +8,27 @@ import (
 var DefaultOptions = NewOptions(WithDefaultUnaryInterceptors(), WithDefaultStreamInterceptors())
 
 type gRPCServerBuilder struct {
-	optionsInstalled bool
+	chainInstalled    bool
+	unaryInterceptor  grpc.UnaryServerInterceptor
+	streamInterceptor grpc.StreamServerInterceptor
 }
 
 func (b *gRPCServerBuilder) New(opts *ServerOptions) *grpc.Server {
 	defer func() {
-		b.optionsInstalled = true
+		b.chainInstalled = true
 	}()
 
-	if b.optionsInstalled {
-		return grpc.NewServer()
+	if !b.chainInstalled {
+		if len(opts.unaryChains) > 0 {
+			b.unaryInterceptor = middleware.ChainUnaryServer(opts.unaryChains...)
+			opts.srvOpts = append(opts.srvOpts, grpc.UnaryInterceptor(b.unaryInterceptor))
+		}
+		if len(opts.streamChains) > 0 {
+			b.streamInterceptor = middleware.ChainStreamServer(opts.streamChains...)
+			opts.srvOpts = append(opts.srvOpts, grpc.StreamInterceptor(b.streamInterceptor))
+		}
 	}
 
-	if len(opts.unaryChains) > 0 {
-		unaryInterceptor := middleware.ChainUnaryServer(opts.unaryChains...)
-		opts.srvOpts = append(opts.srvOpts, grpc.UnaryInterceptor(unaryInterceptor))
-	}
-	if len(opts.streamChains) > 0 {
-		streamInterceptor := middleware.ChainStreamServer(opts.streamChains...)
-		opts.srvOpts = append(opts.srvOpts, grpc.StreamInterceptor(streamInterceptor))
-	}
 	return grpc.NewServer(opts.srvOpts...)
 }
 
@@ -35,4 +36,12 @@ var builder = &gRPCServerBuilder{}
 
 func New(opts *ServerOptions) *grpc.Server {
 	return builder.New(opts)
+}
+
+func ChainUnaryServer() grpc.UnaryServerInterceptor {
+	return builder.unaryInterceptor
+}
+
+func ChainStreamServer() grpc.StreamServerInterceptor {
+	return builder.streamInterceptor
 }

@@ -1,10 +1,20 @@
-package ip
+package iphelper
 
 import (
 	"net"
 )
 
-func LocalIP(v4 bool) (net.IP, error) {
+func LocalIP() string {
+	if ipv4, err := localIP(true); err == nil {
+		return ipv4.String()
+	}
+	if ipv6, err := localIP(false); err == nil {
+		return ipv6.String()
+	}
+	return "127.0.0.1"
+}
+
+func localIP(v4 bool) (net.IP, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return nil, err

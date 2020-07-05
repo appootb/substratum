@@ -10,6 +10,7 @@ import (
 	"github.com/appootb/substratum/auth"
 	"github.com/appootb/substratum/discovery"
 	"github.com/appootb/substratum/resolver"
+	"github.com/appootb/substratum/rpc"
 	"github.com/appootb/substratum/server"
 	"github.com/appootb/substratum/storage"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -45,7 +46,7 @@ func (s *Server) HandleFunc(scope permission.VisibleScope, pattern string, handl
 		m.HandleFunc(pattern, handler)
 		return
 	}
-	if scope != permission.VisibleScope_ALL_SCOPES {
+	if scope != permission.VisibleScope_ALL {
 		return
 	}
 	for _, m := range s.serveMuxers {
@@ -58,7 +59,7 @@ func (s *Server) Handle(scope permission.VisibleScope, pattern string, handler h
 		mux.Handle(pattern, handler)
 		return
 	}
-	if scope != permission.VisibleScope_ALL_SCOPES {
+	if scope != permission.VisibleScope_ALL {
 		return
 	}
 	for _, mux := range s.serveMuxers {
@@ -66,19 +67,29 @@ func (s *Server) Handle(scope permission.VisibleScope, pattern string, handler h
 	}
 }
 
-// Get server context.
+// Return server context.
 func (s *Server) Context() context.Context {
 	return s.ctx
 }
 
+// Return the unary server interceptor for local gateway handler server.
+func (s *Server) UnaryInterceptor() grpc.UnaryServerInterceptor {
+	return rpc.ChainUnaryServer()
+}
+
+// Return the stream server interceptor for local gateway handler server.
+func (s *Server) StreamInterceptor() grpc.StreamServerInterceptor {
+	return rpc.ChainStreamServer()
+}
+
 // Get gRPC server of the specified visible scope.
-func (s *Server) GetScopedGRPCServer(scope permission.VisibleScope) []*grpc.Server {
+func (s *Server) GetGRPCServer(scope permission.VisibleScope) []*grpc.Server {
 	if mux, ok := s.serveMuxers[scope]; ok {
 		return []*grpc.Server{
 			mux.RPCServer(),
 		}
 	}
-	if scope != permission.VisibleScope_ALL_SCOPES {
+	if scope != permission.VisibleScope_ALL {
 		return []*grpc.Server{}
 	}
 	srv := make([]*grpc.Server, 0, len(s.serveMuxers))
@@ -89,13 +100,13 @@ func (s *Server) GetScopedGRPCServer(scope permission.VisibleScope) []*grpc.Serv
 }
 
 // Get gateway mux of the specified visible scope.
-func (s *Server) GetScopedGatewayMux(scope permission.VisibleScope) []*runtime.ServeMux {
+func (s *Server) GetGatewayMux(scope permission.VisibleScope) []*runtime.ServeMux {
 	if mux, ok := s.serveMuxers[scope]; ok {
 		return []*runtime.ServeMux{
 			mux.GatewayMux(),
 		}
 	}
-	if scope != permission.VisibleScope_ALL_SCOPES {
+	if scope != permission.VisibleScope_ALL {
 		return []*runtime.ServeMux{}
 	}
 	srv := make([]*runtime.ServeMux, 0, len(s.serveMuxers))
@@ -140,7 +151,7 @@ func (s *Server) Serve() error {
 		mux.Serve()
 	}
 	// Register node.
-	addr := s.serveMuxers[permission.VisibleScope_INNER_SCOPE].ConnAddr()
+	addr := s.serveMuxers[permission.VisibleScope_SERVER].ConnAddr()
 	for name := range s.components {
 		err := discovery.DefaultService.RegisterNode(name, addr, s.keepAliveTTL)
 		if err != nil {
