@@ -32,7 +32,7 @@ func NewServer(opts ...ServerOption) Service {
 		components:   make(map[string]Component),
 		serveMuxers:  make(map[permission.VisibleScope]*server.ServeMux),
 	}
-	opts = append(opts, WithDefaultMux(), WithDefaultInnerMux())
+	opts = append(opts, WithDefaultClientMux(), WithDefaultServerMux())
 	for _, opt := range opts {
 		opt(srv)
 	}

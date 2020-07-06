@@ -8,20 +8,20 @@ import (
 )
 
 const (
-	DefaultRpcPort          = 8080
-	DefaultGatewayPort      = 8081
-	DefaultInnerRpcPort     = 8088
-	DefaultInnerGatewayPort = 8089
+	DefaultClientRpcPort     = 8080
+	DefaultClientGatewayPort = 8081
+	DefaultServerRpcPort     = 8088
+	DefaultServerGatewayPort = 8089
 )
 
 type ServerOption func(*Server)
 
-func WithDefaultMux() ServerOption {
-	return WithMux(permission.VisibleScope_DEFAULT_SCOPE, DefaultRpcPort, DefaultGatewayPort)
+func WithDefaultClientMux() ServerOption {
+	return WithMux(permission.VisibleScope_CLIENT, DefaultClientRpcPort, DefaultClientGatewayPort)
 }
 
-func WithDefaultInnerMux() ServerOption {
-	return WithMux(permission.VisibleScope_INNER_SCOPE, DefaultInnerRpcPort, DefaultInnerGatewayPort)
+func WithDefaultServerMux() ServerOption {
+	return WithMux(permission.VisibleScope_SERVER, DefaultServerRpcPort, DefaultServerGatewayPort)
 }
 
 func WithMux(scope permission.VisibleScope, rpcPort, gatewayPort uint16) ServerOption {
