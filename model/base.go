@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/appootb/protobuf/go/common"
-	"github.com/appootb/protobuf/go/permission"
+	"github.com/appootb/protobuf/go/secret"
 	"github.com/appootb/protobuf/go/service"
 	"github.com/appootb/substratum/client"
 	"github.com/appootb/substratum/logger"
@@ -33,7 +33,7 @@ func (m Base) Metadata() *common.Metadata {
 	return metadata.RequestMetadata(m.ctx)
 }
 
-func (m Base) AccountSecret() *permission.Secret {
+func (m Base) AccountSecret() *secret.Info {
 	return service.AccountSecretFromContext(m.ctx)
 }
 
