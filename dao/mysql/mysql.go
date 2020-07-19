@@ -13,7 +13,7 @@ type Base struct {
 	ctx context.Context `json:"-" gorm:"-"`
 
 	ID        uint64    `gorm:"primary_key"`
-	CreatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP;index"`
+	CreatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP;index:idx_created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"`
 }
 

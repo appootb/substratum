@@ -26,7 +26,7 @@ type connPool struct {
 }
 
 func (p *connPool) Get(target string) *grpc.ClientConn {
-	if cc, ok := p.Load(target); !ok {
+	if cc, ok := p.Load(target); ok {
 		return cc.(*grpc.ClientConn)
 	}
 	cc := p.newConn(target)

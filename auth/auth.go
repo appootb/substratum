@@ -93,6 +93,7 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 			return secretInfo, nil
 		}
 	}
+	// TODO: check subject with metadata for client token
 	return nil, status.Error(codes.PermissionDenied,
 		fmt.Sprintf("subject: %v, expeced: %v", secretInfo.GetSubject(), n.methods[serviceMethod]))
 }

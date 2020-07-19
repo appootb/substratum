@@ -4,18 +4,19 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/appootb/protobuf/go/code"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 )
 
 type StatusError spb.Status
 
-func CodeType(err error) int32 {
+func CodeType(err error) code.Error {
 	var stErr *StatusError
 	if errors.As(err, &stErr) {
-		return stErr.Code
+		return code.Error(stErr.Code)
 	}
-	return int32(codes.Unknown)
+	return code.Error(codes.Unknown)
 }
 
 func (err *StatusError) Error() string {
@@ -23,16 +24,16 @@ func (err *StatusError) Error() string {
 	return fmt.Sprintf("status error: code = %s desc = %s", codes.Code(p.GetCode()), p.GetMessage())
 }
 
-func New(code int32, msg string) error {
+func New(code code.Error, msg string) error {
 	return &StatusError{
-		Code:    code,
+		Code:    int32(code),
 		Message: msg,
 	}
 }
 
-func Newf(code int32, format string, a ...interface{}) error {
+func Newf(code code.Error, format string, a ...interface{}) error {
 	return &StatusError{
-		Code:    code,
+		Code:    int32(code),
 		Message: fmt.Sprintf(format, a...),
 	}
 }
