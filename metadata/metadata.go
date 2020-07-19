@@ -42,6 +42,10 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 	if net := md.Get("network"); len(net) > 0 {
 		network = common.Network(common.Network_value[net[0]])
 	}
+	debug := false
+	if b := md.Get("is_debug"); len(b) > 0 {
+		debug, _ = strconv.ParseBool(b[0])
+	}
 
 	return &common.Metadata{
 		Account:    &account,
@@ -63,5 +67,6 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		Channel:    proto.String(strings.Join(md["channel"], "")),
 		Product:    proto.String(strings.Join(md["product"], "")),
 		TraceId:    proto.String(strings.Join(md["trace_id"], "")),
+		IsDebug:    &debug,
 	}
 }

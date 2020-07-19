@@ -56,23 +56,36 @@ func (n *AlgorithmAuth) RegisterServiceSubjects(serviceMethodSubjects map[string
 
 // Authenticate a request specified by the full url path of the method.
 func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) (*secret.Info, error) {
+	dt := time.Now().Add(-time.Minute)
+	anonymousMethod := n.IsAnonymousMethod(serviceMethod)
+	emptySecret := &secret.Info{
+		Roles:     []string{},
+		IssuedAt:  datetime.WithTime(dt).Proto(),
+		ExpiredAt: datetime.WithTime(dt).Proto(),
+	}
+
 	// Get request metadata.
 	md := metadata.RequestMetadata(ctx)
 	if md == nil {
 		return nil, status.Error(codes.Unauthenticated, "request metadata not set")
 	}
-	if md.GetToken() == "" && n.IsAnonymousMethod(serviceMethod) {
-		dt := time.Now().Add(-time.Minute)
-		return &secret.Info{
-			Roles:     []string{},
-			IssuedAt:  datetime.WithTime(dt).Proto(),
-			ExpiredAt: datetime.WithTime(dt).Proto(),
-		}, nil
+	if md.GetToken() == "" {
+		if anonymousMethod {
+			return emptySecret, nil
+		}
+		return nil, status.Error(codes.Unauthenticated, "token required")
 	}
 	// Parse the token.
 	secretInfo, err := DefaultToken.Parse(md.GetToken())
 	if err != nil {
+		if anonymousMethod {
+			return emptySecret, nil
+		}
 		return nil, err
+	}
+	// Anonymous method
+	if anonymousMethod {
+		return secretInfo, nil
 	}
 	// Verify the subject.
 	for _, sub := range n.methods[serviceMethod] {

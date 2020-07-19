@@ -30,7 +30,7 @@ func (s *server) Add(keyID int64, val []byte) error {
 func (s *server) Get(keyID int64) ([]byte, error) {
 	val, ok := s.Load(keyID)
 	if !ok {
-		// For debug usage
+		// Default secret seed, for debug usage
 		return []byte("1d011a3a57f9d3fa38541713ae03c6a238233bd2"), nil
 	}
 	return val.([]byte), nil
