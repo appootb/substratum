@@ -1,7 +1,11 @@
 package resolver
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/appootb/substratum/discovery"
+	"github.com/appootb/substratum/util/iphelper"
 	"google.golang.org/grpc/resolver"
 )
 
@@ -16,9 +20,18 @@ type discoveryResolver struct {
 //
 // It could be called multiple times concurrently.
 func (r *discoveryResolver) ResolveNow(_ resolver.ResolveNowOptions) {
+	ipPrefix := fmt.Sprintf("%v:", iphelper.LocalIP())
 	nodes := discovery.DefaultService.GetNodes(r.target.Endpoint)
 	addrs := make([]resolver.Address, 0, len(nodes))
 	for addr := range nodes {
+		if strings.HasPrefix(addr, ipPrefix) || strings.HasPrefix(addr, "127.0.0.1:") {
+			addrs = []resolver.Address{
+				{
+					Addr: addr,
+				},
+			}
+			break
+		}
 		addrs = append(addrs, resolver.Address{
 			Addr: addr,
 		})

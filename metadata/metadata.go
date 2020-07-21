@@ -32,7 +32,11 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 	}
 	platform := common.Platform_PLATFORM_UNSPECIFIED
 	if pf := md.Get("platform"); len(pf) > 0 {
-		platform = common.Platform(common.Platform_value[pf[0]])
+		if i, err := strconv.Atoi(pf[0]); err != nil {
+			platform = common.Platform(common.Platform_value[pf[0]])
+		} else {
+			platform = common.Platform(i)
+		}
 	}
 	timestamp := int64(0)
 	if ts := md.Get("timestamp"); len(ts) > 0 {
@@ -40,7 +44,11 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 	}
 	network := common.Network_NETWORK_UNSPECIFIED
 	if net := md.Get("network"); len(net) > 0 {
-		network = common.Network(common.Network_value[net[0]])
+		if i, err := strconv.Atoi(net[0]); err != nil {
+			network = common.Network(common.Network_value[net[0]])
+		} else {
+			network = common.Network(i)
+		}
 	}
 	debug := false
 	if b := md.Get("is_debug"); len(b) > 0 {

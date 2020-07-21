@@ -24,10 +24,14 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 	if id := md.Get("account"); len(id) > 0 {
 		account, _ = strconv.ParseUint(id[0], 10, 64)
 	}
+	issuer := "appootb"
+	if pkg := md.Get("package"); len(pkg) > 0 {
+		issuer = pkg[0]
+	}
 	secretInfo := &secret.Info{
 		Type:      secret.Type_SERVER,
 		Algorithm: secret.Algorithm_HMAC,
-		Issuer:    "appootb",
+		Issuer:    issuer,
 		Account:   account,
 		KeyId:     keyID,
 		Roles:     []string{},
@@ -48,7 +52,7 @@ func WithMetadata(md *common.Metadata, keyID int64) metadata.MD {
 	secretInfo := &secret.Info{
 		Type:      secret.Type_SERVER,
 		Algorithm: secret.Algorithm_HMAC,
-		Issuer:    "appootb",
+		Issuer:    md.GetPackage(),
 		Account:   md.GetAccount(),
 		KeyId:     keyID,
 		Roles:     []string{},

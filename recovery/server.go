@@ -1,6 +1,8 @@
 package recovery
 
 import (
+	"runtime/debug"
+
 	recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -11,12 +13,14 @@ import (
 
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(func(p interface{}) error {
-		// TODO log
+		debug.PrintStack()
 		return status.Errorf(codes.Internal, "%v", p)
 	}))
 }
 
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
-	// TODO log
-	return recovery.StreamServerInterceptor()
+	return recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(func(p interface{}) error {
+		debug.PrintStack()
+		return status.Errorf(codes.Internal, "%v", p)
+	}))
 }

@@ -155,6 +155,7 @@ func (t *JwtToken) Parse(token string) (*secret.Info, error) {
 	var (
 		accountID uint64
 		keyID     int64
+		alg       secret.Algorithm
 	)
 	resolver := &jwtutil.Resolver{
 		New: func(header jwt.Header) (jwt.Algorithm, error) {
@@ -176,7 +177,6 @@ func (t *JwtToken) Parse(token string) (*secret.Info, error) {
 			if err != nil {
 				return nil, err
 			}
-			alg := secret.Algorithm_None
 			switch header.Algorithm {
 			case "HS512":
 				alg = secret.Algorithm_HMAC
@@ -188,6 +188,8 @@ func (t *JwtToken) Parse(token string) (*secret.Info, error) {
 				alg = secret.Algorithm_ECDSA
 			case "Ed25519":
 				alg = secret.Algorithm_EdDSA
+			default:
+				alg = secret.Algorithm_None
 			}
 			return t.getAlgorithm(alg, key)
 		},
@@ -204,7 +206,7 @@ func (t *JwtToken) Parse(token string) (*secret.Info, error) {
 	}
 	return &secret.Info{
 		Type:      secret.Type(secret.Type_value[header.ContentType]),
-		Algorithm: 0,
+		Algorithm: alg,
 		Subject:   permission.Subject(permission.Subject_value[payload.Subject]),
 		Issuer:    payload.Issuer,
 		Account:   accountID,

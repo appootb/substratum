@@ -14,12 +14,9 @@ import (
 
 // Storage interface.
 type Storage interface {
-	InitDB(dialects []Dialect, opts ...SQLOption) error
+	InitDB(dialect Dialect, opts ...SQLOption) error
 	InitRedis(dialects []Dialect, opts ...RedisOption) error
-	AddDB(db *gorm.DB)
-	AddRedis(cache redis.Cmdable)
-	GetDBs() []*gorm.DB
-	GetDB(key interface{}) *gorm.DB
+	GetDB() *gorm.DB
 	GetRedisz() []redis.Cmdable
 	GetRedis(key interface{}) redis.Cmdable
 }
@@ -31,21 +28,21 @@ func newStorage() Storage {
 type storage struct {
 	mu sync.RWMutex
 
-	dbs    []*gorm.DB
-	caches []redis.Cmdable
+	database *gorm.DB
+	caches   []redis.Cmdable
 }
 
-func (s *storage) InitDB(dialects []Dialect, opts ...SQLOption) error {
-	for _, dialect := range dialects {
-		db, err := gorm.Open(string(dialect.Type()), dialect.URL())
-		if err != nil {
-			return err
-		}
-		for _, opt := range opts {
-			opt(db)
-		}
-		s.AddDB(db)
+func (s *storage) InitDB(dialect Dialect, opts ...SQLOption) error {
+	db, err := gorm.Open(string(dialect.Type()), dialect.URL())
+	if err != nil {
+		return err
 	}
+	for _, opt := range opts {
+		opt(db)
+	}
+	s.mu.Lock()
+	s.database = db
+	s.mu.Unlock()
 	return nil
 }
 
@@ -58,32 +55,17 @@ func (s *storage) InitRedis(dialects []Dialect, opts ...RedisOption) error {
 		for _, opt := range opts {
 			opt(options)
 		}
-		s.AddRedis(redis.NewClient(options))
+		s.mu.Lock()
+		s.caches = append(s.caches, redis.NewClient(options))
+		s.mu.Unlock()
 	}
 	return nil
 }
 
-func (s *storage) AddDB(db *gorm.DB) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.dbs = append(s.dbs, db)
-}
-
-func (s *storage) AddRedis(cache redis.Cmdable) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.caches = append(s.caches, cache)
-}
-func (s *storage) GetDBs() []*gorm.DB {
+func (s *storage) GetDB() *gorm.DB {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.dbs
-}
-
-func (s *storage) GetDB(key interface{}) *gorm.DB {
-	dbs := s.GetDBs()
-	sum := hash.Sum(key)
-	return dbs[sum%int64(len(dbs))]
+	return s.database
 }
 
 func (s *storage) GetRedisz() []redis.Cmdable {
