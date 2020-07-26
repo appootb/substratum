@@ -8,7 +8,7 @@ import (
 	"github.com/appootb/protobuf/go/common"
 	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/protobuf/go/secret"
-	"github.com/appootb/substratum/auth"
+	"github.com/appootb/substratum/token"
 	"github.com/appootb/substratum/util/datetime"
 	"github.com/appootb/substratum/util/iphelper"
 	"google.golang.org/grpc/metadata"
@@ -39,8 +39,8 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 		IssuedAt:  datetime.WithTime(now).Proto(),
 		ExpiredAt: datetime.WithTime(now.Add(time.Minute)).Proto(),
 	}
-	token, _ := auth.DefaultToken.Generate(secretInfo)
-	md["token"] = []string{token}
+	val, _ := token.Implementor().Generate(secretInfo)
+	md["token"] = []string{val}
 	md["platform"] = []string{common.Platform_PLATFORM_SERVER.String()}
 	md["timestamp"] = []string{strconv.FormatInt(now.UnixNano()/1e6, 10)}
 	md["x-forwarded-for"] = []string{iphelper.LocalIP()}
@@ -60,10 +60,10 @@ func WithMetadata(md *common.Metadata, keyID int64) metadata.MD {
 		IssuedAt:  datetime.WithTime(now).Proto(),
 		ExpiredAt: datetime.WithTime(now.Add(time.Minute)).Proto(),
 	}
-	token, _ := auth.DefaultToken.Generate(secretInfo)
+	val, _ := token.Implementor().Generate(secretInfo)
 	m := map[string]string{
 		"account":         strconv.FormatUint(md.GetAccount(), 10),
-		"token":           token,
+		"token":           val,
 		"package":         md.GetPackage(),
 		"version":         md.GetVersion(),
 		"os_version":      md.GetOsVersion(),

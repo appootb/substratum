@@ -4,37 +4,31 @@ import (
 	"sync"
 	"time"
 
+	"github.com/appootb/substratum/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 )
 
-var (
-	DefaultConnPool = newConnPool()
-)
-
-type ConnPool interface {
-	Get(target string) *grpc.ClientConn
-	Close()
+func Init() {
+	if client.Implementor() == nil {
+		client.RegisterImplementor(&ConnPool{})
+	}
 }
 
-func newConnPool() ConnPool {
-	return &connPool{}
-}
-
-type connPool struct {
+type ConnPool struct {
 	sync.Map
 }
 
-func (p *connPool) Get(target string) *grpc.ClientConn {
+func (p *ConnPool) Get(target string) *grpc.ClientConn {
 	if cc, ok := p.Load(target); ok {
 		return cc.(*grpc.ClientConn)
 	}
-	cc := p.newConn(target)
+	cc := p.NewConn(target)
 	p.Store(target, cc)
 	return cc
 }
 
-func (p *connPool) newConn(target string) *grpc.ClientConn {
+func (p *ConnPool) NewConn(target string) *grpc.ClientConn {
 	// TODO: support more schema
 	cli, err := grpc.Dial(target,
 		grpc.WithInsecure(),
@@ -52,7 +46,7 @@ func (p *connPool) newConn(target string) *grpc.ClientConn {
 	return cli
 }
 
-func (p *connPool) Close() {
+func (p *ConnPool) Close() {
 	p.Range(func(_, value interface{}) bool {
 		cc := value.(*grpc.ClientConn)
 		_ = cc.Close()

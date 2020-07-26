@@ -1,4 +1,4 @@
-package auth
+package token
 
 import (
 	"crypto/ecdsa"
@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -14,17 +15,24 @@ import (
 
 	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/protobuf/go/secret"
-	"github.com/appootb/substratum/credentials"
+	"github.com/appootb/substratum/credential"
+	"github.com/appootb/substratum/token"
 	"github.com/appootb/substratum/util/datetime"
 	"github.com/gbrlsnchs/jwt/v3"
 	"github.com/gbrlsnchs/jwt/v3/jwtutil"
 )
 
-type JwtToken struct{}
+var (
+	UnsupportedAlgorithm = errors.New("substratum: algorithm not supported")
+)
 
-func NewJwtToken() Token {
-	return &JwtToken{}
+func Init() {
+	if token.Implementor() == nil {
+		token.RegisterImplementor(&JwtToken{})
+	}
 }
+
+type JwtToken struct{}
 
 func (t *JwtToken) sign(s *secret.Info, key []byte) (string, error) {
 	issuedAt := datetime.FromProtoTime(s.GetIssuedAt()).Time
@@ -43,11 +51,11 @@ func (t *JwtToken) sign(s *secret.Info, key []byte) (string, error) {
 	}
 	contentType := jwt.ContentType(s.GetType().String())
 	keyID := jwt.KeyID(fmt.Sprintf("%v-%v", s.GetAccount(), s.GetKeyId()))
-	token, err := jwt.Sign(payload, alg, contentType, keyID)
+	val, err := jwt.Sign(payload, alg, contentType, keyID)
 	if err != nil {
 		return "", err
 	}
-	return string(token), nil
+	return string(val), nil
 }
 
 func (t *JwtToken) getAlgorithm(alg secret.Algorithm, key []byte) (jwt.Algorithm, error) {
@@ -110,7 +118,7 @@ func (t *JwtToken) NewSecretKey(alg secret.Algorithm) ([]byte, error) {
 func (t *JwtToken) Generate(s *secret.Info) (string, error) {
 	if s.GetType() == secret.Type_SERVER {
 		// TODO: Server key should be added by operators.
-		key, err := credentials.DefaultServer.Get(s.GetKeyId())
+		key, err := credential.ServerImplementor().Get(s.GetKeyId())
 		if err != nil {
 			return "", err
 		}
@@ -121,7 +129,7 @@ func (t *JwtToken) Generate(s *secret.Info) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := credentials.DefaultClient.Add(s.GetAccount(), s.GetKeyId(), key); err != nil {
+	if err := credential.ClientImplementor().Add(s.GetAccount(), s.GetKeyId(), key); err != nil {
 		return "", err
 	}
 	return t.sign(s, key)
@@ -134,9 +142,9 @@ func (t *JwtToken) Refresh(s *secret.Info) (string, error) {
 		key []byte
 	)
 	if s.GetType() == secret.Type_SERVER {
-		key, err = credentials.DefaultServer.Get(s.GetKeyId())
+		key, err = credential.ServerImplementor().Get(s.GetKeyId())
 	} else {
-		key, err = credentials.DefaultClient.Get(s.GetAccount(), s.GetKeyId())
+		key, err = credential.ClientImplementor().Get(s.GetAccount(), s.GetKeyId())
 	}
 	if err != nil {
 		return "", err
@@ -170,9 +178,9 @@ func (t *JwtToken) Parse(token string) (*secret.Info, error) {
 			accountID, _ = strconv.ParseUint(keyIDs[0], 10, 64)
 			keyID, _ = strconv.ParseInt(keyIDs[1], 10, 64)
 			if header.ContentType == secret.Type_SERVER.String() {
-				key, err = credentials.DefaultServer.Get(keyID)
+				key, err = credential.ServerImplementor().Get(keyID)
 			} else {
-				key, err = credentials.DefaultClient.Get(accountID, keyID)
+				key, err = credential.ClientImplementor().Get(accountID, keyID)
 			}
 			if err != nil {
 				return nil, err

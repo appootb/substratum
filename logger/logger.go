@@ -1,16 +1,24 @@
 package logger
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
-	"sync/atomic"
 
 	"github.com/appootb/protobuf/go/common"
-	"github.com/appootb/substratum/util/jsonpb"
 )
 
-var Default = newConsole()
+var (
+	impl Logger
+)
+
+// Return the service implementor.
+func Implementor() Logger {
+	return impl
+}
+
+// Register service implementor.
+func RegisterImplementor(log Logger) {
+	impl = log
+}
 
 type Level int
 
@@ -45,52 +53,23 @@ type Logger interface {
 	Log(level Level, md *common.Metadata, msg string, c Content)
 }
 
-func newConsole() Logger {
-	return &Console{}
-}
-
-type Console struct {
-	level int32
-}
-
-func (log *Console) UpdateLevel(level Level) {
-	atomic.StoreInt32(&log.level, int32(level))
-}
-
-func (log *Console) Log(level Level, md *common.Metadata, msg string, c Content) {
-	if int32(level) < atomic.LoadInt32(&log.level) {
-		return
-	}
-	var (
-		meta    []byte
-		content []byte
-	)
-	if md != nil {
-		meta, _ = jsonpb.Marshal(md)
-	}
-	if c != nil && len(c) > 0 {
-		content, _ = json.Marshal(c)
-	}
-	fmt.Println(fmt.Sprintf("%v metadata: %v, %v: %v", level.String(), string(meta), msg, string(content)))
-}
-
 func Debug(msg string, c Content) {
-	Default.Log(DebugLevel, nil, msg, c)
+	impl.Log(DebugLevel, nil, msg, c)
 }
 
 func Info(msg string, c Content) {
-	Default.Log(InfoLevel, nil, msg, c)
+	impl.Log(InfoLevel, nil, msg, c)
 }
 
 func Warn(msg string, c Content) {
-	Default.Log(WarnLevel, nil, msg, c)
+	impl.Log(WarnLevel, nil, msg, c)
 }
 
 func Error(msg string, c Content) {
-	Default.Log(ErrorLevel, nil, msg, c)
+	impl.Log(ErrorLevel, nil, msg, c)
 }
 
 func Fatal(msg string, c Content) {
-	Default.Log(FatalLevel, nil, msg, c)
+	impl.Log(FatalLevel, nil, msg, c)
 	os.Exit(1)
 }

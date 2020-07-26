@@ -2,52 +2,33 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/appootb/protobuf/go/common"
 	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/protobuf/go/secret"
-	"github.com/appootb/protobuf/go/service"
+	"github.com/appootb/substratum/auth"
 	"github.com/appootb/substratum/metadata"
+	"github.com/appootb/substratum/token"
 	"github.com/appootb/substratum/util/datetime"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-var (
-	Default      = NewAlgorithmAuth()
-	DefaultToken = NewJwtToken()
-)
-
-var (
-	UnsupportedAlgorithm = errors.New("substratum: algorithm not supported")
-)
-
-// Token interface.
-type Token interface {
-	// Generate a new secret key.
-	NewSecretKey(alg secret.Algorithm) ([]byte, error)
-	// Generate a new token with specified secret info.
-	Generate(s *secret.Info) (string, error)
-	// Refresh the token with expired time renewed.
-	Refresh(s *secret.Info) (string, error)
-	// Parse the token string.
-	Parse(token string) (*secret.Info, error)
+func Init() {
+	if auth.Implementor() == nil {
+		auth.RegisterImplementor(&AlgorithmAuth{
+			methodComponent: make(map[string]string),
+			methodSubjects:  make(map[string][]permission.Subject),
+		})
+	}
 }
 
 type AlgorithmAuth struct {
 	methodComponent map[string]string
 	methodSubjects  map[string][]permission.Subject
-}
-
-func NewAlgorithmAuth() service.Authenticator {
-	return &AlgorithmAuth{
-		methodComponent: make(map[string]string),
-		methodSubjects:  make(map[string][]permission.Subject),
-	}
 }
 
 // Return the component name implements the service method.
@@ -87,7 +68,7 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 		return nil, status.Error(codes.Unauthenticated, "token required")
 	}
 	// Parse the token.
-	secretInfo, err := DefaultToken.Parse(md.GetToken())
+	secretInfo, err := token.Implementor().Parse(md.GetToken())
 	if err != nil {
 		if anonymousMethod {
 			md.Account = proto.Uint64(0)

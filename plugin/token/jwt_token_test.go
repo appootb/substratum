@@ -1,4 +1,4 @@
-package auth
+package token
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ import (
 )
 
 func TestJwtToken_Generate(t *testing.T) {
-	j := NewJwtToken()
+	j := &JwtToken{}
 	now := time.Now()
 	token, err := j.Generate(&secret.Info{
 		Type:      secret.Type_CLIENT,
@@ -36,7 +36,7 @@ func TestJwtToken_Generate(t *testing.T) {
 }
 
 func TestJwtToken_Expire(t *testing.T) {
-	j := NewJwtToken()
+	j := &JwtToken{}
 	now := time.Now()
 	token, err := j.Generate(&secret.Info{
 		Type:      secret.Type_SERVER,
@@ -58,7 +58,7 @@ func TestJwtToken_Expire(t *testing.T) {
 }
 
 func TestJwtToken_Before(t *testing.T) {
-	j := NewJwtToken()
+	j := &JwtToken{}
 	now := time.Now()
 	token, err := j.Generate(&secret.Info{
 		Type:      secret.Type_CLIENT,
@@ -80,7 +80,7 @@ func TestJwtToken_Before(t *testing.T) {
 }
 
 func TestJwtToken_TokenNotBefore(t *testing.T) {
-	j := NewJwtToken()
+	j := &JwtToken{}
 	now := time.Now()
 	token, err := j.Generate(&secret.Info{
 		Algorithm: secret.Algorithm_HMAC,

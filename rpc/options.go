@@ -3,10 +3,12 @@ package rpc
 import (
 	"github.com/appootb/substratum/auth"
 	"github.com/appootb/substratum/client"
+	"github.com/appootb/substratum/cron"
 	"github.com/appootb/substratum/errors"
 	"github.com/appootb/substratum/logger"
 	"github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/monitor"
+	"github.com/appootb/substratum/queue"
 	"github.com/appootb/substratum/recovery"
 	"github.com/appootb/substratum/storage"
 	"google.golang.org/grpc"
@@ -49,6 +51,8 @@ func WithDefaultUnaryInterceptors(fns ...grpc.UnaryServerInterceptor) ServerOpti
 			validator.UnaryServerInterceptor(),
 			client.UnaryServerInterceptor(),
 			storage.UnaryServerInterceptor(),
+			queue.UnaryServerInterceptor(),
+			cron.UnaryServerInterceptor(),
 		)
 		options.unaryChains = append(options.unaryChains, fns...)
 	}
@@ -72,6 +76,8 @@ func WithDefaultStreamInterceptors(fns ...grpc.StreamServerInterceptor) ServerOp
 			validator.StreamServerInterceptor(),
 			client.StreamServerInterceptor(),
 			storage.StreamServerInterceptor(),
+			queue.StreamServerInterceptor(),
+			cron.StreamServerInterceptor(),
 		)
 		options.streamChains = append(options.streamChains, fns...)
 	}

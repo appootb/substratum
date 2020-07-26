@@ -8,8 +8,10 @@ import (
 
 	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/substratum/auth"
+	"github.com/appootb/substratum/cron"
 	"github.com/appootb/substratum/discovery"
-	"github.com/appootb/substratum/resolver"
+	"github.com/appootb/substratum/plugin"
+	"github.com/appootb/substratum/queue"
 	"github.com/appootb/substratum/rpc"
 	"github.com/appootb/substratum/server"
 	"github.com/appootb/substratum/storage"
@@ -26,6 +28,9 @@ type Server struct {
 }
 
 func NewServer(opts ...ServerOption) Service {
+	// Register plugin.
+	plugin.Register()
+	// New server
 	srv := &Server{
 		ctx:          context.Background(),
 		keepAliveTTL: 3 * time.Second,
@@ -36,8 +41,6 @@ func NewServer(opts ...ServerOption) Service {
 	for _, opt := range opts {
 		opt(srv)
 	}
-	// Register gRPC resolver.
-	resolver.Register()
 	return srv
 }
 
@@ -131,16 +134,22 @@ func (s *Server) AddMux(scope permission.VisibleScope, rpcPort, gatewayPort uint
 func (s *Server) Register(comp Component) error {
 	name := comp.Name()
 	s.components[name] = comp
-	storage.DefaultManager.New(name)
+	storage.Implementor().New(name)
 
 	// Init component.
-	if err := comp.Init(discovery.DefaultConfig); err != nil {
+	if err := comp.Init(discovery.ConfigImplementor()); err != nil {
 		return err
 	}
-	if err := comp.InitStorage(storage.DefaultManager.Get(name)); err != nil {
+	if err := comp.InitStorage(storage.Implementor().Get(name)); err != nil {
 		return err
 	}
-	if err := comp.RegisterService(auth.Default, s); err != nil {
+	if err := comp.InitJobWorker(queue.Implementor()); err != nil {
+		return err
+	}
+	if err := comp.InitCron(cron.Implementor()); err != nil {
+		return err
+	}
+	if err := comp.RegisterService(auth.Implementor(), s); err != nil {
 		return err
 	}
 	return nil
@@ -153,7 +162,7 @@ func (s *Server) Serve() error {
 	// Register node.
 	addr := s.serveMuxers[permission.VisibleScope_SERVER].ConnAddr()
 	for name := range s.components {
-		err := discovery.DefaultService.RegisterNode(name, addr, s.keepAliveTTL)
+		err := discovery.Implementor().RegisterNode(name, addr, s.keepAliveTTL)
 		if err != nil {
 			return err
 		}

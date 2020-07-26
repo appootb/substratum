@@ -15,7 +15,7 @@ type loggerKey struct{}
 func contextWithLogger(ctx context.Context) context.Context {
 	return context.WithValue(ctx, loggerKey{}, &Helper{
 		md:     md.RequestMetadata(ctx),
-		Logger: Default,
+		Logger: impl,
 	})
 }
 
@@ -24,7 +24,7 @@ func ContextLogger(ctx context.Context) *Helper {
 		return logger.(*Helper)
 	}
 	return &Helper{
-		Logger: Default,
+		Logger: impl,
 	}
 }
 
@@ -33,7 +33,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		ts := time.Now()
 		logger := &Helper{
-			Logger: Default,
+			Logger: impl,
 			md:     md.RequestMetadata(ctx),
 		}
 		resp, err := handler(context.WithValue(ctx, loggerKey{}, logger), req)

@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/resolver"
 )
 
-type discoveryResolver struct {
+type DiscoveryResolver struct {
 	target resolver.Target
 	cc     resolver.ClientConn
 	opts   resolver.BuildOptions
@@ -19,9 +19,9 @@ type discoveryResolver struct {
 // again. It's just a hint, resolver can ignore this if it's not necessary.
 //
 // It could be called multiple times concurrently.
-func (r *discoveryResolver) ResolveNow(_ resolver.ResolveNowOptions) {
+func (r *DiscoveryResolver) ResolveNow(_ resolver.ResolveNowOptions) {
 	ipPrefix := fmt.Sprintf("%v:", iphelper.LocalIP())
-	nodes := discovery.DefaultService.GetNodes(r.target.Endpoint)
+	nodes := discovery.Implementor().GetNodes(r.target.Endpoint)
 	addrs := make([]resolver.Address, 0, len(nodes))
 	for addr := range nodes {
 		if strings.HasPrefix(addr, ipPrefix) || strings.HasPrefix(addr, "127.0.0.1:") {
@@ -42,5 +42,5 @@ func (r *discoveryResolver) ResolveNow(_ resolver.ResolveNowOptions) {
 }
 
 // Close closes the resolver.
-func (r *discoveryResolver) Close() {
+func (r *DiscoveryResolver) Close() {
 }

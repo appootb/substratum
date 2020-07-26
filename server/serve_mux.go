@@ -27,7 +27,12 @@ type ServeMux struct {
 func NewServeMux(rpcPort, gatewayPort uint16) (*ServeMux, error) {
 	var err error
 	m := &ServeMux{
-		rpcSrv:     rpc.New(rpc.DefaultOptions),
+		rpcSrv: rpc.New(
+			rpc.NewOptions(
+				rpc.WithDefaultUnaryInterceptors(),
+				rpc.WithDefaultStreamInterceptors(),
+			),
+		),
 		httpMux:    http.NewServeMux(),
 		gatewayMux: gateway.New(gateway.DefaultOptions),
 	}
