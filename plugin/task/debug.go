@@ -1,17 +1,17 @@
-package cron
+package task
 
 import (
 	"context"
 
-	"github.com/appootb/substratum/cron"
+	"github.com/appootb/substratum/task"
 )
 
 func Init() {
-	if cron.BackendImplementor() == nil {
-		cron.RegisterBackendImplementor(&Debug{})
+	if task.BackendImplementor() == nil {
+		task.RegisterBackendImplementor(&Debug{})
 	}
-	if cron.Implementor() == nil {
-		cron.RegisterImplementor(&Cron{})
+	if task.Implementor() == nil {
+		task.RegisterImplementor(&Task{})
 	}
 }
 

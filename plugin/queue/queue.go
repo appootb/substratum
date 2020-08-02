@@ -1,6 +1,9 @@
 package queue
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/appootb/substratum/queue"
 )
 
@@ -23,6 +26,10 @@ func (m *Queue) Publish(name string, content []byte, opts ...queue.PublishOption
 	options := queue.EmptyPublishOptions()
 	for _, o := range opts {
 		o(options)
+	}
+	maxDelay := queue.BackendImplementor().MaxDelay()
+	if options.Delay > 0 && maxDelay >= 0 && options.Delay > maxDelay {
+		return errors.New(fmt.Sprintf("substratum queue delay: %v, max supported: %v", options.Delay, maxDelay))
 	}
 	if err := queue.BackendImplementor().Ping(); err != nil {
 		return err
@@ -61,6 +68,10 @@ func (m *Queue) process(ch <-chan queue.MessageWrapper, handler queue.MessageHan
 		case <-opts.Context.Done():
 			return
 		case msg = <-ch:
+		}
+
+		if msg.IsPing() {
+			continue
 		}
 
 		msg.Begin()

@@ -32,9 +32,9 @@ func (s *ctxWrapper) Context() context.Context {
 	return context.WithValue(ctx, queueKey{}, impl)
 }
 
-func ContextQueueService(ctx context.Context) Service {
+func ContextQueueService(ctx context.Context) Queue {
 	if srv := ctx.Value(queueKey{}); srv != nil {
-		return srv.(Service)
+		return srv.(Queue)
 	}
 	return nil
 }

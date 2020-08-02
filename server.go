@@ -8,13 +8,13 @@ import (
 
 	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/substratum/auth"
-	"github.com/appootb/substratum/cron"
 	"github.com/appootb/substratum/discovery"
 	"github.com/appootb/substratum/plugin"
 	"github.com/appootb/substratum/queue"
 	"github.com/appootb/substratum/rpc"
 	"github.com/appootb/substratum/server"
 	"github.com/appootb/substratum/storage"
+	"github.com/appootb/substratum/task"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 )
@@ -143,10 +143,10 @@ func (s *Server) Register(comp Component) error {
 	if err := comp.InitStorage(storage.Implementor().Get(name)); err != nil {
 		return err
 	}
-	if err := comp.InitJobWorker(queue.Implementor()); err != nil {
+	if err := comp.InitQueueWorker(queue.Implementor()); err != nil {
 		return err
 	}
-	if err := comp.InitCron(cron.Implementor()); err != nil {
+	if err := comp.InitCronTask(task.Implementor()); err != nil {
 		return err
 	}
 	if err := comp.RegisterService(auth.Implementor(), s); err != nil {

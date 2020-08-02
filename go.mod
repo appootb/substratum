@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/appootb/grc v0.0.0-20200719070357-303a04703be6
-	github.com/appootb/protobuf/go v0.0.0-20200718152935-1e88d873aeb3
+	github.com/appootb/protobuf/go v0.0.0-20200729151134-0f07fd3bead3
 	github.com/gbrlsnchs/jwt/v3 v3.0.0-rc.2
 	github.com/go-redis/redis v6.15.7+incompatible
 	github.com/golang/protobuf v1.4.2

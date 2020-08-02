@@ -6,20 +6,20 @@ import (
 )
 
 var (
-	impl Service
+	impl Queue
 )
 
 // Return the service implementor.
-func Implementor() Service {
+func Implementor() Queue {
 	return impl
 }
 
 // Register service implementor.
-func RegisterImplementor(s Service) {
+func RegisterImplementor(s Queue) {
 	impl = s
 }
 
-type Service interface {
+type Queue interface {
 	// Publish writes a message body to the specified queue.
 	Publish(queue string, content []byte, opts ...PublishOption) error
 	// Subscribe consumes the messages of the specified queue and topic.

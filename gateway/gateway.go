@@ -11,17 +11,23 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
 var DefaultOptions = []runtime.ServeMuxOption{
 	runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonpb.Marshaler),
+	runtime.WithMetadata(URLQueryMetadata),
 	runtime.WithProtoErrorHandler(ProtoErrorHandler),
 	runtime.WithStreamErrorHandler(StreamErrorHandler),
 }
 
 func New(opts []runtime.ServeMuxOption) *runtime.ServeMux {
 	return runtime.NewServeMux(opts...)
+}
+
+func URLQueryMetadata(_ context.Context, r *http.Request) metadata.MD {
+	return metadata.MD(r.URL.Query())
 }
 
 func ProtoErrorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler,

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/appootb/substratum/queue"
+	"github.com/appootb/substratum/util/timer"
 )
 
 type Debug struct {
@@ -37,11 +38,7 @@ func (m *Debug) Read(queue, topic string, ch chan<- queue.MessageWrapper) error 
 	} else {
 		cache = c.(chan *Message)
 	}
-	go func() {
-		for {
-			ch <- <-cache
-		}
-	}()
+	go m.dequeue(ch, cache)
 	return nil
 }
 
@@ -63,8 +60,7 @@ func (m *Debug) Write(queue string, delay time.Duration, content []byte) error {
 			delay:     delay,
 		}
 		if delay > 0 {
-			// TODO: timer
-			time.AfterFunc(delay, func() {
+			timer.AfterFunc(delay, func() {
 				m.enqueue(ch, msg)
 			})
 		} else {
@@ -73,6 +69,15 @@ func (m *Debug) Write(queue string, delay time.Duration, content []byte) error {
 		return true
 	})
 	return nil
+}
+
+func (m *Debug) dequeue(in chan<- queue.MessageWrapper, out <-chan *Message) {
+	ping := &queue.PingMessage{}
+
+	for {
+		in <- ping
+		in <- <-out
+	}
 }
 
 func (m *Debug) enqueue(ch chan *Message, msg *Message) {

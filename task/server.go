@@ -1,4 +1,4 @@
-package cron
+package task
 
 import (
 	"context"
@@ -6,16 +6,16 @@ import (
 	"google.golang.org/grpc"
 )
 
-type cronKey struct{}
+type taskKey struct{}
 
-// UnaryServerInterceptor returns a new unary server interceptor for crontab service.
+// UnaryServerInterceptor returns a new unary server interceptor for crontab task.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		return handler(context.WithValue(ctx, cronKey{}, impl), req)
+		return handler(context.WithValue(ctx, taskKey{}, impl), req)
 	}
 }
 
-// StreamServerInterceptor returns a new streaming server interceptor for crontab service.
+// StreamServerInterceptor returns a new streaming server interceptor for crontab task.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wrapper := &ctxWrapper{stream}
@@ -29,12 +29,12 @@ type ctxWrapper struct {
 
 func (s *ctxWrapper) Context() context.Context {
 	ctx := s.ServerStream.Context()
-	return context.WithValue(ctx, cronKey{}, impl)
+	return context.WithValue(ctx, taskKey{}, impl)
 }
 
-func ContextCronService(ctx context.Context) Cron {
-	if srv := ctx.Value(cronKey{}); srv != nil {
-		return srv.(Cron)
+func ContextTaskService(ctx context.Context) Task {
+	if srv := ctx.Value(taskKey{}); srv != nil {
+		return srv.(Task)
 	}
 	return nil
 }

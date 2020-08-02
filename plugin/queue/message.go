@@ -52,6 +52,11 @@ func (m *Message) Retry() int {
 	return m.retry
 }
 
+// Return true for a ping message.
+func (m *Message) IsPing() bool {
+	return false
+}
+
 // Begin to process the message.
 func (m *Message) Begin() {
 }

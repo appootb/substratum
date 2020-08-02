@@ -1,4 +1,4 @@
-package cron
+package task
 
 import (
 	"context"
@@ -7,14 +7,14 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/appootb/substratum/cron"
+	"github.com/appootb/substratum/task"
 	"github.com/appootb/substratum/util/scheduler"
 )
 
-type Cron struct{}
+type Task struct{}
 
-func (c *Cron) Schedule(spec string, fn cron.JobFunc, opts ...cron.Option) error {
-	options := cron.EmptyOptions()
+func (c *Task) Schedule(spec string, fn task.JobFunc, opts ...task.Option) error {
+	options := task.EmptyOptions()
 	for _, o := range opts {
 		o(options)
 	}
@@ -31,18 +31,18 @@ func (c *Cron) Schedule(spec string, fn cron.JobFunc, opts ...cron.Option) error
 	return nil
 }
 
-func (c *Cron) exec(schedule scheduler.Schedule, fn cron.JobFunc, opts *cron.Options) {
+func (c *Task) exec(schedule scheduler.Schedule, fn task.JobFunc, opts *task.Options) {
 Reset:
 	ctx := context.TODO()
 
 	if opts.Singleton {
-		err := cron.BackendImplementor().Lock(opts.Name)
+		err := task.BackendImplementor().Lock(opts.Name)
 		if err != nil {
 			time.Sleep(time.Second)
 			goto Reset
 		}
 		// Keep alive
-		ctx = cron.BackendImplementor().KeepAlive(opts.Name)
+		ctx = task.BackendImplementor().KeepAlive(opts.Name)
 	}
 
 	for {
@@ -52,7 +52,7 @@ Reset:
 		select {
 		case <-opts.Done():
 			if opts.Singleton {
-				cron.BackendImplementor().Unlock(opts.Name)
+				task.BackendImplementor().Unlock(opts.Name)
 			}
 			return
 
@@ -61,7 +61,12 @@ Reset:
 			goto Reset
 
 		case <-time.After(next.Sub(now)):
-			fn(opts.Argument)
+			err := fn(opts.Argument)
+			if err != nil {
+				// TODO succeed
+			} else {
+				// TODO failed
+			}
 		}
 	}
 }

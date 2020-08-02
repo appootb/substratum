@@ -7,11 +7,11 @@ import (
 	"github.com/appootb/protobuf/go/secret"
 	"github.com/appootb/protobuf/go/service"
 	"github.com/appootb/substratum/client"
-	"github.com/appootb/substratum/cron"
 	"github.com/appootb/substratum/logger"
 	"github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/queue"
 	"github.com/appootb/substratum/storage"
+	"github.com/appootb/substratum/task"
 	"google.golang.org/grpc"
 )
 
@@ -51,10 +51,10 @@ func (m Base) ClientConn(component string) *grpc.ClientConn {
 	return client.ContextConnPool(m.ctx).Get(component)
 }
 
-func (m Base) MessageQueue() queue.Service {
+func (m Base) MessageQueue() queue.Queue {
 	return queue.ContextQueueService(m.ctx)
 }
 
-func (m Base) Cron() cron.Cron {
-	return cron.ContextCronService(m.ctx)
+func (m Base) CronTask() task.Task {
+	return task.ContextTaskService(m.ctx)
 }
