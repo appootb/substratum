@@ -3,6 +3,7 @@ package rpc
 import (
 	"github.com/appootb/substratum/auth"
 	"github.com/appootb/substratum/client"
+	"github.com/appootb/substratum/discovery"
 	"github.com/appootb/substratum/errors"
 	"github.com/appootb/substratum/logger"
 	"github.com/appootb/substratum/metadata"
@@ -50,6 +51,7 @@ func WithDefaultUnaryInterceptors(fns ...grpc.UnaryServerInterceptor) ServerOpti
 			auth.UnaryServerInterceptor(),
 			validator.UnaryServerInterceptor(),
 			client.UnaryServerInterceptor(),
+			discovery.UnaryServerInterceptor(),
 			storage.UnaryServerInterceptor(),
 			queue.UnaryServerInterceptor(),
 			task.UnaryServerInterceptor(),
@@ -75,6 +77,7 @@ func WithDefaultStreamInterceptors(fns ...grpc.StreamServerInterceptor) ServerOp
 			auth.StreamServerInterceptor(),
 			validator.StreamServerInterceptor(),
 			client.StreamServerInterceptor(),
+			discovery.StreamServerInterceptor(),
 			storage.StreamServerInterceptor(),
 			queue.StreamServerInterceptor(),
 			task.StreamServerInterceptor(),

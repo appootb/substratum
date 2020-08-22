@@ -5,6 +5,12 @@ import (
 	"time"
 )
 
+const (
+	DefaultTopic       = "default"
+	DefaultConcurrency = 1
+	DefaultMaxRetry    = 3
+)
+
 var (
 	impl Queue
 )
@@ -22,8 +28,8 @@ func RegisterImplementor(s Queue) {
 type Queue interface {
 	// Publish writes a message body to the specified queue.
 	Publish(queue string, content []byte, opts ...PublishOption) error
-	// Subscribe consumes the messages of the specified queue and topic.
-	Subscribe(queue, topic string, handler MessageHandler, opts ...SubscribeOption) error
+	// Subscribe consumes the messages of the specified queue.
+	Subscribe(queue string, handler MessageHandler, opts ...SubscribeOption) error
 }
 
 type PublishOption func(*PublishOptions)
@@ -55,6 +61,7 @@ type SubscribeOption func(*SubscribeOptions)
 
 type SubscribeOptions struct {
 	context.Context
+	Topic       string
 	Concurrency int
 	MaxRetry    int
 	Idempotent  Idempotent
@@ -63,8 +70,9 @@ type SubscribeOptions struct {
 var EmptySubscribeOptions = func() *SubscribeOptions {
 	return &SubscribeOptions{
 		Context:     context.Background(),
-		Concurrency: 1,
-		MaxRetry:    3,
+		Topic:       DefaultTopic,
+		Concurrency: DefaultConcurrency,
+		MaxRetry:    DefaultMaxRetry,
 		Idempotent:  IdempotentImplementor(),
 	}
 }
@@ -72,6 +80,12 @@ var EmptySubscribeOptions = func() *SubscribeOptions {
 func WithConsumeContext(ctx context.Context) SubscribeOption {
 	return func(opts *SubscribeOptions) {
 		opts.Context = ctx
+	}
+}
+
+func WithConsumeTopic(topic string) SubscribeOption {
+	return func(opts *SubscribeOptions) {
+		opts.Topic = topic
 	}
 }
 

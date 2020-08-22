@@ -37,8 +37,8 @@ func (m *Queue) Publish(name string, content []byte, opts ...queue.PublishOption
 	return queue.BackendImplementor().Write(name, options.Delay, content)
 }
 
-// Subscribe consumes the messages of the specified queue and topic.
-func (m *Queue) Subscribe(name, topic string, handler queue.MessageHandler, opts ...queue.SubscribeOption) error {
+// Subscribe consumes the messages of the specified queue.
+func (m *Queue) Subscribe(name string, handler queue.MessageHandler, opts ...queue.SubscribeOption) error {
 	options := queue.EmptySubscribeOptions()
 	for _, o := range opts {
 		o(options)
@@ -47,7 +47,7 @@ func (m *Queue) Subscribe(name, topic string, handler queue.MessageHandler, opts
 		return err
 	}
 	messageChan := make(chan queue.MessageWrapper)
-	if err := queue.BackendImplementor().Read(name, topic, messageChan); err != nil {
+	if err := queue.BackendImplementor().Read(name, options.Topic, messageChan); err != nil {
 		return err
 	}
 	for i := 0; i < options.Concurrency; i++ {

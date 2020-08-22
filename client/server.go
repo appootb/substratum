@@ -35,7 +35,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-// StreamServerInterceptor returns a new streaming server interceptor for parsing request metadata.
+// StreamServerInterceptor returns a new streaming server interceptor for gRPC client connection pool.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wrapper := &ctxWrapper{stream}

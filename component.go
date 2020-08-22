@@ -2,7 +2,7 @@ package substratum
 
 import (
 	"github.com/appootb/protobuf/go/service"
-	"github.com/appootb/substratum/discovery"
+	"github.com/appootb/substratum/configure"
 	"github.com/appootb/substratum/queue"
 	"github.com/appootb/substratum/storage"
 	"github.com/appootb/substratum/task"
@@ -14,7 +14,7 @@ type Component interface {
 	Name() string
 
 	// Init component.
-	Init(discovery.Config) error
+	Init(configure.Configure) error
 
 	// Init storage.
 	InitStorage(storage.Storage) error

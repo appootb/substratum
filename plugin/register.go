@@ -5,6 +5,7 @@ import (
 
 	"github.com/appootb/substratum/plugin/auth"
 	"github.com/appootb/substratum/plugin/client"
+	"github.com/appootb/substratum/plugin/configure"
 	"github.com/appootb/substratum/plugin/credential"
 	"github.com/appootb/substratum/plugin/discovery"
 	"github.com/appootb/substratum/plugin/logger"
@@ -25,6 +26,8 @@ func Register() {
 		auth.Init()
 		// Client ConnPool
 		client.Init()
+		// Config
+		configure.Init()
 		// Credential
 		credential.Init()
 		// Discovery

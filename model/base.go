@@ -7,6 +7,7 @@ import (
 	"github.com/appootb/protobuf/go/secret"
 	"github.com/appootb/protobuf/go/service"
 	"github.com/appootb/substratum/client"
+	"github.com/appootb/substratum/discovery"
 	"github.com/appootb/substratum/logger"
 	"github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/queue"
@@ -39,16 +40,21 @@ func (m Base) AccountSecret() *secret.Info {
 	return service.AccountSecretFromContext(m.ctx)
 }
 
+func (m Base) Discovery() discovery.Discovery {
+	return discovery.ContextDiscovery(m.ctx)
+}
+
 func (m Base) Logger() *logger.Helper {
 	return logger.ContextLogger(m.ctx)
 }
 
-func (m Base) Storage(component string) storage.Storage {
+func (m Base) Storage() storage.Storage {
+	component := service.ComponentNameFromContext(m.Context())
 	return storage.ContextStorage(m.ctx, component)
 }
 
-func (m Base) ClientConn(component string) *grpc.ClientConn {
-	return client.ContextConnPool(m.ctx).Get(component)
+func (m Base) ClientConn(target string) *grpc.ClientConn {
+	return client.ContextConnPool(m.ctx).Get(target)
 }
 
 func (m Base) MessageQueue() queue.Queue {

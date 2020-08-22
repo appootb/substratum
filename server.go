@@ -8,6 +8,7 @@ import (
 
 	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/substratum/auth"
+	"github.com/appootb/substratum/configure"
 	"github.com/appootb/substratum/discovery"
 	"github.com/appootb/substratum/plugin"
 	"github.com/appootb/substratum/queue"
@@ -137,7 +138,7 @@ func (s *Server) Register(comp Component) error {
 	storage.Implementor().New(name)
 
 	// Init component.
-	if err := comp.Init(discovery.ConfigImplementor()); err != nil {
+	if err := comp.Init(configure.Implementor()); err != nil {
 		return err
 	}
 	if err := comp.InitStorage(storage.Implementor().Get(name)); err != nil {

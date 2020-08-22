@@ -5,20 +5,23 @@ import (
 )
 
 var (
-	serviceImpl Service
+	impl Discovery
 )
 
 // Return the service implementor.
-func Implementor() Service {
-	return serviceImpl
+func Implementor() Discovery {
+	return impl
 }
 
 // Register service implementor.
-func RegisterImplementor(svc Service) {
-	serviceImpl = svc
+func RegisterImplementor(svc Discovery) {
+	impl = svc
 }
 
-type Service interface {
+type Discovery interface {
+	// Return local rpc address registered for the component.
+	RegisteredAddr(component string) string
+
 	// Register rpc address of the component node.
 	RegisterNode(component, rpcAddr string, ttl time.Duration) error
 

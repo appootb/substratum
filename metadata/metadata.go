@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"context"
+	"os"
 	"strconv"
 	"strings"
 
@@ -9,6 +10,10 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
+)
+
+var (
+	Debug = os.Getenv("DEBUG")
 )
 
 func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
@@ -51,7 +56,7 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		}
 	}
 	debug := false
-	if b := md.Get("is_debug"); len(b) > 0 {
+	if b := md.Get("is_debug"); len(b) > 0 && Debug != "" {
 		debug, _ = strconv.ParseBool(b[0])
 	}
 
