@@ -7,8 +7,8 @@ import (
 )
 
 func Init() {
-	if task.BackendImplementor() == nil {
-		task.RegisterBackendImplementor(&Debug{})
+	if task.LockerImplementor() == nil {
+		task.RegisterLockerImplementor(&Debug{})
 	}
 	if task.Implementor() == nil {
 		task.RegisterImplementor(&Task{})
@@ -19,13 +19,8 @@ type Debug struct{}
 
 // Get the locker of the scheduler,
 // should be blocked before acquired the locker.
-func (m *Debug) Lock(_ string) error {
-	return nil
-}
-
-// Keep alive the schedule locker.
-func (m *Debug) KeepAlive(_ string) context.Context {
-	return context.TODO()
+func (m *Debug) Lock(ctx context.Context, _ string) context.Context {
+	return ctx
 }
 
 // Give up the schedule locker.

@@ -1,7 +1,6 @@
 package task
 
 import (
-	"context"
 	"crypto/sha1"
 	"fmt"
 	"reflect"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/appootb/substratum/task"
 	"github.com/appootb/substratum/util/scheduler"
+	"github.com/appootb/substratum/util/timer"
 )
 
 type Task struct{}
@@ -33,16 +33,11 @@ func (c *Task) Schedule(spec string, fn task.JobFunc, opts ...task.Option) error
 
 func (c *Task) exec(schedule scheduler.Schedule, fn task.JobFunc, opts *task.Options) {
 Reset:
-	ctx := context.TODO()
+	ctx := opts.Context
 
 	if opts.Singleton {
-		err := task.BackendImplementor().Lock(opts.Name)
-		if err != nil {
-			time.Sleep(time.Second)
-			goto Reset
-		}
-		// Keep alive
-		ctx = task.BackendImplementor().KeepAlive(opts.Name)
+		// Blocked before acquired the locker.
+		ctx = task.LockerImplementor().Lock(opts.Context, opts.Name)
 	}
 
 	for {
@@ -50,17 +45,19 @@ Reset:
 		next := schedule.Next(now)
 
 		select {
-		case <-opts.Done():
-			if opts.Singleton {
-				task.BackendImplementor().Unlock(opts.Name)
-			}
-			return
-
 		case <-ctx.Done():
-			// Keep alive failed, reset.
-			goto Reset
+			select {
+			case <-opts.Done():
+				if opts.Singleton {
+					task.LockerImplementor().Unlock(opts.Name)
+				}
+				return
+			default:
+				// Keep alive failed, reset.
+				goto Reset
+			}
 
-		case <-time.After(next.Sub(now)):
+		case <-timer.After(next.Sub(now)):
 			err := fn(opts.Argument)
 			if err != nil {
 				// TODO succeed

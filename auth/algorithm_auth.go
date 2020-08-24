@@ -8,27 +8,33 @@ import (
 	"github.com/appootb/protobuf/go/common"
 	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/protobuf/go/secret"
-	"github.com/appootb/substratum/auth"
+	"github.com/appootb/protobuf/go/service"
 	"github.com/appootb/substratum/metadata"
-	"github.com/appootb/substratum/token"
 	"github.com/appootb/substratum/util/datetime"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func Init() {
-	if auth.Implementor() == nil {
-		auth.RegisterImplementor(&AlgorithmAuth{
-			methodComponent: make(map[string]string),
-			methodSubjects:  make(map[string][]permission.Subject),
-		})
+type TokenParser interface {
+	// Parse the token string.
+	Parse(token string) (*secret.Info, error)
+}
+
+func NewAlgorithmAuth(client, server TokenParser) service.Authenticator {
+	return &AlgorithmAuth{
+		clientTokenParser: client,
+		serverTokenParser: server,
+		methodComponent:   make(map[string]string),
+		methodSubjects:    make(map[string][]permission.Subject),
 	}
 }
 
 type AlgorithmAuth struct {
-	methodComponent map[string]string
-	methodSubjects  map[string][]permission.Subject
+	clientTokenParser TokenParser
+	serverTokenParser TokenParser
+	methodComponent   map[string]string
+	methodSubjects    map[string][]permission.Subject
 }
 
 // Return the component name implements the service method.
@@ -67,8 +73,17 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 		}
 		return nil, status.Error(codes.Unauthenticated, "token required")
 	}
+
 	// Parse the token.
-	secretInfo, err := token.Implementor().Parse(md.GetToken())
+	var (
+		err        error
+		secretInfo *secret.Info
+	)
+	if md.GetPlatform() == common.Platform_PLATFORM_SERVER {
+		secretInfo, err = n.serverTokenParser.Parse(md.GetToken())
+	} else {
+		secretInfo, err = n.clientTokenParser.Parse(md.GetToken())
+	}
 	if err != nil {
 		if anonymousMethod {
 			md.Account = proto.Uint64(0)
