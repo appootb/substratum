@@ -1,4 +1,4 @@
-package mysql
+package dao
 
 import (
 	"time"
@@ -7,11 +7,11 @@ import (
 )
 
 type Base struct {
-	tx *gorm.DB `json:"-" gorm:"-"`
+	tx *gorm.DB `gorm:"-"`
 
 	ID        uint64    `gorm:"primary_key"`
-	CreatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP;index:idx_created_at"`
-	UpdatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"`
+	CreatedAt time.Time `gorm:"not null; index:idx_created_at"`
+	UpdatedAt time.Time `gorm:"not null"`
 }
 
 func (m Base) DB() *gorm.DB {
