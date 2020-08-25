@@ -10,6 +10,9 @@ import (
 
 // Service component.
 type Component interface {
+	//
+	// Invoked when registering component.
+	//
 	// Return the component name.
 	Name() string
 
@@ -19,12 +22,15 @@ type Component interface {
 	// Init storage.
 	InitStorage(storage.Storage) error
 
-	// Init queue consume workers.
-	InitQueueWorker(queue.Queue) error
-
-	// Init cron tasks.
-	InitCronTask(task.Task) error
-
 	// Register service.
 	RegisterService(service.Authenticator, service.Implementor) error
+
+	//
+	// Invoked when serve
+	//
+	// Run queue consume workers.
+	RunQueueWorker(queue.Queue) error
+
+	// Schedule cron tasks.
+	ScheduleCronTask(task.Task) error
 }

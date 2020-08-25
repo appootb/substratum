@@ -144,12 +144,6 @@ func (s *Server) Register(comp Component) error {
 	if err := comp.InitStorage(storage.Implementor().Get(name)); err != nil {
 		return err
 	}
-	if err := comp.InitQueueWorker(queue.Implementor()); err != nil {
-		return err
-	}
-	if err := comp.InitCronTask(task.Implementor()); err != nil {
-		return err
-	}
 	if err := comp.RegisterService(auth.Implementor(), s); err != nil {
 		return err
 	}
@@ -157,9 +151,21 @@ func (s *Server) Register(comp Component) error {
 }
 
 func (s *Server) Serve() error {
+	// Start queue worker and cron tasks.
+	for _, comp := range s.components {
+		if err := comp.RunQueueWorker(queue.Implementor()); err != nil {
+			return err
+		}
+		if err := comp.ScheduleCronTask(task.Implementor()); err != nil {
+			return err
+		}
+	}
+
+	// Serve muxers.
 	for _, mux := range s.serveMuxers {
 		mux.Serve()
 	}
+
 	// Register node.
 	addr := s.serveMuxers[permission.VisibleScope_SERVER].ConnAddr()
 	for name := range s.components {
@@ -168,7 +174,8 @@ func (s *Server) Serve() error {
 			return err
 		}
 	}
-	// Wait for cancellation
+
+	// Wait for cancellation.
 	<-s.ctx.Done()
 	return nil
 }
