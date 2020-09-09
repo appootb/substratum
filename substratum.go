@@ -20,7 +20,7 @@ type Service interface {
 	AddMux(permission.VisibleScope, uint16, uint16) error
 
 	// Register component.
-	Register(Component) error
+	Register(Component, ...string) error
 
 	// Serve start the mux server.
 	Serve() error

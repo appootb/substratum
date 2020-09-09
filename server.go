@@ -25,6 +25,7 @@ type Server struct {
 	keepAliveTTL time.Duration
 
 	components  map[string]Component
+	rpcServices map[string][]string
 	serveMuxers map[permission.VisibleScope]*server.ServeMux
 }
 
@@ -36,6 +37,7 @@ func NewServer(opts ...ServerOption) Service {
 		ctx:          context.Background(),
 		keepAliveTTL: 3 * time.Second,
 		components:   make(map[string]Component),
+		rpcServices:  make(map[string][]string),
 		serveMuxers:  make(map[permission.VisibleScope]*server.ServeMux),
 	}
 	opts = append(opts, WithDefaultClientMux(), WithDefaultServerMux())
@@ -132,9 +134,10 @@ func (s *Server) AddMux(scope permission.VisibleScope, rpcPort, gatewayPort uint
 	return nil
 }
 
-func (s *Server) Register(comp Component) error {
+func (s *Server) Register(comp Component, rpcs ...string) error {
 	name := comp.Name()
 	s.components[name] = comp
+	s.rpcServices[name] = rpcs
 	storage.Implementor().New(name)
 
 	// Init component.
@@ -169,7 +172,7 @@ func (s *Server) Serve() error {
 	// Register node.
 	addr := s.serveMuxers[permission.VisibleScope_SERVER].ConnAddr()
 	for name := range s.components {
-		err := discovery.Implementor().RegisterNode(name, addr, s.keepAliveTTL)
+		err := discovery.Implementor().RegisterNode(name, addr, s.rpcServices[name], s.keepAliveTTL)
 		if err != nil {
 			return err
 		}

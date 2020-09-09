@@ -17,10 +17,9 @@ const (
 	TimestampBitShift = BitLengthNodeID + BitLengthSequence
 	NodeIDBitShift    = BitLengthSequence
 
+	NodeIDBitMask   = 1<<BitLengthNodeID - 1
 	SequenceBitMask = 1<<BitLengthSequence - 1
 )
-
-type ID int64
 
 type Snowflake struct {
 	mu sync.Mutex
@@ -61,4 +60,9 @@ func (sf *Snowflake) Next() uint64 {
 	return uint64(sf.elapsed)<<TimestampBitShift |
 		uint64(sf.node)<<NodeIDBitShift |
 		uint64(sf.sequence)
+}
+
+func (sf *Snowflake) Timestamp(id uint64) time.Time {
+	dur := id >> (BitLengthNodeID + BitLengthSequence)
+	return sf.epoch.Add(time.Duration(dur) * time.Millisecond)
 }

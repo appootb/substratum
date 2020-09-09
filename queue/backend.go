@@ -32,9 +32,17 @@ type Backend interface {
 	// Will be called before every Read/Write operation.
 	Ping() error
 	// Return the max delay duration supported by the backend.
-	// Less than zero means no limitation.
+	// A negative value means no limitation.
 	// A zero value means delay operation is not supported.
 	MaxDelay() time.Duration
+	// Return all queue names in backend storage.
+	GetQueues() ([]string, error)
+	// Return all queue/topics in backend storage.
+	GetTopics() (map[string][]string, error)
+	// Return all topic length of specified queue in backend storage.
+	GetQueueLength(queue string) (map[string]int64, error)
+	// Return the specified queue/topic length in backend storage.
+	GetTopicLength(queue, topic string) (int64, error)
 
 	// Read subscribes the message of the specified queue and topic.
 	Read(queue, topic string, ch chan<- MessageWrapper) error

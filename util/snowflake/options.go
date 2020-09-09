@@ -1,6 +1,8 @@
 package snowflake
 
-import "time"
+import (
+	"time"
+)
 
 type Option func(*Snowflake)
 
@@ -10,8 +12,8 @@ func WithEpoch(epoch time.Time) Option {
 	}
 }
 
-func WithNodeID(node int16) Option {
+func WithNodeID(node int64) Option {
 	return func(snowflake *Snowflake) {
-		snowflake.node = node
+		snowflake.node = int16(node % NodeIDBitMask)
 	}
 }

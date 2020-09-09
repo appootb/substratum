@@ -22,8 +22,6 @@ var (
 
 func Register() {
 	once.Do(func() {
-		// Auth
-		auth.Init()
 		// Client ConnPool
 		client.Init()
 		// Config
@@ -44,5 +42,7 @@ func Register() {
 		task.Init()
 		// Token
 		token.Init()
+		// Auth
+		auth.Init()
 	})
 }

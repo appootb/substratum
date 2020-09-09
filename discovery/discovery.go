@@ -19,12 +19,12 @@ func RegisterImplementor(svc Discovery) {
 }
 
 type Discovery interface {
-	// Return local rpc address registered for the component.
-	RegisteredAddr(component string) string
+	// Return service unique ID and rpc address registered for the component.
+	RegisteredNode(component string) (int64, string)
 
 	// Register rpc address of the component node.
-	RegisterNode(component, rpcAddr string, ttl time.Duration) error
+	RegisterNode(component, rpcAddr string, rpcSvc []string, ttl time.Duration) error
 
-	// Get component nodes.
-	GetNodes(component string) map[string]int
+	// Get rpc service nodes.
+	GetNodes(svc string) map[string]int
 }

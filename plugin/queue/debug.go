@@ -24,6 +24,56 @@ func (m *Debug) MaxDelay() time.Duration {
 	return -1
 }
 
+func (m *Debug) GetQueues() ([]string, error) {
+	var queues []string
+	m.queues.Range(func(queue, _ interface{}) bool {
+		queues = append(queues, queue.(string))
+		return true
+	})
+	return queues, nil
+}
+
+func (m *Debug) GetTopics() (map[string][]string, error) {
+	topics := map[string][]string{}
+	m.queues.Range(func(queue, chs interface{}) bool {
+		ts, _ := chs.(*sync.Map)
+		ts.Range(func(topic, _ interface{}) bool {
+			topics[queue.(string)] = append(topics[queue.(string)], topic.(string))
+			return true
+		})
+		return true
+	})
+	return topics, nil
+}
+
+func (m *Debug) GetQueueLength(queue string) (map[string]int64, error) {
+	length := map[string]int64{}
+	topics, ok := m.queues.Load(queue)
+	if !ok {
+		return length, nil
+	}
+	ts, _ := topics.(*sync.Map)
+	ts.Range(func(key, value interface{}) bool {
+		ch := value.(chan *Message)
+		length[key.(string)] = int64(len(ch))
+		return true
+	})
+	return length, nil
+}
+
+func (m *Debug) GetTopicLength(queue, topic string) (int64, error) {
+	topics, ok := m.queues.Load(queue)
+	if !ok {
+		return 0, nil
+	}
+	ts, _ := topics.(*sync.Map)
+	ch, ok := ts.Load(topic)
+	if !ok {
+		return 0, nil
+	}
+	return int64(len(ch.(chan *Message))), nil
+}
+
 func (m *Debug) Read(queue, topic string, ch chan<- queue.MessageWrapper) error {
 	topics, ok := m.queues.Load(queue)
 	if !ok {
