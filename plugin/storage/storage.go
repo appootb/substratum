@@ -5,7 +5,7 @@ import (
 
 	"github.com/appootb/substratum/storage"
 	"github.com/appootb/substratum/util/hash"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"github.com/jinzhu/gorm"
 )
 

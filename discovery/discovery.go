@@ -23,7 +23,7 @@ type Discovery interface {
 	RegisteredNode(component string) (int64, string)
 
 	// Register rpc address of the component node.
-	RegisterNode(component, rpcAddr string, rpcSvc []string, ttl time.Duration) error
+	RegisterNode(component, rpcAddr string, rpcSvc []string, ttl time.Duration) (int64, error)
 
 	// Get rpc service nodes.
 	GetNodes(svc string) map[string]int

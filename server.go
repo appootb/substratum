@@ -16,6 +16,7 @@ import (
 	"github.com/appootb/substratum/server"
 	"github.com/appootb/substratum/storage"
 	"github.com/appootb/substratum/task"
+	"github.com/appootb/substratum/util/snowflake"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 )
@@ -24,7 +25,7 @@ type Server struct {
 	ctx          context.Context
 	keepAliveTTL time.Duration
 
-	components  map[string]Component
+	components  []Component
 	rpcServices map[string][]string
 	serveMuxers map[permission.VisibleScope]*server.ServeMux
 }
@@ -36,7 +37,6 @@ func NewServer(opts ...ServerOption) Service {
 	srv := &Server{
 		ctx:          context.Background(),
 		keepAliveTTL: 3 * time.Second,
-		components:   make(map[string]Component),
 		rpcServices:  make(map[string][]string),
 		serveMuxers:  make(map[permission.VisibleScope]*server.ServeMux),
 	}
@@ -136,7 +136,7 @@ func (s *Server) AddMux(scope permission.VisibleScope, rpcPort, gatewayPort uint
 
 func (s *Server) Register(comp Component, rpcs ...string) error {
 	name := comp.Name()
-	s.components[name] = comp
+	s.components = append(s.components, comp)
 	s.rpcServices[name] = rpcs
 	storage.Implementor().New(name)
 
@@ -145,6 +145,10 @@ func (s *Server) Register(comp Component, rpcs ...string) error {
 		return err
 	}
 	if err := comp.InitStorage(storage.Implementor().Get(name)); err != nil {
+		return err
+	}
+	if err := comp.RegisterHandler(s.serveMuxers[permission.VisibleScope_CLIENT].HTTPMux(),
+		s.serveMuxers[permission.VisibleScope_SERVER].HTTPMux()); err != nil {
 		return err
 	}
 	if err := comp.RegisterService(auth.Implementor(), s); err != nil {
@@ -171,11 +175,16 @@ func (s *Server) Serve() error {
 
 	// Register node.
 	addr := s.serveMuxers[permission.VisibleScope_SERVER].ConnAddr()
-	for name := range s.components {
-		err := discovery.Implementor().RegisterNode(name, addr, s.rpcServices[name], s.keepAliveTTL)
+	for _, comp := range s.components {
+		nodeID, err := discovery.Implementor().RegisterNode(comp.Name(), addr, s.rpcServices[comp.Name()], s.keepAliveTTL)
 		if err != nil {
 			return err
 		}
+		// TODO:
+		// NodeID is unique in component scope on different node.
+		// If multiple components are registered within an unique server,
+		// snowflake's node ID might be the same on different nodes.
+		snowflake.SetNodeID(nodeID)
 	}
 
 	// Wait for cancellation.

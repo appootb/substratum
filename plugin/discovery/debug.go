@@ -41,17 +41,17 @@ func (m *Debug) RegisteredNode(component string) (int64, string) {
 }
 
 // Register rpc address of the component node.
-func (m *Debug) RegisterNode(component, rpcAddr string, rpcSvc []string, ttl time.Duration) error {
+func (m *Debug) RegisterNode(component, rpcAddr string, rpcSvc []string, ttl time.Duration) (int64, error) {
 	uniqueID, err := m.rc.RegisterNode(component, rpcAddr, grc.WithNodeTTL(ttl),
 		grc.WithNodeMetadata(map[string]string{"services": strings.Join(rpcSvc, ",")}))
 	if err != nil {
-		return err
+		return 0, err
 	}
 	m.lc.Store(component, &Node{
 		UniqueID: uniqueID,
 		Address:  rpcAddr,
 	})
-	return nil
+	return uniqueID, nil
 }
 
 // Get rpc service nodes.

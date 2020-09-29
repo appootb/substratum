@@ -1,6 +1,8 @@
 package rpc
 
 import (
+	"time"
+
 	"github.com/appootb/substratum/auth"
 	"github.com/appootb/substratum/client"
 	"github.com/appootb/substratum/discovery"
@@ -13,6 +15,8 @@ import (
 	"github.com/appootb/substratum/storage"
 	"github.com/appootb/substratum/task"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/tap"
 
 	validator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
 )
@@ -37,6 +41,30 @@ func NewOptions(opts ...ServerOption) *ServerOptions {
 func WithServerOption(opts ...grpc.ServerOption) ServerOption {
 	return func(options *ServerOptions) {
 		options.srvOpts = append(options.srvOpts, opts...)
+	}
+}
+
+func WithRateLimitingOption(fn tap.ServerInHandle) ServerOption {
+	return func(options *ServerOptions) {
+		options.srvOpts = append(options.srvOpts, grpc.InTapHandle(fn))
+	}
+}
+
+func WithDefaultKeepaliveOption() ServerOption {
+	return func(options *ServerOptions) {
+		options.srvOpts = append(options.srvOpts,
+			grpc.KeepaliveParams(keepalive.ServerParameters{
+				MaxConnectionIdle:     time.Hour,
+				MaxConnectionAge:      time.Hour,
+				MaxConnectionAgeGrace: time.Hour,
+				Time:                  time.Second * 10,
+				Timeout:               time.Second * 10,
+			}),
+			grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+				MinTime:             time.Second * 10,
+				PermitWithoutStream: true,
+			}),
+		)
 	}
 }
 

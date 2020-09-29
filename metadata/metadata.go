@@ -21,10 +21,6 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 	if !ok {
 		return nil
 	}
-	account := uint64(0)
-	if id := md.Get("account"); len(id) > 0 {
-		account, _ = strconv.ParseUint(id[0], 10, 64)
-	}
 	clientIP := ""
 	if ips := md.Get("x-forwarded-for"); len(ips) > 0 {
 		clientIP = ips[0]
@@ -61,7 +57,6 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 	}
 
 	return &common.Metadata{
-		Account:    &account,
 		Token:      proto.String(strings.Join(md["token"], "")),
 		Package:    proto.String(strings.Join(md["package"], "")),
 		Version:    proto.String(strings.Join(md["version"], "")),

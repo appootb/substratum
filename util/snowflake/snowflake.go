@@ -21,6 +21,18 @@ const (
 	SequenceBitMask = 1<<BitLengthSequence - 1
 )
 
+var Default = New()
+
+func SetNodeID(nodeID int64) {
+	Default.mu.Lock()
+	Default.node = int16(nodeID % NodeIDBitMask)
+	Default.mu.Unlock()
+}
+
+func NextID() uint64 {
+	return Default.Next()
+}
+
 type Snowflake struct {
 	mu sync.Mutex
 

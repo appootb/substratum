@@ -3,7 +3,7 @@ package storage
 import (
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 )
 
 type RedisOption func(*redis.Options)

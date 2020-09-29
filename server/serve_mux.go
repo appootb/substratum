@@ -29,6 +29,7 @@ func NewServeMux(rpcPort, gatewayPort uint16) (*ServeMux, error) {
 	m := &ServeMux{
 		rpcSrv: rpc.New(
 			rpc.NewOptions(
+				rpc.WithDefaultKeepaliveOption(),
 				rpc.WithDefaultUnaryInterceptors(),
 				rpc.WithDefaultStreamInterceptors(),
 			),
@@ -51,6 +52,10 @@ func NewServeMux(rpcPort, gatewayPort uint16) (*ServeMux, error) {
 
 func (m *ServeMux) RPCServer() *grpc.Server {
 	return m.rpcSrv
+}
+
+func (m *ServeMux) HTTPMux() *http.ServeMux {
+	return m.httpMux
 }
 
 func (m *ServeMux) GatewayMux() *runtime.ServeMux {

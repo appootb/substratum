@@ -11,7 +11,6 @@ import (
 	"github.com/appootb/protobuf/go/service"
 	"github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/util/datetime"
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -68,7 +67,6 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 	}
 	if md.GetToken() == "" {
 		if anonymousMethod {
-			md.Account = proto.Uint64(0)
 			return emptySecret, nil
 		}
 		return nil, status.Error(codes.Unauthenticated, "token required")
@@ -86,23 +84,13 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 	}
 	if err != nil {
 		if anonymousMethod {
-			md.Account = proto.Uint64(0)
 			return emptySecret, nil
 		}
 		return nil, err
 	}
 	// Anonymous method
 	if anonymousMethod {
-		md.Account = &secretInfo.Account
 		return secretInfo, nil
-	}
-	// Verify account and secret info
-	if md.GetAccount() != secretInfo.Account {
-		if md.GetIsDebug() {
-			md.Account = &secretInfo.Account
-		} else {
-			return nil, status.Error(codes.Unauthenticated, "invalid account token")
-		}
 	}
 	// Verify the subject.
 	if !n.IsValidPlatform(secretInfo.GetSubject(), md.GetPlatform()) {
