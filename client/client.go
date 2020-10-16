@@ -22,8 +22,10 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 		return nil
 	}
 	account := uint64(0)
+	subject := permission.Subject_SERVER
 	if accountSecret := service.AccountSecretFromContext(ctx); accountSecret != nil {
 		account = accountSecret.GetAccount()
+		subject |= accountSecret.GetSubject()
 	}
 	issuer := "appootb"
 	if pkg := md.Get("package"); len(pkg) > 0 {
@@ -36,7 +38,7 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 		Account:   account,
 		KeyId:     keyID,
 		Roles:     []string{},
-		Subject:   permission.Subject_SERVER,
+		Subject:   subject,
 		IssuedAt:  datetime.WithTime(now).Proto(),
 		ExpiredAt: datetime.WithTime(now.Add(time.Minute)).Proto(),
 	}

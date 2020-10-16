@@ -6,10 +6,15 @@ import (
 
 	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/protobuf/go/secret"
+	"github.com/appootb/substratum/plugin/credential"
 	"github.com/appootb/substratum/util/datetime"
 	"github.com/appootb/substratum/util/hash"
 	"github.com/gbrlsnchs/jwt/v3"
 )
+
+func init() {
+	credential.Init()
+}
 
 func TestJwtToken_Generate(t *testing.T) {
 	j := &JwtToken{}

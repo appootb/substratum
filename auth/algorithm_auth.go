@@ -97,7 +97,7 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 		return nil, status.Error(codes.Unauthenticated, "invalid token usage")
 	}
 	for _, sub := range n.methodSubjects[serviceMethod] {
-		if sub == secretInfo.GetSubject() {
+		if (sub & secretInfo.GetSubject()) == sub {
 			return secretInfo, nil
 		}
 	}
@@ -117,13 +117,13 @@ func (n *AlgorithmAuth) IsAnonymousMethod(serviceMethod string) bool {
 func (n *AlgorithmAuth) IsValidPlatform(sub permission.Subject, platform common.Platform) bool {
 	switch platform {
 	case common.Platform_PLATFORM_H5, common.Platform_PLATFORM_WEB, common.Platform_PLATFORM_CHROME:
-		return sub == permission.Subject_WEB
+		return (sub & permission.Subject_WEB) == permission.Subject_WEB
 	case common.Platform_PLATFORM_LINUX, common.Platform_PLATFORM_WINDOWS, common.Platform_PLATFORM_DARWIN:
-		return sub == permission.Subject_PC
+		return (sub & permission.Subject_PC) == permission.Subject_PC
 	case common.Platform_PLATFORM_ANDROID, common.Platform_PLATFORM_IOS:
-		return sub == permission.Subject_MOBILE
+		return (sub & permission.Subject_MOBILE) == permission.Subject_MOBILE
 	case common.Platform_PLATFORM_SERVER:
-		return sub == permission.Subject_SERVER
+		return (sub & permission.Subject_SERVER) == permission.Subject_SERVER
 	default:
 		return false
 	}
