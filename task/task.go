@@ -1,5 +1,7 @@
 package task
 
+import "context"
+
 var (
 	impl Task
 )
@@ -14,7 +16,7 @@ func RegisterImplementor(c Task) {
 	impl = c
 }
 
-type JobFunc func(arg interface{}) error
+type JobFunc func(ctx context.Context, arg interface{}) error
 
 type Task interface {
 	// Schedule a task.

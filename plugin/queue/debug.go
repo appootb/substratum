@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -74,7 +75,7 @@ func (m *Debug) GetTopicLength(queue, topic string) (int64, error) {
 	return int64(len(ch.(chan *Message))), nil
 }
 
-func (m *Debug) Read(queue, topic string, ch chan<- queue.MessageWrapper) error {
+func (m *Debug) Read(_ context.Context, queue, topic string, ch chan<- queue.MessageWrapper) error {
 	topics, ok := m.queues.Load(queue)
 	if !ok {
 		topics = &sync.Map{}
@@ -92,7 +93,7 @@ func (m *Debug) Read(queue, topic string, ch chan<- queue.MessageWrapper) error 
 	return nil
 }
 
-func (m *Debug) Write(queue string, delay time.Duration, content []byte) error {
+func (m *Debug) Write(_ context.Context, queue string, delay time.Duration, content []byte) error {
 	topics, ok := m.queues.Load(queue)
 	if !ok {
 		topics = &sync.Map{}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/appootb/substratum/plugin/context"
 	"github.com/appootb/substratum/queue"
 )
 
@@ -34,7 +35,7 @@ func (m *Queue) Publish(name string, content []byte, opts ...queue.PublishOption
 	if err := queue.BackendImplementor().Ping(); err != nil {
 		return err
 	}
-	return queue.BackendImplementor().Write(name, options.Delay, content)
+	return queue.BackendImplementor().Write(options.Context, name, options.Delay, content)
 }
 
 // Subscribe consumes the messages of the specified queue.
@@ -47,7 +48,7 @@ func (m *Queue) Subscribe(name string, handler queue.MessageHandler, opts ...que
 		return err
 	}
 	messageChan := make(chan queue.MessageWrapper)
-	if err := queue.BackendImplementor().Read(name, options.Topic, messageChan); err != nil {
+	if err := queue.BackendImplementor().Read(options.Context, name, options.Topic, messageChan); err != nil {
 		return err
 	}
 	for i := 0; i < options.Concurrency; i++ {
@@ -57,6 +58,8 @@ func (m *Queue) Subscribe(name string, handler queue.MessageHandler, opts ...que
 }
 
 func (m *Queue) process(ch <-chan queue.MessageWrapper, handler queue.MessageHandler, opts *queue.SubscribeOptions) {
+	ctx := context.WithImplementContext(opts.Context, opts.Component)
+
 	for {
 		var (
 			err    error
@@ -83,7 +86,7 @@ func (m *Queue) process(ch <-chan queue.MessageWrapper, handler queue.MessageHan
 			goto ProcessEnd
 		}
 
-		err = handler(msg)
+		err = handler(ctx, msg)
 		if err == nil {
 			msg.End()
 			status = queue.Succeeded

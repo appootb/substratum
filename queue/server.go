@@ -11,7 +11,7 @@ type queueKey struct{}
 // UnaryServerInterceptor returns a new unary server interceptor for message queue service.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		return handler(context.WithValue(ctx, queueKey{}, impl), req)
+		return handler(ContextWithQueueService(ctx), req)
 	}
 }
 
@@ -29,6 +29,10 @@ type ctxWrapper struct {
 
 func (s *ctxWrapper) Context() context.Context {
 	ctx := s.ServerStream.Context()
+	return ContextWithQueueService(ctx)
+}
+
+func ContextWithQueueService(ctx context.Context) context.Context {
 	return context.WithValue(ctx, queueKey{}, impl)
 }
 

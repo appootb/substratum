@@ -8,6 +8,7 @@ type Option func(options *Options)
 
 type Options struct {
 	context.Context
+	Component string
 	Name      string
 	Singleton bool
 	Argument  interface{}
@@ -18,6 +19,12 @@ var EmptyOptions = func() *Options {
 		Context:   context.Background(),
 		Singleton: false,
 		Argument:  nil,
+	}
+}
+
+func WithComponent(component string) Option {
+	return func(opts *Options) {
+		opts.Component = component
 	}
 }
 

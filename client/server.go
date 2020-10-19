@@ -31,7 +31,7 @@ type connPoolKey struct{}
 // UnaryServerInterceptor returns a new unary server interceptor for gRPC client connection pool.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		return handler(context.WithValue(ctx, connPoolKey{}, impl), req)
+		return handler(ContextWithConnPool(ctx), req)
 	}
 }
 
@@ -49,6 +49,10 @@ type ctxWrapper struct {
 
 func (s *ctxWrapper) Context() context.Context {
 	ctx := s.ServerStream.Context()
+	return ContextWithConnPool(ctx)
+}
+
+func ContextWithConnPool(ctx context.Context) context.Context {
 	return context.WithValue(ctx, connPoolKey{}, impl)
 }
 

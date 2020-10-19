@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"context"
 	"time"
 )
 
@@ -45,7 +46,7 @@ type Backend interface {
 	GetTopicLength(queue, topic string) (int64, error)
 
 	// Read subscribes the message of the specified queue and topic.
-	Read(queue, topic string, ch chan<- MessageWrapper) error
+	Read(ctx context.Context, queue, topic string, ch chan<- MessageWrapper) error
 	// Write publishes content data to the specified queue.
-	Write(queue string, delay time.Duration, content []byte) error
+	Write(ctx context.Context, queue string, delay time.Duration, content []byte) error
 }

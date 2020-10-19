@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/appootb/substratum/plugin/context"
 	"github.com/appootb/substratum/task"
 	"github.com/appootb/substratum/util/scheduler"
 	"github.com/appootb/substratum/util/timer"
@@ -33,7 +34,7 @@ func (c *Task) Schedule(spec string, fn task.JobFunc, opts ...task.Option) error
 
 func (c *Task) exec(schedule scheduler.Schedule, fn task.JobFunc, opts *task.Options) {
 Reset:
-	ctx := opts.Context
+	ctx := context.WithImplementContext(opts.Context, opts.Component)
 
 	if opts.Singleton {
 		// Blocked before acquired the locker.
@@ -58,7 +59,7 @@ Reset:
 			}
 
 		case <-timer.After(next.Sub(now)):
-			err := fn(opts.Argument)
+			err := fn(ctx, opts.Argument)
 			if err != nil {
 				// TODO succeed
 			} else {

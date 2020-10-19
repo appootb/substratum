@@ -1,11 +1,12 @@
 package queue
 
 import (
+	"context"
 	"time"
 )
 
 // Queue message handler.
-type MessageHandler func(Message) error
+type MessageHandler func(context.Context, Message) error
 
 // Queue message struct.
 type Message interface {

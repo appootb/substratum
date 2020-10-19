@@ -11,7 +11,7 @@ type discoveryKey struct{}
 // UnaryServerInterceptor returns a new unary server interceptor for service discovery.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		return handler(context.WithValue(ctx, discoveryKey{}, impl), req)
+		return handler(ContextWithDiscovery(ctx), req)
 	}
 }
 
@@ -29,6 +29,10 @@ type ctxWrapper struct {
 
 func (s *ctxWrapper) Context() context.Context {
 	ctx := s.ServerStream.Context()
+	return ContextWithDiscovery(ctx)
+}
+
+func ContextWithDiscovery(ctx context.Context) context.Context {
 	return context.WithValue(ctx, discoveryKey{}, impl)
 }
 

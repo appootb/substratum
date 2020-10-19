@@ -12,7 +12,7 @@ import (
 
 type loggerKey struct{}
 
-func contextWithLogger(ctx context.Context) context.Context {
+func ContextWithLogger(ctx context.Context) context.Context {
 	return context.WithValue(ctx, loggerKey{}, &Helper{
 		md:     md.RequestMetadata(ctx),
 		Logger: impl,
@@ -73,5 +73,5 @@ type ctxWrapper struct {
 
 func (s *ctxWrapper) Context() context.Context {
 	ctx := s.ServerStream.Context()
-	return contextWithLogger(ctx)
+	return ContextWithLogger(ctx)
 }

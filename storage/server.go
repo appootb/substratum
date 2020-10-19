@@ -11,7 +11,7 @@ type storageKey struct{}
 // UnaryServerInterceptor returns a new unary server interceptor for storage manager.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		return handler(context.WithValue(ctx, storageKey{}, impl), req)
+		return handler(ContextWithStorage(ctx), req)
 	}
 }
 
@@ -29,6 +29,10 @@ type ctxWrapper struct {
 
 func (s *ctxWrapper) Context() context.Context {
 	ctx := s.ServerStream.Context()
+	return ContextWithStorage(ctx)
+}
+
+func ContextWithStorage(ctx context.Context) context.Context {
 	return context.WithValue(ctx, storageKey{}, impl)
 }
 

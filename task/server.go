@@ -11,7 +11,7 @@ type taskKey struct{}
 // UnaryServerInterceptor returns a new unary server interceptor for crontab task.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		return handler(context.WithValue(ctx, taskKey{}, impl), req)
+		return handler(ContextWithTaskService(ctx), req)
 	}
 }
 
@@ -29,6 +29,10 @@ type ctxWrapper struct {
 
 func (s *ctxWrapper) Context() context.Context {
 	ctx := s.ServerStream.Context()
+	return ContextWithTaskService(ctx)
+}
+
+func ContextWithTaskService(ctx context.Context) context.Context {
 	return context.WithValue(ctx, taskKey{}, impl)
 }
 
