@@ -10,15 +10,18 @@ import (
 type DialectType string
 
 const (
-	DialectSQLite     DialectType = "sqlite3"
-	DialectMySQL      DialectType = "mysql"
-	DialectPostgreSQL DialectType = "postgres"
-	DialectMSSQL      DialectType = "mssql"
-	DialectRedis      DialectType = "redis"
+	DialectSQLite         DialectType = "sqlite3"
+	DialectMySQL          DialectType = "mysql"
+	DialectPostgreSQL     DialectType = "postgres"
+	DialectMSSQL          DialectType = "mssql"
+	DialectRedis          DialectType = "redis"
+	DialectElasticSearch6 DialectType = "elasticsearch6"
+	DialectElasticSearch7 DialectType = "elasticsearch7"
 )
 
 type Dialect interface {
 	Type() DialectType
+	Config() *Config
 	URL() string
 }
 
@@ -80,6 +83,10 @@ type Config struct {
 	Port     string       `json:"port"`
 	Database string       `json:"database"`
 	Params   ConfigParams `json:"params"`
+}
+
+func (c *Config) Config() *Config {
+	return c
 }
 
 func (c *Config) Type() DialectType {
@@ -150,4 +157,12 @@ type Redis struct {
 
 func (d *Redis) URL() string {
 	return fmt.Sprintf("redis://:%s@%s:%s/%s", d.Password, d.Host, d.Port, d.Database)
+}
+
+type ElasticSearch struct {
+	Config
+}
+
+func (d *ElasticSearch) URL() string {
+	return fmt.Sprintf("http://%s:%s", d.Host, d.Port)
 }

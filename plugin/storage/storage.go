@@ -5,6 +5,8 @@ import (
 
 	"github.com/appootb/substratum/storage"
 	"github.com/appootb/substratum/util/hash"
+	es6 "github.com/elastic/go-elasticsearch/v6"
+	es7 "github.com/elastic/go-elasticsearch/v7"
 	"github.com/go-redis/redis/v8"
 	"github.com/jinzhu/gorm"
 )
@@ -12,6 +14,8 @@ import (
 type Storage struct {
 	mu sync.RWMutex
 
+	elastic6 *es6.Client
+	elastic7 *es7.Client
 	database *gorm.DB
 	caches   []redis.Cmdable
 }
@@ -27,6 +31,44 @@ func (s *Storage) InitDB(dialect storage.Dialect, opts ...storage.SQLOption) err
 	s.mu.Lock()
 	s.database = db
 	s.mu.Unlock()
+	return nil
+}
+
+func (s *Storage) InitElasticSearch(dialect storage.Dialect, opts ...storage.ElasticOption) error {
+	switch dialect.Type() {
+	case storage.DialectElasticSearch6:
+		cfg6 := es6.Config{
+			Addresses: []string{dialect.URL()},
+			Username:  dialect.Config().Username,
+			Password:  dialect.Config().Password,
+		}
+		for _, o := range opts {
+			o(&cfg6, nil)
+		}
+		cli6, err := es6.NewClient(cfg6)
+		if err != nil {
+			return err
+		}
+		s.mu.Lock()
+		s.elastic6 = cli6
+		s.mu.Unlock()
+	case storage.DialectElasticSearch7:
+		cfg7 := es7.Config{
+			Addresses: []string{dialect.URL()},
+			Username:  dialect.Config().Username,
+			Password:  dialect.Config().Password,
+		}
+		for _, o := range opts {
+			o(nil, &cfg7)
+		}
+		cli7, err := es7.NewClient(cfg7)
+		if err != nil {
+			return err
+		}
+		s.mu.Lock()
+		s.elastic7 = cli7
+		s.mu.Unlock()
+	}
 	return nil
 }
 
@@ -50,6 +92,18 @@ func (s *Storage) GetDB() *gorm.DB {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.database
+}
+
+func (s *Storage) GetESv6() *es6.Client {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.elastic6
+}
+
+func (s *Storage) GetESv7() *es7.Client {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.elastic7
 }
 
 func (s *Storage) GetRedisz() []redis.Cmdable {
