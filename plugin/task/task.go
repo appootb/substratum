@@ -34,12 +34,13 @@ func (c *Task) Schedule(spec string, fn task.JobFunc, opts ...task.Option) error
 
 func (c *Task) exec(schedule scheduler.Schedule, fn task.JobFunc, opts *task.Options) {
 Reset:
-	ctx := context.WithImplementContext(opts.Context, opts.Component)
-
+	ctx := opts.Context
 	if opts.Singleton {
 		// Blocked before acquired the locker.
 		ctx = task.LockerImplementor().Lock(opts.Context, opts.Name)
 	}
+
+	ctx = context.WithImplementContext(opts.Context, opts.Component)
 
 	for {
 		now := time.Now()
