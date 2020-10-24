@@ -39,8 +39,8 @@ func (s *Storage) InitElasticSearch(dialect storage.Dialect, opts ...storage.Ela
 	case storage.DialectElasticSearch6:
 		cfg6 := es6.Config{
 			Addresses: []string{dialect.URL()},
-			Username:  dialect.Config().Username,
-			Password:  dialect.Config().Password,
+			Username:  dialect.Meta().Username,
+			Password:  dialect.Meta().Password,
 		}
 		for _, o := range opts {
 			o(&cfg6, nil)
@@ -55,8 +55,8 @@ func (s *Storage) InitElasticSearch(dialect storage.Dialect, opts ...storage.Ela
 	case storage.DialectElasticSearch7:
 		cfg7 := es7.Config{
 			Addresses: []string{dialect.URL()},
-			Username:  dialect.Config().Username,
-			Password:  dialect.Config().Password,
+			Username:  dialect.Meta().Username,
+			Password:  dialect.Meta().Password,
 		}
 		for _, o := range opts {
 			o(nil, &cfg7)

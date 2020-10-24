@@ -21,7 +21,7 @@ const (
 
 type Dialect interface {
 	Type() DialectType
-	Config() *Config
+	Meta() *Config
 	URL() string
 }
 
@@ -85,7 +85,7 @@ type Config struct {
 	Params   ConfigParams `json:"params"`
 }
 
-func (c *Config) Config() *Config {
+func (c *Config) Meta() *Config {
 	return c
 }
 
