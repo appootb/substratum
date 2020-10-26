@@ -29,7 +29,7 @@ func SetPartitionID(partitionID int64) {
 	Default.mu.Unlock()
 }
 
-func NextID() uint64 {
+func NextID() (uint64, error) {
 	return Default.Next()
 }
 
@@ -56,7 +56,7 @@ func New(opts ...Option) *Snowflake {
 	return snowflake
 }
 
-func (sf *Snowflake) Next() uint64 {
+func (sf *Snowflake) Next() (uint64, error) {
 	sf.mu.RLock()
 	partition := sf.partition
 	sf.mu.RUnlock()
@@ -64,15 +64,15 @@ func (sf *Snowflake) Next() uint64 {
 	return sf.CustomNext(partition, sf.sequence)
 }
 
-func (sf *Snowflake) CustomNext(partition int16, sequence Sequence) uint64 {
+func (sf *Snowflake) CustomNext(partition int16, sequence Sequence) (uint64, error) {
 	elapsed, num, err := sequence.Next(partition, sf.epoch)
 	if err != nil {
-		return 0
+		return 0, err
 	}
 
 	return uint64(elapsed)<<TimestampBitShift |
 		uint64(partition)<<PartitionIDBitShift |
-		uint64(num)
+		uint64(num), nil
 }
 
 func (sf *Snowflake) Timestamp(id uint64) time.Time {
