@@ -5,7 +5,7 @@ import (
 )
 
 type Sequence interface {
-	Next(partition int16, epoch time.Time) uint64
+	Next(partition int16, epoch time.Time) (int64, int64, error)
 }
 
 type Option func(*Snowflake)

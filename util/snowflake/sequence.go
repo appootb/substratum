@@ -12,7 +12,7 @@ type DefaultSequence struct {
 	sequence int64
 }
 
-func (s *DefaultSequence) Next(partition int16, epoch time.Time) uint64 {
+func (s *DefaultSequence) Next(_ int16, epoch time.Time) (int64, int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -29,7 +29,5 @@ func (s *DefaultSequence) Next(partition int16, epoch time.Time) uint64 {
 		}
 	}
 
-	return uint64(s.elapsed)<<TimestampBitShift |
-		uint64(partition)<<PartitionIDBitShift |
-		uint64(s.sequence)
+	return s.elapsed, s.sequence, nil
 }

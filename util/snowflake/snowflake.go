@@ -33,12 +33,16 @@ func NextID() uint64 {
 	return Default.Next()
 }
 
-type Snowflake struct {
-	mu sync.RWMutex
+func PartitionID(id uint64) uint64 {
+	return (id >> BitLengthSequence) & PartitionIDBitMask
+}
 
-	epoch     time.Time
+type Snowflake struct {
+	epoch    time.Time
+	sequence Sequence
+
+	mu        sync.RWMutex
 	partition int16
-	sequence  Sequence
 }
 
 func New(opts ...Option) *Snowflake {
@@ -54,9 +58,21 @@ func New(opts ...Option) *Snowflake {
 
 func (sf *Snowflake) Next() uint64 {
 	sf.mu.RLock()
-	defer sf.mu.RUnlock()
+	partition := sf.partition
+	sf.mu.RUnlock()
 
-	return sf.sequence.Next(sf.partition, sf.epoch)
+	return sf.CustomNext(partition, sf.sequence)
+}
+
+func (sf *Snowflake) CustomNext(partition int16, sequence Sequence) uint64 {
+	elapsed, num, err := sequence.Next(partition, sf.epoch)
+	if err != nil {
+		return 0
+	}
+
+	return uint64(elapsed)<<TimestampBitShift |
+		uint64(partition)<<PartitionIDBitShift |
+		uint64(num)
 }
 
 func (sf *Snowflake) Timestamp(id uint64) time.Time {
