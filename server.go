@@ -184,7 +184,7 @@ func (s *Server) Serve() error {
 		// NodeID is unique in component scope on different node.
 		// If multiple components are registered within an unique server,
 		// snowflake's node ID might be the same on different nodes.
-		snowflake.SetNodeID(nodeID)
+		snowflake.SetPartitionID(nodeID)
 	}
 
 	// Wait for cancellation.

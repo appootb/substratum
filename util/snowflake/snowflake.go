@@ -6,26 +6,26 @@ import (
 )
 
 //
-// +--------------------------------------------------------------------------+
-// | 1 Bit Unused | 41 Bit Timestamp |  10 Bit NodeID  |   12 Bit Sequence ID |
-// +--------------------------------------------------------------------------+
+// +-------------------------------------------------------------------------------+
+// | 1 Bit Unused | 41 Bit Timestamp |  10 Bit PartitionID  |   12 Bit Sequence ID |
+// +-------------------------------------------------------------------------------+
 const (
-	BitLengthTimestamp = 41
-	BitLengthNodeID    = 10
-	BitLengthSequence  = 63 - BitLengthTimestamp - BitLengthNodeID
+	BitLengthTimestamp   = 41
+	BitLengthPartitionID = 10
+	BitLengthSequence    = 63 - BitLengthTimestamp - BitLengthPartitionID
 
-	TimestampBitShift = BitLengthNodeID + BitLengthSequence
-	NodeIDBitShift    = BitLengthSequence
+	TimestampBitShift   = BitLengthPartitionID + BitLengthSequence
+	PartitionIDBitShift = BitLengthSequence
 
-	NodeIDBitMask   = 1<<BitLengthNodeID - 1
-	SequenceBitMask = 1<<BitLengthSequence - 1
+	PartitionIDBitMask = 1<<BitLengthPartitionID - 1
+	SequenceBitMask    = 1<<BitLengthSequence - 1
 )
 
 var Default = New()
 
-func SetNodeID(nodeID int64) {
+func SetPartitionID(partitionID int64) {
 	Default.mu.Lock()
-	Default.node = int16(nodeID % NodeIDBitMask)
+	Default.partition = int16(partitionID % PartitionIDBitMask)
 	Default.mu.Unlock()
 }
 
@@ -34,17 +34,17 @@ func NextID() uint64 {
 }
 
 type Snowflake struct {
-	mu sync.Mutex
+	mu sync.RWMutex
 
-	epoch    time.Time
-	elapsed  int64
-	node     int16
-	sequence int64
+	epoch     time.Time
+	partition int16
+	sequence  Sequence
 }
 
 func New(opts ...Option) *Snowflake {
 	snowflake := &Snowflake{
-		epoch: time.Date(2020, 02, 02, 20, 20, 02, 02, time.Local),
+		epoch:    time.Date(2020, 02, 02, 20, 20, 02, 02, time.Local),
+		sequence: &DefaultSequence{},
 	}
 	for _, opt := range opts {
 		opt(snowflake)
@@ -53,28 +53,13 @@ func New(opts ...Option) *Snowflake {
 }
 
 func (sf *Snowflake) Next() uint64 {
-	sf.mu.Lock()
-	defer sf.mu.Unlock()
+	sf.mu.RLock()
+	defer sf.mu.RUnlock()
 
-	elapsed := time.Since(sf.epoch).Nanoseconds() / 1e6
-	if sf.elapsed < elapsed {
-		sf.elapsed = elapsed
-		sf.sequence = 0
-	} else {
-		sf.sequence = (sf.sequence + 1) & SequenceBitMask
-		if sf.sequence == 0 {
-			sf.elapsed++
-			overtime := time.Duration(sf.elapsed - elapsed)
-			time.Sleep(overtime * time.Millisecond)
-		}
-	}
-
-	return uint64(sf.elapsed)<<TimestampBitShift |
-		uint64(sf.node)<<NodeIDBitShift |
-		uint64(sf.sequence)
+	return sf.sequence.Next(sf.partition, sf.epoch)
 }
 
 func (sf *Snowflake) Timestamp(id uint64) time.Time {
-	dur := id >> (BitLengthNodeID + BitLengthSequence)
+	dur := id >> (BitLengthPartitionID + BitLengthSequence)
 	return sf.epoch.Add(time.Duration(dur) * time.Millisecond)
 }
