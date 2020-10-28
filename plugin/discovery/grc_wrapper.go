@@ -11,7 +11,7 @@ import (
 
 func Init() {
 	if discovery.Implementor() == nil {
-		discovery.RegisterImplementor(NewDebug())
+		discovery.RegisterImplementor(NewGRCWrapper(nil))
 	}
 }
 
@@ -20,19 +20,22 @@ type Node struct {
 	Address  string
 }
 
-type Debug struct {
+type GRCWrapper struct {
 	lc sync.Map
 	rc *grc.RemoteConfig
 }
 
-func NewDebug() *Debug {
-	debug := &Debug{}
-	debug.rc, _ = grc.New(grc.WithDebugProvider())
-	return debug
+func NewGRCWrapper(rc *grc.RemoteConfig) *GRCWrapper {
+	if rc == nil {
+		rc, _ = grc.New(grc.WithDebugProvider())
+	}
+	return &GRCWrapper{
+		rc: rc,
+	}
 }
 
 // Return local rpc address registered for the component.
-func (m *Debug) RegisteredNode(component string) (int64, string) {
+func (m *GRCWrapper) RegisteredNode(component string) (int64, string) {
 	if addr, ok := m.lc.Load(component); ok {
 		node := addr.(*Node)
 		return node.UniqueID, node.Address
@@ -41,7 +44,7 @@ func (m *Debug) RegisteredNode(component string) (int64, string) {
 }
 
 // Register rpc address of the component node.
-func (m *Debug) RegisterNode(component, rpcAddr string, rpcSvc []string, ttl time.Duration) (int64, error) {
+func (m *GRCWrapper) RegisterNode(component, rpcAddr string, rpcSvc []string, ttl time.Duration) (int64, error) {
 	uniqueID, err := m.rc.RegisterNode(component, rpcAddr, grc.WithNodeTTL(ttl),
 		grc.WithNodeMetadata(map[string]string{"services": strings.Join(rpcSvc, ",")}))
 	if err != nil {
@@ -55,7 +58,7 @@ func (m *Debug) RegisterNode(component, rpcAddr string, rpcSvc []string, ttl tim
 }
 
 // Get rpc service nodes.
-func (m *Debug) GetNodes(svc string) map[string]int {
+func (m *GRCWrapper) GetNodes(svc string) map[string]int {
 	parts := strings.Split(svc, ".")
 	component := parts[0]
 	nodes := m.rc.GetNodes(component)
