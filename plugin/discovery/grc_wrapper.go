@@ -11,8 +11,15 @@ import (
 
 func Init() {
 	if discovery.Implementor() == nil {
-		discovery.RegisterImplementor(NewGRCWrapper(nil))
+		debug, _ := grc.New(grc.WithDebugProvider())
+		Register(debug)
 	}
+}
+
+func Register(rc *grc.RemoteConfig) {
+	discovery.RegisterImplementor(&GRCWrapper{
+		rc: rc,
+	})
 }
 
 type Node struct {
@@ -23,15 +30,6 @@ type Node struct {
 type GRCWrapper struct {
 	lc sync.Map
 	rc *grc.RemoteConfig
-}
-
-func NewGRCWrapper(rc *grc.RemoteConfig) *GRCWrapper {
-	if rc == nil {
-		rc, _ = grc.New(grc.WithDebugProvider())
-	}
-	return &GRCWrapper{
-		rc: rc,
-	}
 }
 
 // Return local rpc address registered for the component.

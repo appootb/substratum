@@ -7,22 +7,18 @@ import (
 
 func Init() {
 	if configure.Implementor() == nil {
-		configure.RegisterImplementor(NewGRCWrapper(nil))
+		debug, _ := grc.New(grc.WithDebugProvider(),
+			grc.WithConfigAutoCreation())
+		Register(debug)
 	}
+}
+
+func Register(rc *grc.RemoteConfig) {
+	configure.RegisterImplementor(&GRCWrapper{rc})
 }
 
 type GRCWrapper struct {
 	rc *grc.RemoteConfig
-}
-
-func NewGRCWrapper(rc *grc.RemoteConfig) *GRCWrapper {
-	if rc == nil {
-		rc, _ = grc.New(grc.WithDebugProvider(),
-			grc.WithConfigAutoCreation())
-	}
-	return &GRCWrapper{
-		rc: rc,
-	}
 }
 
 // Register the configuration pointer.
