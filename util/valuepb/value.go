@@ -7,6 +7,10 @@ import (
 	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
+func Bool(v *structpb.Value) bool {
+	return int64(Float64(v)) != 0
+}
+
 func Int64(v *structpb.Value) int64 {
 	return int64(Float64(v))
 }
@@ -16,6 +20,9 @@ func Int32(v *structpb.Value) int32 {
 }
 
 func Float64(v *structpb.Value) float64 {
+	if v == nil {
+		return 0
+	}
 	switch n := v.Kind.(type) {
 	case *structpb.Value_NumberValue:
 		return n.NumberValue
@@ -28,6 +35,9 @@ func Float64(v *structpb.Value) float64 {
 }
 
 func String(v *structpb.Value) string {
+	if v == nil {
+		return ""
+	}
 	switch n := v.Kind.(type) {
 	case *structpb.Value_NumberValue:
 		return fmt.Sprintf("%v", n.NumberValue)
