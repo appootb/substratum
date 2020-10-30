@@ -218,10 +218,16 @@ func (t *JwtToken) ParseRaw(token string) (*secret.Info, error) {
 	if err != nil {
 		return nil, err
 	}
+	sub := permission.Subject_NONE
+	if i, err := strconv.Atoi(payload.Subject); err != nil {
+		sub = permission.Subject(permission.Subject_value[payload.Subject])
+	} else {
+		sub = permission.Subject(i)
+	}
 	return &secret.Info{
 		Type:      secret.Type(secret.Type_value[header.ContentType]),
 		Algorithm: alg,
-		Subject:   permission.Subject(permission.Subject_value[payload.Subject]),
+		Subject:   sub,
 		Issuer:    payload.Issuer,
 		Account:   accountID,
 		KeyId:     keyID,
