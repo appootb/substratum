@@ -17,7 +17,7 @@ import (
 
 type TokenParser interface {
 	// Parse the token string.
-	Parse(token string) (*secret.Info, error)
+	Parse(md *common.Metadata) (*secret.Info, error)
 }
 
 func NewAlgorithmAuth(client, server TokenParser) service.Authenticator {
@@ -78,9 +78,9 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 		secretInfo *secret.Info
 	)
 	if md.GetPlatform() == common.Platform_PLATFORM_SERVER {
-		secretInfo, err = n.serverTokenParser.Parse(md.GetToken())
+		secretInfo, err = n.serverTokenParser.Parse(md)
 	} else {
-		secretInfo, err = n.clientTokenParser.Parse(md.GetToken())
+		secretInfo, err = n.clientTokenParser.Parse(md)
 	}
 	if err != nil {
 		if anonymousMethod {

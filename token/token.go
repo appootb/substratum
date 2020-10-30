@@ -1,6 +1,7 @@
 package token
 
 import (
+	"github.com/appootb/protobuf/go/common"
 	"github.com/appootb/protobuf/go/secret"
 )
 
@@ -27,5 +28,5 @@ type Token interface {
 	// Refresh the token with expired time renewed.
 	Refresh(s *secret.Info) (string, error)
 	// Parse the token string.
-	Parse(token string) (*secret.Info, error)
+	Parse(md *common.Metadata) (*secret.Info, error)
 }

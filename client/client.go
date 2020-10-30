@@ -49,3 +49,44 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 	md["x-forwarded-for"] = append(md.Get("x-forwarded-for"), iphelper.LocalIP())
 	return metadata.NewOutgoingContext(ctx, md)
 }
+
+func WithMetadata(md *common.Metadata, keyID int64) context.Context {
+	now := time.Now()
+	issuer := "appootb"
+	if md.Package != nil {
+		issuer = md.GetPackage()
+	}
+	secretInfo := &secret.Info{
+		Type:      secret.Type_SERVER,
+		Algorithm: secret.Algorithm_HMAC,
+		Issuer:    issuer,
+		KeyId:     keyID,
+		Roles:     []string{},
+		Subject:   permission.Subject_SERVER,
+		IssuedAt:  datetime.WithTime(now).Proto(),
+		ExpiredAt: datetime.WithTime(now.Add(time.Minute)).Proto(),
+	}
+	val, _ := token.Implementor().Generate(secretInfo)
+	outgoingMD := metadata.New(map[string]string{
+		"token":       val,
+		"package":     md.GetPackage(),
+		"version":     md.GetVersion(),
+		"os_version":  md.GetOsVersion(),
+		"brand":       md.GetBrand(),
+		"model":       md.GetModel(),
+		"device_id":   md.GetDeviceId(),
+		"platform":    common.Platform_PLATFORM_SERVER.String(),
+		"timestamp":   strconv.FormatInt(now.UnixNano()/1e6, 10),
+		"is_emulator": strconv.FormatBool(md.GetIsEmulator()),
+		"network":     md.GetNetwork().String(),
+		"latitude":    md.GetLatitude(),
+		"longitude":   md.GetLongitude(),
+		"locale":      md.GetLocale(),
+		"channel":     md.GetChannel(),
+		"product":     md.GetProduct(),
+		"trace_id":    md.GetTraceId(),
+		"is_debug":    strconv.FormatBool(md.GetIsDebug()),
+	})
+	outgoingMD.Set("x-forwarded-for", md.GetClientIp(), iphelper.LocalIP())
+	return metadata.NewOutgoingContext(context.Background(), outgoingMD)
+}

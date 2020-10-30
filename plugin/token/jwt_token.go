@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/appootb/protobuf/go/common"
 	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/protobuf/go/secret"
 	"github.com/appootb/substratum/credential"
@@ -159,7 +160,7 @@ func (t *JwtToken) Refresh(s *secret.Info) (string, error) {
 }
 
 // Parse and verify the token string.
-func (t *JwtToken) Parse(token string) (*secret.Info, error) {
+func (t *JwtToken) Parse(md *common.Metadata) (*secret.Info, error) {
 	var (
 		accountID uint64
 		keyID     int64
@@ -208,7 +209,7 @@ func (t *JwtToken) Parse(token string) (*secret.Info, error) {
 	validator := jwt.ValidatePayload(&payload,
 		jwt.NotBeforeValidator(now),
 		jwt.ExpirationTimeValidator(now))
-	header, err := jwt.Verify([]byte(token), resolver, &payload, validator)
+	header, err := jwt.Verify([]byte(md.GetToken()), resolver, &payload, validator)
 	if err != nil {
 		return nil, err
 	}
