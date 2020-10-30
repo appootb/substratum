@@ -27,6 +27,8 @@ type Token interface {
 	Generate(s *secret.Info) (string, error)
 	// Refresh the token with expired time renewed.
 	Refresh(s *secret.Info) (string, error)
-	// Parse the token string.
+	// Parse the metadata.
 	Parse(md *common.Metadata) (*secret.Info, error)
+	// Parse raw token string.
+	ParseRaw(token string) (*secret.Info, error)
 }

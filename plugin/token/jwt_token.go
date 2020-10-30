@@ -159,8 +159,13 @@ func (t *JwtToken) Refresh(s *secret.Info) (string, error) {
 	return t.sign(s, key)
 }
 
-// Parse and verify the token string.
+// Parse the metadata.
 func (t *JwtToken) Parse(md *common.Metadata) (*secret.Info, error) {
+	return t.ParseRaw(md.GetToken())
+}
+
+// Parse raw token string.
+func (t *JwtToken) ParseRaw(token string) (*secret.Info, error) {
 	var (
 		accountID uint64
 		keyID     int64
@@ -209,7 +214,7 @@ func (t *JwtToken) Parse(md *common.Metadata) (*secret.Info, error) {
 	validator := jwt.ValidatePayload(&payload,
 		jwt.NotBeforeValidator(now),
 		jwt.ExpirationTimeValidator(now))
-	header, err := jwt.Verify([]byte(md.GetToken()), resolver, &payload, validator)
+	header, err := jwt.Verify([]byte(token), resolver, &payload, validator)
 	if err != nil {
 		return nil, err
 	}
