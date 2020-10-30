@@ -27,6 +27,14 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 		account = accountSecret.GetAccount()
 		subject |= accountSecret.GetSubject()
 	}
+	platform := common.Platform_PLATFORM_SERVER
+	if pf := md.Get("platform"); len(pf) > 0 {
+		if i, err := strconv.Atoi(pf[0]); err != nil {
+			platform |= common.Platform(common.Platform_value[pf[0]])
+		} else {
+			platform |= common.Platform(i)
+		}
+	}
 	issuer := "appootb"
 	if pkg := md.Get("package"); len(pkg) > 0 {
 		issuer = pkg[0]
@@ -44,7 +52,7 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 	}
 	val, _ := token.Implementor().Generate(secretInfo)
 	md["token"] = []string{val}
-	md["platform"] = []string{common.Platform_PLATFORM_SERVER.String()}
+	md["platform"] = []string{strconv.Itoa(int(platform))}
 	md["timestamp"] = []string{strconv.FormatInt(now.UnixNano()/1e6, 10)}
 	md["x-forwarded-for"] = append(md.Get("x-forwarded-for"), iphelper.LocalIP())
 	return metadata.NewOutgoingContext(ctx, md)
@@ -55,6 +63,10 @@ func WithMetadata(md *common.Metadata, keyID int64) context.Context {
 	issuer := "appootb"
 	if md.Package != nil {
 		issuer = md.GetPackage()
+	}
+	platform := common.Platform_PLATFORM_SERVER
+	if md.Platform != nil {
+		platform |= md.GetPlatform()
 	}
 	secretInfo := &secret.Info{
 		Type:      secret.Type_SERVER,
@@ -75,7 +87,7 @@ func WithMetadata(md *common.Metadata, keyID int64) context.Context {
 		"brand":       md.GetBrand(),
 		"model":       md.GetModel(),
 		"device_id":   md.GetDeviceId(),
-		"platform":    common.Platform_PLATFORM_SERVER.String(),
+		"platform":    strconv.Itoa(int(platform)),
 		"timestamp":   strconv.FormatInt(now.UnixNano()/1e6, 10),
 		"is_emulator": strconv.FormatBool(md.GetIsEmulator()),
 		"network":     md.GetNetwork().String(),

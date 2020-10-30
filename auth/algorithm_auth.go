@@ -77,7 +77,7 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 		err        error
 		secretInfo *secret.Info
 	)
-	if md.GetPlatform() == common.Platform_PLATFORM_SERVER {
+	if md.GetPlatform()&common.Platform_PLATFORM_SERVER == common.Platform_PLATFORM_SERVER {
 		secretInfo, err = n.serverTokenParser.Parse(md)
 	} else {
 		secretInfo, err = n.clientTokenParser.Parse(md)
@@ -115,16 +115,18 @@ func (n *AlgorithmAuth) IsAnonymousMethod(serviceMethod string) bool {
 }
 
 func (n *AlgorithmAuth) IsValidPlatform(sub permission.Subject, platform common.Platform) bool {
-	switch platform {
-	case common.Platform_PLATFORM_H5, common.Platform_PLATFORM_WEB, common.Platform_PLATFORM_CHROME:
-		return (sub & permission.Subject_WEB) == permission.Subject_WEB
-	case common.Platform_PLATFORM_LINUX, common.Platform_PLATFORM_WINDOWS, common.Platform_PLATFORM_DARWIN:
-		return (sub & permission.Subject_PC) == permission.Subject_PC
-	case common.Platform_PLATFORM_ANDROID, common.Platform_PLATFORM_IOS:
-		return (sub & permission.Subject_MOBILE) == permission.Subject_MOBILE
-	case common.Platform_PLATFORM_SERVER:
+	if platform&common.Platform_PLATFORM_SERVER > 0 {
 		return (sub & permission.Subject_SERVER) == permission.Subject_SERVER
-	default:
-		return false
 	}
+	if platform&common.Platform_PLATFORM_WEB > 0 {
+		return (sub & permission.Subject_WEB) == permission.Subject_WEB
+	}
+	if platform&common.Platform_PLATFORM_PC > 0 {
+		return (sub & permission.Subject_PC) == permission.Subject_PC
+	}
+	if platform&common.Platform_PLATFORM_MOBILE > 0 {
+		return (sub & permission.Subject_MOBILE) == permission.Subject_MOBILE
+	}
+
+	return false
 }
