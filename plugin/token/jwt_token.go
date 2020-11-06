@@ -130,7 +130,8 @@ func (t *JwtToken) Generate(s *secret.Info) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := credential.ClientImplementor().Add(s.GetAccount(), s.GetKeyId(), key); err != nil {
+	dur := datetime.FromProtoTime(s.GetExpiredAt()).Time.Sub(datetime.FromProtoTime(s.GetIssuedAt()).Time)
+	if err := credential.ClientImplementor().Add(s.GetAccount(), s.GetKeyId(), key, dur); err != nil {
 		return "", err
 	}
 	return t.sign(s, key)
@@ -145,7 +146,8 @@ func (t *JwtToken) Refresh(s *secret.Info) (string, error) {
 	if s.GetType() == secret.Type_SERVER {
 		key, err = credential.ServerImplementor().Get(s.GetKeyId())
 	} else {
-		key, err = credential.ClientImplementor().Get(s.GetAccount(), s.GetKeyId())
+		dur := datetime.FromProtoTime(s.GetExpiredAt()).Time.Sub(datetime.FromProtoTime(s.GetIssuedAt()).Time)
+		key, err = credential.ClientImplementor().Refresh(s.GetAccount(), s.GetKeyId(), dur)
 	}
 	if err != nil {
 		return "", err

@@ -1,5 +1,7 @@
 package credential
 
+import "time"
+
 var (
 	clientImpl Client
 	serverImpl Server
@@ -28,7 +30,9 @@ func RegisterServerImplementor(svr Server) {
 // Client secret key.
 type Client interface {
 	// Add a new secret key.
-	Add(accountID uint64, keyID int64, val []byte) error
+	Add(accountID uint64, keyID int64, val []byte, expire time.Duration) error
+	// Get and refresh the secret key's expiration.
+	Refresh(accountID uint64, keyID int64, expire time.Duration) ([]byte, error)
 	// Get secret key.
 	Get(accountID uint64, keyID int64) ([]byte, error)
 	// Revoke the secret key of the specified ID.
