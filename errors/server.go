@@ -60,12 +60,13 @@ func UnaryResponseInterceptor() grpc.UnaryServerInterceptor {
 			outgoingMD.Set("message", url.QueryEscape(se.Message))
 			return resp, status.ErrorProto((*spb.Status)(se))
 		} else if s, ok := status.FromError(err); ok {
-			message := Implementor().Translate(int32(s.Code()))
-			if message == "" {
-				message = s.Message()
+			sp := s.Proto()
+			if message := Implementor().Translate(sp.GetCode()); message != "" {
+				sp.Message = message
 			}
-			outgoingMD.Set("code", strconv.Itoa(int(s.Code())))
-			outgoingMD.Set("message", url.QueryEscape(message))
+			outgoingMD.Set("code", strconv.Itoa(int(sp.GetCode())))
+			outgoingMD.Set("message", url.QueryEscape(sp.GetMessage()))
+			err = status.ErrorProto(sp)
 		}
 		return resp, err
 	}
