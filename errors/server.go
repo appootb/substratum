@@ -13,6 +13,24 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var (
+	impl Prompter
+)
+
+// Return the service implementor.
+func Implementor() Prompter {
+	return impl
+}
+
+// Register service implementor.
+func RegisterImplementor(prompter Prompter) {
+	impl = prompter
+}
+
+type Prompter interface {
+	Translate(code int32) string
+}
+
 func UnaryResponseInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		outgoingMD := metadata.MD{
@@ -35,12 +53,19 @@ func UnaryResponseInterceptor() grpc.UnaryServerInterceptor {
 
 		// Update error message.
 		if se, ok := err.(*StatusError); ok {
+			if message := Implementor().Translate(se.Code); message != "" {
+				se.Message = message
+			}
 			outgoingMD.Set("code", strconv.Itoa(int(se.Code)))
 			outgoingMD.Set("message", url.QueryEscape(se.Message))
 			return resp, status.ErrorProto((*spb.Status)(se))
 		} else if s, ok := status.FromError(err); ok {
+			message := Implementor().Translate(int32(s.Code()))
+			if message == "" {
+				message = s.Message()
+			}
 			outgoingMD.Set("code", strconv.Itoa(int(s.Code())))
-			outgoingMD.Set("message", url.QueryEscape(s.Message()))
+			outgoingMD.Set("message", url.QueryEscape(message))
 		}
 		return resp, err
 	}

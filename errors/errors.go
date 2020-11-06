@@ -8,6 +8,7 @@ import (
 	"github.com/appootb/protobuf/go/code"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type StatusError spb.Status
@@ -16,6 +17,9 @@ func ErrorCode(err error) int32 {
 	var stErr *StatusError
 	if errors.As(err, &stErr) {
 		return stErr.Code
+	}
+	if s, ok := status.FromError(err); ok {
+		return int32(s.Code())
 	}
 	return int32(codes.Unknown)
 }

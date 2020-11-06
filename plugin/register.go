@@ -8,6 +8,7 @@ import (
 	"github.com/appootb/substratum/plugin/configure"
 	"github.com/appootb/substratum/plugin/credential"
 	"github.com/appootb/substratum/plugin/discovery"
+	"github.com/appootb/substratum/plugin/errors"
 	"github.com/appootb/substratum/plugin/logger"
 	"github.com/appootb/substratum/plugin/queue"
 	"github.com/appootb/substratum/plugin/resolver"
@@ -30,6 +31,8 @@ func Register() {
 		credential.Init()
 		// Discovery
 		discovery.Init()
+		// Errors
+		errors.Init()
 		// Logger
 		logger.Init()
 		// Queue
