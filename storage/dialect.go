@@ -46,6 +46,9 @@ func NewDialect(cfg Config) (Dialect, error) {
 		return &MSSQL{cfg}, nil
 	case DialectRedis:
 		return &Redis{cfg}, nil
+	case DialectElasticSearch6,
+		DialectElasticSearch7:
+		return &ElasticSearch{cfg}, nil
 	default:
 		return nil, errors.New("unknown dialect type:" + string(cfg.Schema))
 	}
