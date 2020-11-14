@@ -19,7 +19,7 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 	now := time.Now()
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil
+		md = metadata.MD{}
 	}
 	account := uint64(0)
 	subject := permission.Subject_SERVER
