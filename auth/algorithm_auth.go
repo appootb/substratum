@@ -86,7 +86,7 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 		if anonymousMethod {
 			return emptySecret, nil
 		}
-		return nil, err
+		return nil, status.Error(codes.Unauthenticated, "verify token failed")
 	}
 	// Anonymous method
 	if anonymousMethod {
