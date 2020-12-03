@@ -9,6 +9,7 @@ import (
 	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/protobuf/go/secret"
 	"github.com/appootb/protobuf/go/service"
+	"github.com/appootb/substratum/errors"
 	"github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/util/datetime"
 	"google.golang.org/grpc/codes"
@@ -86,7 +87,14 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 		if anonymousMethod {
 			return emptySecret, nil
 		}
-		return nil, status.Error(codes.Unauthenticated, "verify token failed")
+		switch errors.ErrorCode(err) {
+		case int32(codes.AlreadyExists),
+			int32(codes.FailedPrecondition),
+			int32(codes.Unauthenticated):
+			return nil, err
+		default:
+			return nil, status.Error(codes.Unauthenticated, "verify token failed")
+		}
 	}
 	// Anonymous method
 	if anonymousMethod {

@@ -39,6 +39,9 @@ type Client interface {
 	Revoke(accountID uint64, keyID int64) error
 	// Revoke all secret keys of the specified account ID.
 	RevokeAll(accountID uint64) error
+	// Lock all secret keys for a specified duration.
+	// Returns codes.FailedPrecondition (9).
+	Lock(accountID uint64, reason string, duration time.Duration) error
 }
 
 // Server secret key.
