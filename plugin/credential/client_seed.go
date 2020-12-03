@@ -80,3 +80,17 @@ func (s *ClientSeed) Lock(accountID uint64, reason string, duration time.Duratio
 	})
 	return nil
 }
+
+func (s *ClientSeed) Unlock(accountID uint64) error {
+	key := fmt.Sprintf("%d-", accountID)
+	s.Range(func(k, v interface{}) bool {
+		if strings.HasPrefix(k.(string), key) {
+			info := v.(*clientSeedInfo)
+			info.NotBefore = time.Date(1, 1, 1, 0, 0, 0, 0, time.Local)
+			info.LockMessage = ""
+			s.Store(k, info)
+		}
+		return true
+	})
+	return nil
+}

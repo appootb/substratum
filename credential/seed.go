@@ -42,6 +42,8 @@ type Client interface {
 	// Lock all secret keys for a specified duration.
 	// Returns codes.FailedPrecondition (9).
 	Lock(accountID uint64, reason string, duration time.Duration) error
+	// Unlock secret keys.
+	Unlock(accountID uint64) error
 }
 
 // Server secret key.
