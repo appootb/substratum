@@ -16,10 +16,12 @@ func RegisterImplementor(c Task) {
 	impl = c
 }
 
-type JobFunc func(ctx context.Context, arg interface{}) error
+type Executor interface {
+	Execute(ctx context.Context, arg interface{}) error
+}
 
 type Task interface {
 	// Schedule a task.
 	// Supported spec, refer: https://github.com/robfig/cron/tree/v3.0.1
-	Schedule(spec string, fn JobFunc, opts ...Option) error
+	Schedule(spec string, exec Executor, opts ...Option) error
 }

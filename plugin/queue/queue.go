@@ -39,7 +39,7 @@ func (m *Queue) Publish(name string, content []byte, opts ...queue.PublishOption
 }
 
 // Subscribe consumes the messages of the specified queue.
-func (m *Queue) Subscribe(name string, handler queue.MessageHandler, opts ...queue.SubscribeOption) error {
+func (m *Queue) Subscribe(name string, handler queue.Consumer, opts ...queue.SubscribeOption) error {
 	options := queue.EmptySubscribeOptions()
 	for _, o := range opts {
 		o(options)
@@ -57,7 +57,7 @@ func (m *Queue) Subscribe(name string, handler queue.MessageHandler, opts ...que
 	return nil
 }
 
-func (m *Queue) process(ch <-chan queue.MessageWrapper, handler queue.MessageHandler, opts *queue.SubscribeOptions) {
+func (m *Queue) process(ch <-chan queue.MessageWrapper, h queue.Consumer, opts *queue.SubscribeOptions) {
 	ctx := context.WithImplementContext(opts.Context, opts.Component)
 
 	for {
@@ -86,7 +86,7 @@ func (m *Queue) process(ch <-chan queue.MessageWrapper, handler queue.MessageHan
 			goto ProcessEnd
 		}
 
-		err = handler(ctx, msg)
+		err = h.Handle(ctx, msg)
 		if err == nil {
 			msg.End()
 			status = queue.Succeeded

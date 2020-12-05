@@ -5,8 +5,10 @@ import (
 	"time"
 )
 
-// Queue message handler.
-type MessageHandler func(context.Context, Message) error
+// Queue consume handler.
+type Consumer interface {
+	Handle(context.Context, Message) error
+}
 
 // Queue message struct.
 type Message interface {

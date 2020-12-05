@@ -14,13 +14,13 @@ import (
 
 type Task struct{}
 
-func (c *Task) Schedule(spec string, fn task.JobFunc, opts ...task.Option) error {
+func (c *Task) Schedule(spec string, exec task.Executor, opts ...task.Option) error {
 	options := task.EmptyOptions()
 	for _, o := range opts {
 		o(options)
 	}
 	if options.Name == "" {
-		t := reflect.TypeOf(fn)
+		t := reflect.TypeOf(exec)
 		name := spec + t.PkgPath() + t.Name()
 		options.Name = fmt.Sprintf("%x", sha1.Sum([]byte(name)))
 	}
@@ -28,11 +28,11 @@ func (c *Task) Schedule(spec string, fn task.JobFunc, opts ...task.Option) error
 	if err != nil {
 		return err
 	}
-	go c.exec(schedule, fn, options)
+	go c.exec(schedule, exec, options)
 	return nil
 }
 
-func (c *Task) exec(schedule scheduler.Schedule, fn task.JobFunc, opts *task.Options) {
+func (c *Task) exec(schedule scheduler.Schedule, exec task.Executor, opts *task.Options) {
 Reset:
 	ctx := opts.Context
 	if opts.Singleton {
@@ -60,7 +60,7 @@ Reset:
 			}
 
 		case <-timer.After(next.Sub(now)):
-			err := fn(ctx, opts.Argument)
+			err := exec.Execute(ctx, opts.Argument)
 			if err != nil {
 				// TODO succeed
 			} else {

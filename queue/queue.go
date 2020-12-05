@@ -29,7 +29,7 @@ type Queue interface {
 	// Publish writes a message body to the specified queue.
 	Publish(queue string, content []byte, opts ...PublishOption) error
 	// Subscribe consumes the messages of the specified queue.
-	Subscribe(queue string, handler MessageHandler, opts ...SubscribeOption) error
+	Subscribe(queue string, handler Consumer, opts ...SubscribeOption) error
 }
 
 type PublishOption func(*PublishOptions)
