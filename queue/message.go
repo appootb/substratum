@@ -10,6 +10,12 @@ type Consumer interface {
 	Handle(context.Context, Message) error
 }
 
+type ConsumerFunc func(context.Context, Message) error
+
+func (fn ConsumerFunc) Handle(ctx context.Context, m Message) error {
+	return fn(ctx, m)
+}
+
 // Queue message struct.
 type Message interface {
 	// Queue name of this message.

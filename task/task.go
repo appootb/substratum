@@ -17,7 +17,13 @@ func RegisterImplementor(c Task) {
 }
 
 type Executor interface {
-	Execute(ctx context.Context, arg interface{}) error
+	Execute(context.Context, interface{}) error
+}
+
+type ExecutorFunc func(ctx context.Context, arg interface{}) error
+
+func (fn ExecutorFunc) Execute(ctx context.Context, arg interface{}) error {
+	return fn(ctx, arg)
 }
 
 type Task interface {
