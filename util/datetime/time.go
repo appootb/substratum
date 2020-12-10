@@ -29,7 +29,7 @@ func FromProtoTime(ts *timestamp.Timestamp) *Time {
 	if err != nil {
 		log.Println(err)
 	}
-	return &Time{t}
+	return &Time{t.Local()}
 }
 
 func Now() *Time {
