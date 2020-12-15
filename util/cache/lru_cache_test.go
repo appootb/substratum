@@ -175,7 +175,7 @@ func TestLRULoad(t *testing.T) {
 		return 1, 0, nil
 	}
 
-	c := New(LRU, WithSize(2), WithExpiredLoader(fn))
+	c := New(LRU, WithSize(2), WithLoaderFunc(fn))
 
 	wg := sync.WaitGroup{}
 	for i := 0; i < 100; i++ {

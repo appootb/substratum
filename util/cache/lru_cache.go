@@ -25,7 +25,7 @@ func (c *LRUCache) Get(key interface{}) (interface{}, bool) {
 	if ok {
 		return value, true
 	}
-	if c.expiredLoader == nil {
+	if c.loader == nil {
 		return nil, false
 	}
 	// try load

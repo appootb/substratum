@@ -4,7 +4,7 @@ import "time"
 
 type Option func(*base)
 
-type ExpiredLoaderFunc func(interface{}) (interface{}, time.Duration, error)
+type LoaderFunc func(interface{}) (interface{}, time.Duration, error)
 
 func WithSize(size int) Option {
 	return func(b *base) {
@@ -12,8 +12,8 @@ func WithSize(size int) Option {
 	}
 }
 
-func WithExpiredLoader(fn ExpiredLoaderFunc) Option {
+func WithLoaderFunc(fn LoaderFunc) Option {
 	return func(b *base) {
-		b.expiredLoader = fn
+		b.loader = fn
 	}
 }
