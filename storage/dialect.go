@@ -15,6 +15,7 @@ const (
 	DialectPostgreSQL     DialectType = "postgres"
 	DialectMSSQL          DialectType = "mssql"
 	DialectRedis          DialectType = "redis"
+	DialectRedisCluster   DialectType = "rediscluster"
 	DialectElasticSearch6 DialectType = "elasticsearch6"
 	DialectElasticSearch7 DialectType = "elasticsearch7"
 )
@@ -44,7 +45,8 @@ func NewDialect(cfg Config) (Dialect, error) {
 		return &PostgreSQL{cfg}, nil
 	case DialectMSSQL:
 		return &MSSQL{cfg}, nil
-	case DialectRedis:
+	case DialectRedis,
+		DialectRedisCluster:
 		return &Redis{cfg}, nil
 	case DialectElasticSearch6,
 		DialectElasticSearch7:
