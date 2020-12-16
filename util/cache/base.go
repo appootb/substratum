@@ -27,8 +27,7 @@ type base struct {
 	items     map[interface{}]*list.Element
 	evictList *list.List
 
-	syncLock syncLocker
-	loader   LoaderFunc
+	loaderLock syncLocker
 }
 
 func (c *base) set(key, value interface{}, expire time.Duration) {
@@ -69,12 +68,6 @@ func (c *base) get(key interface{}) (interface{}, bool) {
 		return entry.value, true
 	}
 	return nil, false
-}
-
-func (c *base) load(key interface{}, fn func(interface{}, time.Duration, error) (interface{}, error)) (interface{}, error) {
-	return c.syncLock.Invoke(key, func() (interface{}, error) {
-		return fn(c.loader(key))
-	})
 }
 
 func (c *base) peek(key interface{}) (interface{}, bool) {

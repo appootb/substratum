@@ -12,8 +12,20 @@ func WithSize(size int) Option {
 	}
 }
 
-func WithLoaderFunc(fn LoaderFunc) Option {
-	return func(b *base) {
-		b.loader = fn
+type op struct {
+	loader LoaderFunc
+}
+
+func (opt *op) apply(opts []OpOption) {
+	for _, o := range opts {
+		o(opt)
+	}
+}
+
+type OpOption func(*op)
+
+func WithLoaderFunc(fn LoaderFunc) OpOption {
+	return func(op *op) {
+		op.loader = fn
 	}
 }

@@ -175,13 +175,13 @@ func TestLRULoad(t *testing.T) {
 		return 1, 0, nil
 	}
 
-	c := New(LRU, WithSize(2), WithLoaderFunc(fn))
+	c := New(LRU, WithSize(2))
 
 	wg := sync.WaitGroup{}
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
 		go func() {
-			v, ok := c.Get(1)
+			v, ok := c.Get(1, WithLoaderFunc(fn))
 			if !ok || v.(int) != 1 {
 				t.Fatal("1 should be contained")
 			}

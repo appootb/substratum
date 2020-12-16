@@ -18,18 +18,21 @@ func (c *LRUCache) Set(key, value interface{}, expire time.Duration) {
 }
 
 // Get value from the cache by the key.
-func (c *LRUCache) Get(key interface{}) (interface{}, bool) {
+func (c *LRUCache) Get(key interface{}, opts ...OpOption) (interface{}, bool) {
 	c.mu.Lock()
 	value, ok := c.base.get(key)
 	c.mu.Unlock()
 	if ok {
 		return value, true
 	}
-	if c.loader == nil {
+	op := &op{}
+	op.apply(opts)
+	if op.loader == nil {
 		return nil, false
 	}
 	// try load
-	value, err := c.base.load(key, func(v interface{}, dur time.Duration, e error) (interface{}, error) {
+	value, err := c.base.loaderLock.Invoke(key, func() (interface{}, error) {
+		v, dur, e := op.loader(key)
 		if e != nil {
 			return nil, e
 		}

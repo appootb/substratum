@@ -22,7 +22,7 @@ type Cache interface {
 	Set(key, value interface{}, expire time.Duration)
 
 	// Get value from the cache by the key.
-	Get(key interface{}) (interface{}, bool)
+	Get(key interface{}, opts ...OpOption) (interface{}, bool)
 
 	// Return value without updating the "recently used"-ness of the key.
 	Peek(key interface{}) (interface{}, bool)
@@ -63,7 +63,7 @@ func New(evictType EvictType, opts ...Option) (c Cache) {
 		return nil
 	}
 	//
-	b.syncLock = syncLocker{
+	b.loaderLock = syncLocker{
 		cache: c,
 		m:     make(map[interface{}]*caller),
 	}
