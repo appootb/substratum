@@ -103,6 +103,10 @@ func Float64(v *structpb.Value) float64 {
 	switch n := v.Kind.(type) {
 	case *structpb.Value_NumberValue:
 		return n.NumberValue
+	case *structpb.Value_StringValue:
+		if fv, err := strconv.ParseFloat(n.StringValue, 64); err == nil {
+			return fv
+		}
 	case *structpb.Value_BoolValue:
 		if n.BoolValue {
 			return 1

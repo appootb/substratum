@@ -9,13 +9,13 @@ import (
 
 func TestPool(t *testing.T) {
 	b := uint32(0)
-	cp := New(context.Background(), func(data interface{}) {
+	cp := New(context.Background(), CallbackFunc(func(ctx context.Context, data interface{}) {
 		if i, ok := data.(uint32); ok {
 			atomic.AddUint32(&b, i)
 		} else {
 			t.Error("data is not int type")
 		}
-	})
+	}))
 	for i := 0; i < 10; i++ {
 		go func() {
 			for j := 0; j < 1000; j++ {

@@ -2,6 +2,8 @@ package cpool
 
 import (
 	"context"
+
+	appootb "github.com/appootb/substratum/plugin/context"
 )
 
 const (
@@ -9,7 +11,15 @@ const (
 	DefaultChanLength  = 100
 )
 
-type ConsumeCallback func(interface{})
+type Callback interface {
+	Handle(context.Context, interface{})
+}
+
+type CallbackFunc func(context.Context, interface{})
+
+func (fn CallbackFunc) Handle(ctx context.Context, arg interface{}) {
+	fn(ctx, arg)
+}
 
 type Option func(pool *ConsumePool)
 
@@ -25,20 +35,25 @@ func WithChanLength(chanLen int) Option {
 	}
 }
 
+func WithComponent(component string) Option {
+	return func(cp *ConsumePool) {
+		cp.component = component
+	}
+}
+
 type ConsumePool struct {
 	ctx  context.Context
 	stop context.CancelFunc
 
 	concurrency int
 	chanLength  int
+	component   string
 
-	fn ConsumeCallback
 	ch chan interface{}
 }
 
-func New(ctx context.Context, callback ConsumeCallback, opts ...Option) *ConsumePool {
+func New(ctx context.Context, callback Callback, opts ...Option) *ConsumePool {
 	cp := &ConsumePool{
-		fn:          callback,
 		concurrency: DefaultConcurrency,
 		chanLength:  DefaultChanLength,
 	}
@@ -66,11 +81,13 @@ func (cp *ConsumePool) Stop() {
 	cp.stop()
 }
 
-func (cp *ConsumePool) run(callback ConsumeCallback) {
+func (cp *ConsumePool) run(h Callback) {
+	ctx := appootb.WithImplementContext(cp.ctx, cp.component)
+
 	for {
 		select {
 		case d := <-cp.ch:
-			callback(d)
+			h.Handle(ctx, d)
 		case <-cp.ctx.Done():
 			return
 		}
