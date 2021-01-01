@@ -18,21 +18,22 @@ func (c *LRUCache) Set(key, value interface{}, expire time.Duration) {
 }
 
 // Get value from the cache by the key.
-func (c *LRUCache) Get(key interface{}, opts ...OpOption) (interface{}, bool) {
+func (c *LRUCache) Get(key interface{}) (interface{}, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.base.get(key)
+}
+
+func (c *LRUCache) GetOrLoad(key interface{}, loader LoaderFunc) (interface{}, error) {
 	c.mu.Lock()
 	value, ok := c.base.get(key)
 	c.mu.Unlock()
 	if ok {
-		return value, true
-	}
-	op := &op{}
-	op.apply(opts)
-	if op.loader == nil {
-		return nil, false
+		return value, nil
 	}
 	// try load
 	value, err := c.base.loaderLock.Invoke(key, func() (interface{}, error) {
-		v, dur, e := op.loader(key)
+		v, dur, e := loader(key)
 		if e != nil {
 			return nil, e
 		}
@@ -42,9 +43,9 @@ func (c *LRUCache) Get(key interface{}, opts ...OpOption) (interface{}, bool) {
 		return v, nil
 	})
 	if err != nil {
-		return nil, false
+		return nil, err
 	}
-	return value, true
+	return value, nil
 }
 
 // Return value without updating the "recently used"-ness of the key.

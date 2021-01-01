@@ -181,8 +181,8 @@ func TestLRULoad(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
 		go func() {
-			v, ok := c.Get(1, WithLoaderFunc(fn))
-			if !ok || v.(int) != 1 {
+			v, err := c.GetOrLoad(1, fn)
+			if err != nil || v.(int) != 1 {
 				t.Fatal("1 should be contained")
 			}
 			wg.Done()

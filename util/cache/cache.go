@@ -22,7 +22,10 @@ type Cache interface {
 	Set(key, value interface{}, expire time.Duration)
 
 	// Get value from the cache by the key.
-	Get(key interface{}, opts ...OpOption) (interface{}, bool)
+	Get(key interface{}) (interface{}, bool)
+
+	// Get value from the cache or load by loader.
+	GetOrLoad(key interface{}, loader LoaderFunc) (interface{}, error)
 
 	// Return value without updating the "recently used"-ness of the key.
 	Peek(key interface{}) (interface{}, bool)
