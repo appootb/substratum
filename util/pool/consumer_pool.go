@@ -106,8 +106,6 @@ func newConsumerSlot(handler Consumer, opts []ConsumerOption) *consumerSlot {
 }
 
 func (slot *consumerSlot) run(handler Consumer) {
-	ctx := pctx.WithImplementContext(slot.ctx, slot.component)
-
 	for {
 		var (
 			keys   []interface{}
@@ -152,6 +150,7 @@ func (slot *consumerSlot) run(handler Consumer) {
 		slot.ops += uint64(len(values))
 		slot.Unlock()
 
+		ctx := pctx.WithImplementContext(slot.ctx, slot.component)
 		handler.Handle(ctx, values)
 		if sleepy {
 			time.Sleep(slot.duration)

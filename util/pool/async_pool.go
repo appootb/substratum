@@ -89,11 +89,10 @@ func (pool *AsyncPool) Stop() {
 }
 
 func (pool *AsyncPool) run(h AsyncHandler) {
-	ctx := pctx.WithImplementContext(pool.ctx, pool.component)
-
 	for {
 		select {
 		case d := <-pool.ch:
+			ctx := pctx.WithImplementContext(pool.ctx, pool.component)
 			h.Handle(ctx, d)
 		case <-pool.ctx.Done():
 			return
