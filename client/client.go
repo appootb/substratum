@@ -9,6 +9,7 @@ import (
 	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/protobuf/go/secret"
 	"github.com/appootb/protobuf/go/service"
+	appootb "github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/token"
 	"github.com/appootb/substratum/util/datetime"
 	"github.com/appootb/substratum/util/iphelper"
@@ -20,6 +21,9 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 	now := time.Now()
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
+		if reqMD := appootb.RequestMetadata(ctx); reqMD != nil {
+			return WithMetadata(reqMD, keyID)
+		}
 		md = metadata.MD{}
 	}
 	account := uint64(0)
