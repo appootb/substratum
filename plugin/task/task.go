@@ -40,7 +40,7 @@ Reset:
 		ctx = task.LockerImplementor().Lock(opts.Context, opts.Name)
 	}
 
-	ctx = context.WithImplementContext(opts.Context, opts.Component)
+	ctx = context.WithImplementContext(opts.Context, opts.Component, opts.Product)
 
 	for {
 		now := time.Now()

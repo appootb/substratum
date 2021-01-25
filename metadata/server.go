@@ -35,6 +35,12 @@ func (s *ctxWrapper) Context() context.Context {
 	return context.WithValue(ctx, metadataKey{}, md)
 }
 
+func ContextWithProduct(ctx context.Context, product string) context.Context {
+	return context.WithValue(ctx, metadataKey{}, &common.Metadata{
+		Product: &product,
+	})
+}
+
 func RequestMetadata(ctx context.Context) *common.Metadata {
 	if md := ctx.Value(metadataKey{}); md != nil {
 		return md.(*common.Metadata)

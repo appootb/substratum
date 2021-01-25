@@ -47,6 +47,12 @@ func WithAsyncComponent(component string) AsyncOption {
 	}
 }
 
+func WithAsyncProduct(product string) AsyncOption {
+	return func(pool *AsyncPool) {
+		pool.product = product
+	}
+}
+
 type AsyncPool struct {
 	ctx  context.Context
 	stop context.CancelFunc
@@ -54,6 +60,7 @@ type AsyncPool struct {
 	concurrency int
 	chanLength  int
 	component   string
+	product     string
 
 	ch chan interface{}
 }
@@ -92,7 +99,7 @@ func (pool *AsyncPool) run(h AsyncHandler) {
 	for {
 		select {
 		case d := <-pool.ch:
-			ctx := pctx.WithImplementContext(pool.ctx, pool.component)
+			ctx := pctx.WithImplementContext(pool.ctx, pool.component, pool.product)
 			h.Handle(ctx, d)
 		case <-pool.ctx.Done():
 			return

@@ -58,7 +58,7 @@ func (m *Queue) Subscribe(name string, handler queue.Consumer, opts ...queue.Sub
 }
 
 func (m *Queue) process(ch <-chan queue.MessageWrapper, h queue.Consumer, opts *queue.SubscribeOptions) {
-	ctx := context.WithImplementContext(opts.Context, opts.Component)
+	ctx := context.WithImplementContext(opts.Context, opts.Component, opts.Product)
 
 	for {
 		var (

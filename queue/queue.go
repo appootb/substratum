@@ -62,6 +62,7 @@ type SubscribeOption func(*SubscribeOptions)
 type SubscribeOptions struct {
 	context.Context
 	Component   string
+	Product     string
 	Topic       string
 	Concurrency int
 	MaxRetry    int
@@ -87,6 +88,12 @@ func WithConsumeContext(ctx context.Context) SubscribeOption {
 func WithConsumeComponent(component string) SubscribeOption {
 	return func(opts *SubscribeOptions) {
 		opts.Component = component
+	}
+}
+
+func WithConsumeProduct(product string) SubscribeOption {
+	return func(opts *SubscribeOptions) {
+		opts.Product = product
 	}
 }
 

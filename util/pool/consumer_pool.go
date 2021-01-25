@@ -57,6 +57,12 @@ func WithConsumerComponent(component string) ConsumerOption {
 	}
 }
 
+func WithConsumerProduct(product string) ConsumerOption {
+	return func(slot *consumerSlot) {
+		slot.product = product
+	}
+}
+
 type consumerSlot struct {
 	ctx  context.Context
 	stop context.CancelFunc
@@ -65,6 +71,7 @@ type consumerSlot struct {
 	merge     int
 	duration  time.Duration
 	component string
+	product   string
 
 	ops uint64
 	add uint64
@@ -150,7 +157,7 @@ func (slot *consumerSlot) run(handler Consumer) {
 		slot.ops += uint64(len(values))
 		slot.Unlock()
 
-		ctx := pctx.WithImplementContext(slot.ctx, slot.component)
+		ctx := pctx.WithImplementContext(slot.ctx, slot.component, slot.product)
 		handler.Handle(ctx, values)
 		if sleepy {
 			time.Sleep(slot.duration)

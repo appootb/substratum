@@ -12,6 +12,7 @@ import (
 	"github.com/appootb/substratum/token"
 	"github.com/appootb/substratum/util/datetime"
 	"github.com/appootb/substratum/util/iphelper"
+	"github.com/appootb/substratum/util/random"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -79,6 +80,10 @@ func WithMetadata(md *common.Metadata, keyID int64) context.Context {
 		ExpiredAt: datetime.WithTime(now.Add(time.Minute)).Proto(),
 	}
 	val, _ := token.Implementor().Generate(secretInfo)
+	traceID := md.GetTraceId()
+	if traceID == "" {
+		traceID = random.String(32)
+	}
 	outgoingMD := metadata.New(map[string]string{
 		"token":       val,
 		"package":     md.GetPackage(),
