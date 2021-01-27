@@ -21,6 +21,10 @@ func (c *Task) Schedule(spec string, exec task.Executor, opts ...task.Option) er
 	}
 	if options.Name == "" {
 		t := reflect.TypeOf(exec)
+		// reflect.Ptr's PkgPath and Name is empty
+		for t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
 		name := spec + t.PkgPath() + t.Name()
 		options.Name = fmt.Sprintf("%x", sha1.Sum([]byte(name)))
 	}
