@@ -76,6 +76,8 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		Product:    proto.String(strings.Join(md["product"], "")),
 		TraceId:    proto.String(strings.Join(md["trace_id"], "")),
 		RiskId:     proto.String(strings.Join(md["risk_id"], "")),
+		Uuid:       proto.String(strings.Join(md["uuid"], "")),
+		Udid:       proto.String(strings.Join(md["udid"], "")),
 		IsDebug:    &debug,
 	}
 }

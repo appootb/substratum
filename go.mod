@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/appootb/grc v0.0.0-20201028142642-766c8a7c8b87
-	github.com/appootb/protobuf/go v0.0.0-20201114151757-c54ac82ba4e3
+	github.com/appootb/protobuf/go v0.0.0-20210208073423-7f1ebfd7ab8b
 	github.com/elastic/go-elasticsearch/v6 v6.8.10
 	github.com/elastic/go-elasticsearch/v7 v7.9.0
 	github.com/gbrlsnchs/jwt/v3 v3.0.0-rc.2
