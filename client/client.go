@@ -106,6 +106,9 @@ func WithMetadata(md *common.Metadata, keyID int64) context.Context {
 		"channel":     md.GetChannel(),
 		"product":     md.GetProduct(),
 		"trace_id":    traceID,
+		"risk_id":     md.GetRiskId(),
+		"uuid":        md.GetUuid(),
+		"udid":        md.GetUdid(),
 		"is_debug":    strconv.FormatBool(md.GetIsDebug()),
 	})
 	outgoingMD.Set("x-forwarded-for", md.GetClientIp(), iphelper.LocalIP())
