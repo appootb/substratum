@@ -33,7 +33,7 @@ func (dt *DateTime) UnmarshalURL(v string) error {
 }
 
 func (dt DateTime) MarshalJSON() ([]byte, error) {
-	return []byte(dt.String()), nil
+	return json.Marshal(dt.String())
 }
 
 func (dt *DateTime) UnmarshalJSON(v []byte) error {
