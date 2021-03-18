@@ -63,12 +63,14 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		OsVersion:  proto.String(strings.Join(md["os_version"], "")),
 		Brand:      proto.String(strings.Join(md["brand"], "")),
 		Model:      proto.String(strings.Join(md["model"], "")),
+		UserAgent:  proto.String(strings.Join(md["user_agent"], "")),
 		DeviceId:   proto.String(strings.Join(md["device_id"], "")),
 		Platform:   &platform,
 		Timestamp:  &timestamp,
 		IsEmulator: &emulator,
 		Network:    &network,
 		ClientIp:   &clientIP,
+		DeviceMac:  proto.String(strings.Join(md["device_mac"], "")),
 		Latitude:   proto.String(strings.Join(md["latitude"], "")),
 		Longitude:  proto.String(strings.Join(md["longitude"], "")),
 		Locale:     proto.String(strings.Join(md["locale"], "")),
@@ -78,6 +80,7 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		RiskId:     proto.String(strings.Join(md["risk_id"], "")),
 		Uuid:       proto.String(strings.Join(md["uuid"], "")),
 		Udid:       proto.String(strings.Join(md["udid"], "")),
+		AndroidId:  proto.String(strings.Join(md["android_id"], "")),
 		IsDebug:    &debug,
 	}
 }
