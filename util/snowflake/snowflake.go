@@ -69,7 +69,8 @@ func (sf *Snowflake) CustomNext(partition int16, sequence Sequence) (uint64, err
 	if err != nil {
 		return 0, err
 	}
-
+	//
+	num &= SequenceBitMask
 	return uint64(elapsed)<<TimestampBitShift |
 		uint64(partition)<<PartitionIDBitShift |
 		uint64(num), nil

@@ -10,7 +10,7 @@ func TestSnowflake_Next(t *testing.T) {
 	vals := make(map[uint64]bool)
 
 	for i := 0; i < 1000; i++ {
-		id := sf.Next()
+		id, _ := sf.Next()
 		if _, ok := vals[id]; ok {
 			t.Fatal("id exist", id)
 		}
@@ -21,7 +21,7 @@ func TestSnowflake_Next(t *testing.T) {
 func TestSnowflake_Timestamp(t *testing.T) {
 	sf := New()
 
-	id := sf.Next()
+	id, _ := sf.Next()
 	ts := sf.Timestamp(id)
 	diff := time.Now().Sub(ts)
 	if diff < 0 {
