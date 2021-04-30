@@ -23,5 +23,5 @@ type Service interface {
 	Register(Component, ...string) error
 
 	// Serve start the mux server.
-	Serve() error
+	Serve(isolate ...bool) error
 }

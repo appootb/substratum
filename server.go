@@ -157,7 +157,7 @@ func (s *Server) Register(comp Component, rpcs ...string) error {
 	return nil
 }
 
-func (s *Server) Serve() error {
+func (s *Server) Serve(isolate ...bool) error {
 	// Start queue worker and cron tasks.
 	for _, comp := range s.components {
 		if err := comp.RunQueueWorker(queue.Implementor()); err != nil {
@@ -173,18 +173,20 @@ func (s *Server) Serve() error {
 		mux.Serve()
 	}
 
-	// Register node.
-	addr := s.serveMuxers[permission.VisibleScope_SERVER].ConnAddr()
-	for _, comp := range s.components {
-		nodeID, err := discovery.Implementor().RegisterNode(comp.Name(), addr, s.rpcServices[comp.Name()], s.keepAliveTTL)
-		if err != nil {
-			return err
+	if len(isolate) == 0 || !isolate[0] {
+		// Register node.
+		addr := s.serveMuxers[permission.VisibleScope_SERVER].ConnAddr()
+		for _, comp := range s.components {
+			nodeID, err := discovery.Implementor().RegisterNode(comp.Name(), addr, s.rpcServices[comp.Name()], s.keepAliveTTL)
+			if err != nil {
+				return err
+			}
+			// TODO:
+			// NodeID is unique in component scope on different node.
+			// If multiple components are registered within an unique server,
+			// snowflake's node ID might be the same on different nodes.
+			snowflake.SetPartitionID(nodeID)
 		}
-		// TODO:
-		// NodeID is unique in component scope on different node.
-		// If multiple components are registered within an unique server,
-		// snowflake's node ID might be the same on different nodes.
-		snowflake.SetPartitionID(nodeID)
 	}
 
 	// Wait for cancellation.
