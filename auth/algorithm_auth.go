@@ -35,6 +35,7 @@ type AlgorithmAuth struct {
 	serverTokenParser TokenParser
 	methodComponent   map[string]string
 	methodSubjects    map[string][]permission.Subject
+	methodRoles       map[string][]string
 }
 
 // Return the component name implements the service method.
@@ -44,10 +45,17 @@ func (n *AlgorithmAuth) ServiceComponentName(serviceMethod string) string {
 
 // Register required method subjects of the service.
 // The map key of the parameter is the full url path of the method.
-func (n *AlgorithmAuth) RegisterServiceSubjects(component string, serviceMethodSubjects map[string][]permission.Subject) {
+func (n *AlgorithmAuth) RegisterServiceSubjects(component string,
+	serviceMethodSubjects map[string][]permission.Subject,
+	serviceMethodRoles map[string][]string) {
+	//
 	for methodURL, methodSubjects := range serviceMethodSubjects {
 		n.methodComponent[methodURL] = component
 		n.methodSubjects[methodURL] = methodSubjects
+	}
+	for methodURL, methodRoles := range serviceMethodRoles {
+		n.methodComponent[methodURL] = component
+		n.methodRoles[methodURL] = methodRoles
 	}
 }
 
@@ -106,6 +114,11 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 	}
 	for _, sub := range n.methodSubjects[serviceMethod] {
 		if (sub & secretInfo.GetSubject()) == sub {
+			// Check roles.
+			if !n.CheckRoles(serviceMethod, secretInfo.GetRoles()) {
+				return nil, status.Error(codes.PermissionDenied,
+					fmt.Sprintf("roles: %v, expeced roles: %v", secretInfo.GetRoles(), n.methodRoles[serviceMethod]))
+			}
 			return secretInfo, nil
 		}
 	}
@@ -136,5 +149,23 @@ func (n *AlgorithmAuth) IsValidPlatform(sub permission.Subject, platform common.
 		return (sub & permission.Subject_MOBILE) == permission.Subject_MOBILE
 	}
 
+	return false
+}
+
+func (n *AlgorithmAuth) CheckRoles(serviceMethod string, roles []string) bool {
+	methodRoles, ok := n.methodRoles[serviceMethod]
+	if !ok {
+		// Do NOT check roles.
+		return true
+	}
+	policyRoles := make(map[string]bool, len(methodRoles))
+	for _, role := range methodRoles {
+		policyRoles[role] = true
+	}
+	for _, role := range roles {
+		if _, ok = policyRoles[role]; ok {
+			return true
+		}
+	}
 	return false
 }
