@@ -115,11 +115,18 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 	for _, sub := range n.methodSubjects[serviceMethod] {
 		if (sub & secretInfo.GetSubject()) == sub {
 			// Check roles.
-			if !n.CheckRoles(serviceMethod, secretInfo.GetRoles()) {
-				return nil, status.Error(codes.PermissionDenied,
-					fmt.Sprintf("roles: %v, expeced roles: %v", secretInfo.GetRoles(), n.methodRoles[serviceMethod]))
+			methodRoles, ok := n.methodRoles[serviceMethod]
+			if !ok {
+				return secretInfo, nil
 			}
-			return secretInfo, nil
+			secretRoles := n.GetSecretRoles(secretInfo)
+			for _, role := range methodRoles {
+				if _, ok = secretRoles[role]; ok {
+					return secretInfo, nil
+				}
+			}
+			return nil, status.Error(codes.PermissionDenied,
+				fmt.Sprintf("roles: %v, expeced roles: %v", secretInfo.GetRoles(), methodRoles))
 		}
 	}
 	return nil, status.Error(codes.PermissionDenied,
@@ -152,20 +159,14 @@ func (n *AlgorithmAuth) IsValidPlatform(sub permission.Subject, platform common.
 	return false
 }
 
-func (n *AlgorithmAuth) CheckRoles(serviceMethod string, roles []string) bool {
-	methodRoles, ok := n.methodRoles[serviceMethod]
-	if !ok {
-		// Do NOT check roles.
-		return true
+func (n *AlgorithmAuth) GetSecretRoles(secretInfo *secret.Info) map[string]bool {
+	if secretInfo == nil {
+		return map[string]bool{}
 	}
-	policyRoles := make(map[string]bool, len(methodRoles))
-	for _, role := range methodRoles {
-		policyRoles[role] = true
+	//
+	roles := make(map[string]bool, len(secretInfo.GetRoles()))
+	for _, role := range secretInfo.GetRoles() {
+		roles[role] = true
 	}
-	for _, role := range roles {
-		if _, ok = policyRoles[role]; ok {
-			return true
-		}
-	}
-	return false
+	return roles
 }
