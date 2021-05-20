@@ -27,6 +27,7 @@ func NewAlgorithmAuth(client, server TokenParser) service.Authenticator {
 		serverTokenParser: server,
 		methodComponent:   make(map[string]string),
 		methodSubjects:    make(map[string][]permission.Subject),
+		methodRoles:       make(map[string][]string),
 	}
 }
 
@@ -114,19 +115,7 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 	}
 	for _, sub := range n.methodSubjects[serviceMethod] {
 		if (sub & secretInfo.GetSubject()) == sub {
-			// Check roles.
-			methodRoles, ok := n.methodRoles[serviceMethod]
-			if !ok {
-				return secretInfo, nil
-			}
-			secretRoles := n.GetSecretRoles(secretInfo)
-			for _, role := range methodRoles {
-				if _, ok = secretRoles[role]; ok {
-					return secretInfo, nil
-				}
-			}
-			return nil, status.Error(codes.PermissionDenied,
-				fmt.Sprintf("roles: %v, expeced roles: %v", secretInfo.GetRoles(), methodRoles))
+			return n.CheckPolicy(serviceMethod, secretInfo)
 		}
 	}
 	return nil, status.Error(codes.PermissionDenied,
@@ -157,6 +146,26 @@ func (n *AlgorithmAuth) IsValidPlatform(sub permission.Subject, platform common.
 	}
 
 	return false
+}
+
+func (n *AlgorithmAuth) CheckPolicy(serviceMethod string, secretInfo *secret.Info) (*secret.Info, error) {
+	// Check roles.
+	methodRoles, ok := n.methodRoles[serviceMethod]
+	if !ok {
+		return secretInfo, nil
+	}
+	secretRoles := n.GetSecretRoles(secretInfo)
+	// Admin role.
+	if _, ok = secretRoles["admin"]; ok {
+		return secretInfo, nil
+	}
+	for _, role := range methodRoles {
+		if _, ok = secretRoles[role]; ok {
+			return secretInfo, nil
+		}
+	}
+	return nil, status.Error(codes.PermissionDenied,
+		fmt.Sprintf("roles: %v, expeced roles: %v", secretInfo.GetRoles(), methodRoles))
 }
 
 func (n *AlgorithmAuth) GetSecretRoles(secretInfo *secret.Info) map[string]bool {
