@@ -127,7 +127,8 @@ func (s *Server) AddMux(scope permission.VisibleScope, rpcPort, gatewayPort uint
 	if _, ok := s.serveMuxers[scope]; ok {
 		return errors.New("ServerMux for the specified scope has already been registered")
 	}
-	s.serveMuxers[scope], err = server.NewServeMux(rpcPort, gatewayPort)
+	metrics := scope == permission.VisibleScope_SERVER
+	s.serveMuxers[scope], err = server.NewServeMux(rpcPort, gatewayPort, metrics)
 	if err != nil {
 		return err
 	}
