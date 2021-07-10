@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/appootb/protobuf/go/service"
 	md "github.com/appootb/substratum/metadata"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -47,6 +48,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			"consume":  consume,
 			"request":  req,
 			"response": resp,
+			"secret":   service.AccountSecretFromContext(ctx),
 		}
 		// Access log.
 		logger.Info("access_log", log)
