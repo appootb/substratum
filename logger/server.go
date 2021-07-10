@@ -12,7 +12,10 @@ import (
 )
 
 const (
-	LogTag      = "_BASE_."
+	LogTag    = "_BASE_."
+	AccessLog = "_MSG_.access"
+	ErrorLog  = "_MSG_.error"
+
 	LogPath     = "path"
 	LogConsumed = "consumed"
 	LogRequest  = "request"
@@ -61,11 +64,11 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			LogTag + LogSecret:   service.AccountSecretFromContext(ctx),
 		}
 		// Access log.
-		logger.Info("_MSG_.access", log)
+		logger.Info(AccessLog, log)
 		// Error log.
 		if err != nil {
 			log[LogTag+LogError] = err.Error()
-			logger.Error("_MSG_.error", log)
+			logger.Error(ErrorLog, log)
 		}
 		return resp, err
 	}
