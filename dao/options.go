@@ -15,17 +15,19 @@ type Option func(*Base)
 func WithContext(ctx context.Context) Option {
 	return func(base *Base) {
 		component := service.ComponentNameFromContext(ctx)
-		db := storage.ContextStorage(ctx, component).GetDB()
+		base.rw = storage.ContextStorage(ctx, component).GetDB()
+		base.ro = storage.ContextStorage(ctx, component).GetDB(true)
 		if md := metadata.RequestMetadata(ctx); md != nil && md.GetIsDebug() {
-			db = db.Debug()
+			base.rw = base.rw.Debug()
+			base.ro = base.ro.Debug()
 		}
-		base.tx = db
 	}
 }
 
 func WithDB(tx *gorm.DB) Option {
 	return func(base *Base) {
-		base.tx = tx
+		base.rw = tx
+		base.ro = tx
 	}
 }
 

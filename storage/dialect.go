@@ -29,10 +29,10 @@ type Dialect interface {
 func ParseDialect(addr string) (Dialect, error) {
 	var cfg Config
 	cfg.Set(addr)
-	return NewDialect(cfg)
+	return NewDialect(&cfg)
 }
 
-func NewDialect(cfg Config) (Dialect, error) {
+func NewDialect(cfg *Config) (Dialect, error) {
 	if cfg.Params == nil {
 		cfg.Params = map[string]string{}
 	}
@@ -98,6 +98,10 @@ func (c *Config) Type() DialectType {
 	return c.Schema
 }
 
+func (c *Config) Dialect() (Dialect, error) {
+	return NewDialect(c)
+}
+
 func (c *Config) Set(addr string) {
 	uri, err := url.Parse(addr)
 	if err != nil {
@@ -118,7 +122,7 @@ func (c *Config) Set(addr string) {
 }
 
 type MySQL struct {
-	Config
+	*Config
 }
 
 func (d *MySQL) URL() string {
@@ -130,7 +134,7 @@ func (d *MySQL) URL() string {
 }
 
 type PostgreSQL struct {
-	Config
+	*Config
 }
 
 func (d *PostgreSQL) URL() string {
@@ -139,7 +143,7 @@ func (d *PostgreSQL) URL() string {
 }
 
 type MSSQL struct {
-	Config
+	*Config
 }
 
 func (d *MSSQL) URL() string {
@@ -149,7 +153,7 @@ func (d *MSSQL) URL() string {
 }
 
 type SQLite struct {
-	Config
+	*Config
 }
 
 func (d *SQLite) URL() string {
@@ -157,7 +161,7 @@ func (d *SQLite) URL() string {
 }
 
 type Redis struct {
-	Config
+	*Config
 }
 
 func (d *Redis) URL() string {
@@ -165,7 +169,7 @@ func (d *Redis) URL() string {
 }
 
 type ElasticSearch struct {
-	Config
+	*Config
 }
 
 func (d *ElasticSearch) URL() string {
