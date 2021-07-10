@@ -11,6 +11,16 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+const (
+	LogTag      = "_BASE_."
+	LogPath     = "path"
+	LogConsumed = "consumed"
+	LogRequest  = "request"
+	LogResponse = "response"
+	LogSecret   = "secret"
+	LogError    = "error"
+)
+
 type loggerKey struct{}
 
 func ContextWithLogger(ctx context.Context) context.Context {
@@ -38,24 +48,24 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			md:     md.RequestMetadata(ctx),
 		}
 		resp, err := handler(context.WithValue(ctx, loggerKey{}, logger), req)
-		consume := time.Since(ts)
+		consumed := time.Since(ts)
 		_ = grpc.SetHeader(ctx, metadata.MD{
-			"consume": []string{strconv.FormatInt(consume.Nanoseconds()/1e6, 10)},
+			LogConsumed: []string{strconv.FormatInt(consumed.Nanoseconds()/1e6, 10)},
 		})
 
 		log := Content{
-			"path":     info.FullMethod,
-			"consume":  consume,
-			"request":  req,
-			"response": resp,
-			"secret":   service.AccountSecretFromContext(ctx),
+			LogTag + LogPath:     info.FullMethod,
+			LogTag + LogConsumed: consumed,
+			LogTag + LogRequest:  req,
+			LogTag + LogResponse: resp,
+			LogTag + LogSecret:   service.AccountSecretFromContext(ctx),
 		}
 		// Access log.
-		logger.Info("access_log", log)
+		logger.Info("_MSG_.access", log)
 		// Error log.
 		if err != nil {
-			log["error"] = err.Error()
-			logger.Error("error_log", log)
+			log[LogTag+LogError] = err.Error()
+			logger.Error("_MSG_.error", log)
 		}
 		return resp, err
 	}

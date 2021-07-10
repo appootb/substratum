@@ -39,12 +39,12 @@ type AlgorithmAuth struct {
 	methodRoles       map[string][]string
 }
 
-// Return the component name implements the service method.
+// ServiceComponentName returns the component name implements the service method.
 func (n *AlgorithmAuth) ServiceComponentName(serviceMethod string) string {
 	return n.methodComponent[serviceMethod]
 }
 
-// Register required method subjects of the service.
+// RegisterServiceSubjects registers required method subjects of the service.
 // The map key of the parameter is the full url path of the method.
 func (n *AlgorithmAuth) RegisterServiceSubjects(component string,
 	serviceMethodSubjects map[string][]permission.Subject,
@@ -81,6 +81,9 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 		}
 		return nil, status.Error(codes.Unauthenticated, "token required")
 	}
+	defer func() {
+		md.Token = nil
+	}()
 
 	// Parse the token.
 	var (
