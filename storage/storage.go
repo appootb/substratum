@@ -13,10 +13,10 @@ import (
 
 // Storage interface.
 type Storage interface {
-	InitDB(dialect Dialect, opts ...SQLOption) error
-	InitElasticSearch(dialect Dialect, opts ...ElasticOption) error
-	InitRedis(dialects []Dialect, opts ...RedisOption) error
-	GetDB() *gorm.DB
+	InitDB(configs []Config, opts ...SQLOption) error
+	InitElasticSearch(config Config, opts ...ElasticOption) error
+	InitRedis(configs []Config, opts ...RedisOption) error
+	GetDB(readOnly ...bool) *gorm.DB
 	GetESv6() *es6.Client
 	GetESv7() *es7.Client
 	GetRedisz() []redis.Cmdable

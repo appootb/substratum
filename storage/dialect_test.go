@@ -7,7 +7,7 @@ import (
 
 func Test_ParseRedisUrlConfig(t *testing.T) {
 	cfg := &Redis{
-		Config: Config{
+		Config: &Config{
 			Schema:   DialectRedis,
 			Password: "pwd",
 			Host:     "127.0.0.1",
@@ -28,7 +28,7 @@ func Test_ParseRedisUrlConfig(t *testing.T) {
 
 func Test_ParseMySQLUrlConfig(t *testing.T) {
 	cfg := &MySQL{
-		Config: Config{
+		Config: &Config{
 			Schema:   DialectMySQL,
 			Username: "root",
 			Password: "pwd",

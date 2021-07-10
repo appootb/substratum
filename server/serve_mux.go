@@ -10,11 +10,14 @@ import (
 	"github.com/appootb/substratum/logger"
 	"github.com/appootb/substratum/rpc"
 	"github.com/appootb/substratum/util/iphelper"
+	prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 )
 
 type ServeMux struct {
+	metrics         bool
 	connAddr        string
 	rpcListener     net.Listener
 	gatewayListener net.Listener
@@ -24,7 +27,7 @@ type ServeMux struct {
 	gatewayMux *runtime.ServeMux
 }
 
-func NewServeMux(rpcPort, gatewayPort uint16) (*ServeMux, error) {
+func NewServeMux(rpcPort, gatewayPort uint16, metrics bool) (*ServeMux, error) {
 	var err error
 	m := &ServeMux{
 		rpcSrv: rpc.New(
@@ -34,6 +37,7 @@ func NewServeMux(rpcPort, gatewayPort uint16) (*ServeMux, error) {
 				rpc.WithDefaultStreamInterceptors(),
 			),
 		),
+		metrics:    metrics,
 		httpMux:    http.NewServeMux(),
 		gatewayMux: gateway.New(gateway.DefaultOptions),
 	}
@@ -47,6 +51,9 @@ func NewServeMux(rpcPort, gatewayPort uint16) (*ServeMux, error) {
 		return nil, err
 	}
 	m.httpMux.Handle("/", m.gatewayMux)
+	if metrics {
+		m.httpMux.Handle("/metrics", promhttp.Handler())
+	}
 	return m, nil
 }
 
@@ -71,6 +78,10 @@ func (m *ServeMux) HandleFunc(pattern string, handler http.HandlerFunc) {
 }
 
 func (m *ServeMux) Serve() {
+	if m.metrics {
+		prometheus.Register(m.rpcSrv)
+	}
+	//
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	go func() {
