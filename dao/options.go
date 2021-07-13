@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/appootb/protobuf/go/service"
 	"github.com/appootb/substratum/metadata"
+	"github.com/appootb/substratum/service"
 	"github.com/appootb/substratum/storage"
 	"github.com/jinzhu/gorm"
 )

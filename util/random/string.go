@@ -17,7 +17,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-// Generate random string using masking with source.
+// String generates random string using masking with source.
 func String(n int) string {
 	b := make([]byte, n)
 	l := len(letterBytes)

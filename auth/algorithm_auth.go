@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/appootb/protobuf/go/common"
-	"github.com/appootb/protobuf/go/permission"
-	"github.com/appootb/protobuf/go/secret"
-	"github.com/appootb/protobuf/go/service"
 	"github.com/appootb/substratum/errors"
 	"github.com/appootb/substratum/metadata"
+	"github.com/appootb/substratum/proto/go/common"
+	"github.com/appootb/substratum/proto/go/permission"
+	"github.com/appootb/substratum/proto/go/secret"
+	"github.com/appootb/substratum/service"
 	"github.com/appootb/substratum/util/datetime"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -82,7 +82,7 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 		return nil, status.Error(codes.Unauthenticated, "token required")
 	}
 	defer func() {
-		md.Token = nil
+		md.Token = ""
 	}()
 
 	// Parse the token.

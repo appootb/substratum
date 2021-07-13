@@ -32,7 +32,7 @@ type GRCWrapper struct {
 	rc *grc.RemoteConfig
 }
 
-// Return local rpc address registered for the component.
+// RegisteredNode returns service unique ID and rpc address registered for the component.
 func (m *GRCWrapper) RegisteredNode(component string) (int64, string) {
 	if addr, ok := m.lc.Load(component); ok {
 		node := addr.(*Node)
@@ -41,7 +41,7 @@ func (m *GRCWrapper) RegisteredNode(component string) (int64, string) {
 	return 0, ""
 }
 
-// Register rpc address of the component node.
+// RegisterNode registers rpc address of the component node.
 func (m *GRCWrapper) RegisterNode(component, rpcAddr string, rpcSvc []string, ttl time.Duration) (int64, error) {
 	uniqueID, err := m.rc.RegisterNode(component, rpcAddr, grc.WithNodeTTL(ttl),
 		grc.WithNodeMetadata(map[string]string{"services": strings.Join(rpcSvc, ",")}))
@@ -55,7 +55,7 @@ func (m *GRCWrapper) RegisterNode(component, rpcAddr string, rpcSvc []string, tt
 	return uniqueID, nil
 }
 
-// Get rpc service nodes.
+// GetNodes returns rpc service nodes.
 func (m *GRCWrapper) GetNodes(svc string) map[string]int {
 	parts := strings.Split(svc, ".")
 	component := parts[0]

@@ -6,12 +6,12 @@ var (
 	impl Task
 )
 
-// Return the service implementor.
+// Implementor returns the task service implementor.
 func Implementor() Task {
 	return impl
 }
 
-// Register service implementor.
+// RegisterImplementor registers the task service implementor.
 func RegisterImplementor(c Task) {
 	impl = c
 }

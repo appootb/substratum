@@ -6,21 +6,21 @@ var (
 	lockerImpl Locker
 )
 
-// Return the service implementor.
+// LockerImplementor return the task locker service implementor.
 func LockerImplementor() Locker {
 	return lockerImpl
 }
 
-// Register service implementor.
+// RegisterLockerImplementor registers the task locker service implementor.
 func RegisterLockerImplementor(locker Locker) {
 	lockerImpl = locker
 }
 
 // Locker interface.
 type Locker interface {
-	// Get the locker of the scheduler,
+	// Lock tries to get the locker of the scheduler,
 	// should be blocked before acquired the locker.
 	Lock(ctx context.Context, scheduler string) context.Context
-	// Give up the schedule locker.
+	// Unlock gives up the schedule locker.
 	Unlock(scheduler string)
 }

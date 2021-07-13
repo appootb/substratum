@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/appootb/protobuf/go/common"
-	"github.com/appootb/protobuf/go/permission"
-	"github.com/appootb/protobuf/go/secret"
-	"github.com/appootb/protobuf/go/service"
 	appootb "github.com/appootb/substratum/metadata"
+	"github.com/appootb/substratum/proto/go/common"
+	"github.com/appootb/substratum/proto/go/permission"
+	"github.com/appootb/substratum/proto/go/secret"
+	"github.com/appootb/substratum/service"
 	"github.com/appootb/substratum/token"
 	"github.com/appootb/substratum/util/datetime"
 	"github.com/appootb/substratum/util/iphelper"
@@ -66,11 +66,11 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 func WithMetadata(md *common.Metadata, keyID int64) context.Context {
 	now := time.Now()
 	issuer := "appootb"
-	if md.Package != nil {
+	if md.Package != "" {
 		issuer = md.GetPackage()
 	}
 	platform := common.Platform_PLATFORM_SERVER
-	if md.Platform != nil {
+	if md.Platform != common.Platform_PLATFORM_UNSPECIFIED {
 		platform |= md.GetPlatform()
 	}
 	secretInfo := &secret.Info{

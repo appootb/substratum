@@ -3,7 +3,7 @@ package logger
 import (
 	"os"
 
-	"github.com/appootb/protobuf/go/common"
+	"github.com/appootb/substratum/proto/go/common"
 )
 
 type Helper struct {

@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/appootb/protobuf/go/common"
-	"github.com/appootb/protobuf/go/permission"
-	"github.com/appootb/protobuf/go/secret"
 	"github.com/appootb/substratum/credential"
+	"github.com/appootb/substratum/proto/go/common"
+	"github.com/appootb/substratum/proto/go/permission"
+	"github.com/appootb/substratum/proto/go/secret"
 	"github.com/appootb/substratum/token"
 	"github.com/appootb/substratum/util/datetime"
 	"github.com/gbrlsnchs/jwt/v3"
@@ -166,7 +166,7 @@ func (t *JwtToken) Parse(md *common.Metadata) (*secret.Info, error) {
 	return t.ParseRaw(md.GetToken())
 }
 
-// Parse raw token string.
+// ParseRaw parses a token string.
 func (t *JwtToken) ParseRaw(token string) (*secret.Info, error) {
 	var (
 		accountID uint64

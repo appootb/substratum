@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/appootb/protobuf/go/permission"
-	"github.com/appootb/protobuf/go/secret"
 	"github.com/appootb/substratum/plugin/credential"
+	"github.com/appootb/substratum/proto/go/permission"
+	"github.com/appootb/substratum/proto/go/secret"
 	"github.com/appootb/substratum/util/datetime"
 	"github.com/appootb/substratum/util/hash"
 	"github.com/gbrlsnchs/jwt/v3"
@@ -33,7 +33,7 @@ func TestJwtToken_Generate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := j.Parse(token)
+	s, err := j.ParseRaw(token)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestJwtToken_Expire(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := j.Parse(token)
+	s, err := j.ParseRaw(token)
 	if err != jwt.ErrExpValidation {
 		t.Fatal(s, err)
 	}
@@ -78,7 +78,7 @@ func TestJwtToken_Before(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := j.Parse(token)
+	s, err := j.ParseRaw(token)
 	if err != jwt.ErrNbfValidation {
 		t.Fatal(s, err)
 	}
@@ -99,7 +99,7 @@ func TestJwtToken_TokenNotBefore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = j.Parse(token)
+	_, err = j.ParseRaw(token)
 	if err == nil {
 		t.Fatal("fail: invalid token")
 	}

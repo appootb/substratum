@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/appootb/protobuf/go/permission"
+	"github.com/appootb/substratum/proto/go/permission"
 )
 
 const (

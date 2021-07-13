@@ -4,17 +4,17 @@ var (
 	idempotentImpl Idempotent
 )
 
-// Return the service implementor.
+// IdempotentImplementor returns the idempotent service implementor.
 func IdempotentImplementor() Idempotent {
 	return idempotentImpl
 }
 
-// Register service implementor.
+// RegisterIdempotentImplementor registers the idempotent service implementor.
 func RegisterIdempotentImplementor(idempotent Idempotent) {
 	idempotentImpl = idempotent
 }
 
-// Status of the message.
+// ProcessStatus type.
 type ProcessStatus int
 
 const (
@@ -28,10 +28,10 @@ const (
 
 // Idempotent interface.
 type Idempotent interface {
-	// Invoked before process message.
+	// BeforeProcess should be invoked before process message.
 	// Returns true to continue the message processing.
 	// Returns false to invoke Cancel for the message.
 	BeforeProcess(Message) bool
-	// Invoked after processing.
+	// AfterProcess should be invoked after processing.
 	AfterProcess(Message, ProcessStatus)
 }

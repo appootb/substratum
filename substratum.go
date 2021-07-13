@@ -3,20 +3,20 @@ package substratum
 import (
 	"net/http"
 
-	"github.com/appootb/protobuf/go/permission"
-	"github.com/appootb/protobuf/go/service"
+	"github.com/appootb/substratum/proto/go/permission"
+	"github.com/appootb/substratum/service"
 )
 
 type Service interface {
 	service.Implementor
 
-	// Scoped http handler.
+	// Handle registers the scoped http handler.
 	Handle(scope permission.VisibleScope, pattern string, handler http.Handler)
 
-	// Scoped http handle function.
+	// HandleFunc registers the scoped http handle function.
 	HandleFunc(scope permission.VisibleScope, pattern string, handler http.HandlerFunc)
 
-	// Add scoped ServeMux.
+	// AddMux adds scoped ServeMux.
 	AddMux(permission.VisibleScope, uint16, uint16) error
 
 	// Register component.

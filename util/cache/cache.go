@@ -24,25 +24,25 @@ type Cache interface {
 	// Get value from the cache by the key.
 	Get(key interface{}) (interface{}, bool)
 
-	// Get value from the cache or load by loader.
+	// GetOrLoad gets value from the cache or load by loader.
 	GetOrLoad(key interface{}, loader LoaderFunc) (interface{}, error)
 
-	// Return value without updating the "recently used"-ness of the key.
+	// Peek returns value without updating the "recently used"-ness of the key.
 	Peek(key interface{}) (interface{}, bool)
 
-	// Delete the specified key from the cache.
+	// Del the specified key from the cache.
 	Del(key interface{}) bool
 
-	// Check if a key exists in the cache.
+	// Contain checks if a key exists in the cache.
 	Contain(key interface{}) bool
 
-	// Return the number of items in the cache.
+	// Len returns the number of items in the cache.
 	Len(withoutExpired ...bool) int
 
-	// Return a slice of the keys in the cache.
+	// Keys returns a slice of the keys in the cache.
 	Keys(withoutExpired ...bool) []interface{}
 
-	// Clear the cache entities.
+	// Purge clears the cache entities.
 	Purge()
 }
 

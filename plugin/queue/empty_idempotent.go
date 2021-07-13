@@ -6,11 +6,11 @@ import (
 
 type EmptyIdempotent struct{}
 
-// Invoked before process message.
+// BeforeProcess is invoked before process message.
 func (p *EmptyIdempotent) BeforeProcess(_ queue.Message) bool {
 	return true
 }
 
-// Invoked after processing.
+// AfterProcess is invoked after processing.
 func (p *EmptyIdempotent) AfterProcess(_ queue.Message, _ queue.ProcessStatus) {
 }

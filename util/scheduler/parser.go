@@ -1,4 +1,5 @@
 // https://github.com/robfig/cron/blob/v3.0.1/parser.go
+
 package scheduler
 
 import (
@@ -9,7 +10,7 @@ import (
 	"time"
 )
 
-// Configuration options for creating a parser. Most options specify which
+// ParseOption is configuration options for creating a parser. Most options specify which
 // fields should be included, while others enable features. If a field is not
 // included the parser will assume a default value. These options do not change
 // the order fields are parse in.
@@ -45,7 +46,7 @@ var defaults = []string{
 	"*",
 }
 
-// A custom Parser that can be configured.
+// Parser is a custom parser that can be configured.
 type Parser struct {
 	options ParseOption
 }

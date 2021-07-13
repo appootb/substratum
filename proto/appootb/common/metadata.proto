@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package appootb.common;
+
+option cc_enable_arenas = true;
+option optimize_for = SPEED;
+
+option csharp_namespace = "Common";
+option go_package = "github.com/appootb/substratum/proto/go/common";
+option java_multiple_files = true;
+option java_outer_classname = "MetadataProto";
+option java_package = "com.appootb.common";
+option objc_class_prefix = "CPB";
+option php_namespace = "Appootb\\Proto\\Common";
+
+
+// Network enums.
+enum Network {
+  NETWORK_UNSPECIFIED = 0; // Unspecified
+
+  NETWORK_ETHERNET = 1; // Ethernet
+  NETWORK_WIFI     = 2; // Wifi
+  NETWORK_CELLULAR = 3; // Cellular
+}
+
+// Platform enums.
+enum Platform {
+  PLATFORM_UNSPECIFIED = 0; // Unspecified
+
+  PLATFORM_H5      = 1; // H5
+  PLATFORM_BROWSER = 2; // Browser
+  PLATFORM_CHROME  = 4; // ChromeOS
+  PLATFORM_WEB     = 7; // WEB，H5 | Browser | ChromeOS
+
+  PLATFORM_LINUX   = 16;  // Linux
+  PLATFORM_WINDOWS = 32;  // Windows
+  PLATFORM_DARWIN  = 64;  // MacOS
+  PLATFORM_PC      = 112; // PC, Linux | Windows | MacOS
+
+  PLATFORM_ANDROID = 256; // Android
+  PLATFORM_IOS     = 512; // iOS
+  PLATFORM_MOBILE  = 768; // Mobile, Android | iOS
+
+  PLATFORM_SERVER = 4096; // Internal server
+}
+
+// Request metadata.
+message Metadata {
+  string token = 1; // Account token, empty for guest account
+
+  Platform platform = 2; // Device platform, ios or android
+  Network  network  = 3; // Device network type, wifi or 4g
+
+  string package     = 4;  // Application package name
+  string version     = 5;  // Application version
+  string os_version  = 6;  // Platform os version
+  string brand       = 7;  // Device brand or manufacturer
+  string model       = 8;  // Device model
+  string device_id   = 9;  // Device ID
+  int64  timestamp   = 10; // Local device timestamp (in millisecond)
+  bool   is_emulator = 11; // If running in an emulator
+  bool   is_debug    = 12; // If running in debug mode
+
+  string latitude  = 13; // Device location latitude
+  string longitude = 14; // Device location longitude
+  string locale    = 15; // Device locale
+  string client_ip = 16; // Client IP
+
+  string channel  = 17; // Distribution channel
+  string product  = 18; // Product name
+  string trace_id = 19; // Trace ID
+  string risk_id  = 20; // Risk ID
+  string uuid     = 21; // Device UUID
+  string udid     = 22; // Device UDID
+
+  string user_agent = 23; // User-agent
+  string device_mac = 24; // Device MAC
+  string android_id = 25; // Android ID
+}

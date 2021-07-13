@@ -1,27 +1,27 @@
 package token
 
 import (
-	"github.com/appootb/protobuf/go/common"
-	"github.com/appootb/protobuf/go/secret"
+	"github.com/appootb/substratum/proto/go/common"
+	"github.com/appootb/substratum/proto/go/secret"
 )
 
 var (
 	impl Token
 )
 
-// Return the service implementor.
+// Implementor return the token service implementor.
 func Implementor() Token {
 	return impl
 }
 
-// Register service implementor.
+// RegisterImplementor registers the token service implementor.
 func RegisterImplementor(token Token) {
 	impl = token
 }
 
 // Token interface.
 type Token interface {
-	// Generate a new secret key.
+	// NewSecretKey creates a new secret key.
 	NewSecretKey(alg secret.Algorithm) ([]byte, error)
 	// Generate a new token with specified secret info.
 	Generate(s *secret.Info) (string, error)
@@ -29,6 +29,6 @@ type Token interface {
 	Refresh(s *secret.Info) (string, error)
 	// Parse the metadata.
 	Parse(md *common.Metadata) (*secret.Info, error)
-	// Parse raw token string.
+	// ParseRaw parses a token string.
 	ParseRaw(token string) (*secret.Info, error)
 }

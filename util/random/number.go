@@ -6,7 +6,7 @@ const (
 	numberBytes = "0123456789"
 )
 
-// Generate random numbers.
+// Number generates random numbers.
 func Number(n int) string {
 	b := make([]byte, n)
 	l := len(numberBytes)

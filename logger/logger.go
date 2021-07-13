@@ -3,19 +3,19 @@ package logger
 import (
 	"os"
 
-	"github.com/appootb/protobuf/go/common"
+	"github.com/appootb/substratum/proto/go/common"
 )
 
 var (
 	impl Logger
 )
 
-// Return the service implementor.
+// Implementor returns the logger service implementor.
 func Implementor() Logger {
 	return impl
 }
 
-// Register service implementor.
+// RegisterImplementor registers the logger service implementor.
 func RegisterImplementor(log Logger) {
 	impl = log
 }
