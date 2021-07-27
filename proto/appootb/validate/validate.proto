@@ -42,6 +42,10 @@ extend google.protobuf.FieldOptions {
   // Rules specify the validations to be performed on this field. By default,
   // no validation is performed against a field.
   optional FieldRules rules = 1071;
+
+  // Error is the custom failure message returned to client. By default,
+  // internal validation message is used.
+  optional string error = 1072;
 }
 
 // FieldRules encapsulates the rules for each type of field. Depending on the
