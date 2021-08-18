@@ -12,16 +12,20 @@ import (
 )
 
 const (
-	LogTag    = "_BASE_."
-	AccessLog = "_MSG_.access"
-	ErrorLog  = "_MSG_.error"
+	LogTag        = "_BASE_."
+	AccessLog     = "_MSG_.access"
+	ErrorLog      = "_MSG_.error"
+	UpstreamLog   = "_MSG_.upstream"
+	DownstreamLog = "_MSG_.downstream"
 
-	LogPath     = "path"
-	LogConsumed = "consumed"
-	LogRequest  = "request"
-	LogResponse = "response"
-	LogSecret   = "secret"
-	LogError    = "error"
+	LogPath       = "path"
+	LogConsumed   = "consumed"
+	LogRequest    = "request"
+	LogResponse   = "response"
+	LogUpstream   = "upstream"
+	LogDownstream = "downstream"
+	LogSecret     = "secret"
+	LogError      = "error"
 )
 
 type loggerKey struct{}
@@ -63,12 +67,13 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			LogTag + LogResponse: resp,
 			LogTag + LogSecret:   service.AccountSecretFromContext(ctx),
 		}
-		// Access log.
-		logger.Info(AccessLog, log)
-		// Error log.
 		if err != nil {
+			// Error log.
 			log[LogTag+LogError] = err.Error()
 			logger.Error(ErrorLog, log)
+		} else {
+			// Access log.
+			logger.Info(AccessLog, log)
 		}
 		return resp, err
 	}
@@ -77,16 +82,60 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 // StreamServerInterceptor returns a new streaming server interceptor for access log.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		wrapper := &ctxWrapper{stream}
-		return handler(srv, wrapper)
+		return handler(srv, &ctxWrapper{
+			ServerStream: stream,
+			info:         info,
+			logger: &Helper{
+				Logger: impl,
+				md:     md.RequestMetadata(stream.Context()),
+			},
+		})
 	}
 }
 
 type ctxWrapper struct {
 	grpc.ServerStream
+	info   *grpc.StreamServerInfo
+	logger *Helper
 }
 
 func (s *ctxWrapper) Context() context.Context {
 	ctx := s.ServerStream.Context()
-	return ContextWithLogger(ctx)
+	return context.WithValue(ctx, loggerKey{}, s.logger)
+}
+
+func (s *ctxWrapper) SendMsg(m interface{}) error {
+	err := s.ServerStream.SendMsg(m)
+	log := Content{
+		LogTag + LogPath:       s.info.FullMethod,
+		LogTag + LogDownstream: m,
+		LogTag + LogSecret:     service.AccountSecretFromContext(s.ServerStream.Context()),
+	}
+	if err != nil {
+		// Error log.
+		log[LogTag+LogError] = err.Error()
+		s.logger.Error(ErrorLog, log)
+	} else {
+		// Downstream log.
+		s.logger.Info(DownstreamLog, log)
+	}
+	return err
+}
+
+func (s *ctxWrapper) RecvMsg(m interface{}) error {
+	err := s.ServerStream.RecvMsg(m)
+	log := Content{
+		LogTag + LogPath:     s.info.FullMethod,
+		LogTag + LogUpstream: m,
+		LogTag + LogSecret:   service.AccountSecretFromContext(s.ServerStream.Context()),
+	}
+	if err != nil {
+		// Error log.
+		log[LogTag+LogError] = err.Error()
+		s.logger.Error(ErrorLog, log)
+	} else {
+		// Upstream log.
+		s.logger.Info(UpstreamLog, log)
+	}
+	return err
 }
