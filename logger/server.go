@@ -17,6 +17,7 @@ const (
 	ErrorLog      = "_MSG_.error"
 	UpstreamLog   = "_MSG_.upstream"
 	DownstreamLog = "_MSG_.downstream"
+	StreamingLog  = "_MSG_.streaming"
 
 	LogPath       = "path"
 	LogConsumed   = "consumed"
@@ -82,14 +83,28 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 // StreamServerInterceptor returns a new streaming server interceptor for access log.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		return handler(srv, &ctxWrapper{
+		logger := &Helper{
+			Logger: impl,
+			md:     md.RequestMetadata(stream.Context()),
+		}
+		err := handler(srv, &ctxWrapper{
 			ServerStream: stream,
 			info:         info,
-			logger: &Helper{
-				Logger: impl,
-				md:     md.RequestMetadata(stream.Context()),
-			},
+			logger:       logger,
 		})
+		log := Content{
+			LogTag + LogPath:   info.FullMethod,
+			LogTag + LogSecret: service.AccountSecretFromContext(stream.Context()),
+		}
+		if err != nil {
+			// Error log.
+			log[LogTag+LogError] = err.Error()
+			logger.Error(ErrorLog, log)
+		} else {
+			// Streaming log.
+			logger.Info(StreamingLog, log)
+		}
+		return err
 	}
 }
 
