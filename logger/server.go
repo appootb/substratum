@@ -50,11 +50,10 @@ func ContextLogger(ctx context.Context) *Helper {
 // UnaryServerInterceptor returns a new unary server interceptor for access log.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		ts := time.Now()
-		logger := &Helper{
-			Logger: impl,
-			md:     md.RequestMetadata(ctx),
-		}
+		var (
+			ts     = time.Now()
+			logger = newHelper(ctx)
+		)
 		resp, err := handler(context.WithValue(ctx, loggerKey{}, logger), req)
 		consumed := time.Since(ts)
 		_ = grpc.SetHeader(ctx, metadata.MD{
@@ -83,10 +82,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 // StreamServerInterceptor returns a new streaming server interceptor for access log.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		logger := &Helper{
-			Logger: impl,
-			md:     md.RequestMetadata(stream.Context()),
-		}
+		logger := newHelper(stream.Context())
 		err := handler(srv, &ctxWrapper{
 			ServerStream: stream,
 			info:         info,

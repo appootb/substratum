@@ -81,9 +81,6 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 		}
 		return nil, status.Error(codes.Unauthenticated, "token required")
 	}
-	defer func() {
-		md.Token = ""
-	}()
 
 	// Parse the token.
 	var (

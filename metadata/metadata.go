@@ -26,7 +26,7 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 	} else if p, ok := peer.FromContext(ctx); ok {
 		clientIP = p.Addr.String()
 	}
-	emulator := true
+	emulator := false
 	if b := md.Get("is_emulator"); len(b) > 0 {
 		emulator, _ = strconv.ParseBool(b[0])
 	}
