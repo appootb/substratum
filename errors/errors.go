@@ -32,13 +32,26 @@ func parseCode(c interface{}) int32 {
 	switch v := c.(type) {
 	case int32:
 		return v
+	case codes.Code:
+		return int32(v)
 	default:
-		i, err := strconv.Atoi(fmt.Sprintf("%v", v))
+		i, err := strconv.Atoi(fmt.Sprintf("%d", v))
 		if err != nil {
 			panic("unknown error code, err: " + err.Error())
 		}
 		return int32(i)
 	}
+}
+
+func With(err error, msg string) error {
+	return fmt.Errorf(msg+": %w", err)
+}
+
+func Withf(err error, format string, a ...interface{}) error {
+	args := make([]interface{}, 0, len(a)+1)
+	args = append(args, a...)
+	args = append(args, err)
+	return fmt.Errorf(format+": %w", args...)
 }
 
 func New(code interface{}, msg string) error {
