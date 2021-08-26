@@ -35,7 +35,7 @@ func (h *Helper) Warn(msg string, c Content) {
 }
 
 func (h *Helper) Error(msg string, c Content) {
-	h.Log(WarnLevel, h.md, msg, c)
+	h.Log(ErrorLevel, h.md, msg, c)
 }
 
 func (h *Helper) Fatal(msg string, c Content) {
