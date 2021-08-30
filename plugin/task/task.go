@@ -6,10 +6,20 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/appootb/substratum/logger"
 	"github.com/appootb/substratum/plugin/context"
 	"github.com/appootb/substratum/task"
 	"github.com/appootb/substratum/util/scheduler"
 	"github.com/appootb/substratum/util/timer"
+)
+
+const (
+	DebugLog = "_TASK_.debug"
+	ErrorLog = "_TASK_.error"
+
+	LogName     = logger.LogTag + "name"
+	LogExecutor = logger.LogTag + "executor"
+	LogError    = logger.LogTag + "error"
 )
 
 type Task struct{}
@@ -20,13 +30,7 @@ func (c *Task) Schedule(spec string, exec task.Executor, opts ...task.Option) er
 		o(options)
 	}
 	if options.Name == "" {
-		t := reflect.TypeOf(exec)
-		// reflect.Ptr's PkgPath and Name is empty
-		for t.Kind() == reflect.Ptr {
-			t = t.Elem()
-		}
-		name := spec + t.PkgPath() + t.Name()
-		options.Name = fmt.Sprintf("%x", sha1.Sum([]byte(name)))
+		options.Name = fmt.Sprintf("%x", sha1.Sum([]byte(spec+c.reflectName(exec))))
 	}
 	schedule, err := scheduler.ParseStandard(spec)
 	if err != nil {
@@ -36,15 +40,24 @@ func (c *Task) Schedule(spec string, exec task.Executor, opts ...task.Option) er
 	return nil
 }
 
+func (c *Task) reflectName(exec task.Executor) string {
+	t := reflect.TypeOf(exec)
+	// reflect.Ptr's PkgPath and Name is empty
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return fmt.Sprintf("%s/%s", t.PkgPath(), t.Name())
+}
+
 func (c *Task) exec(schedule scheduler.Schedule, exec task.Executor, opts *task.Options) {
 Reset:
 	ctx := opts.Context
 	if opts.Singleton {
 		// Blocked before acquired the locker.
-		ctx = task.LockerImplementor().Lock(opts.Context, opts.Name)
+		ctx = task.LockerImplementor().Lock(ctx, opts.Name)
 	}
 
-	ctx = context.WithImplementContext(opts.Context, opts.Component, opts.Product)
+	ctx = context.WithImplementContext(ctx, opts.Component, opts.Product)
 
 	for {
 		now := time.Now()
@@ -66,9 +79,16 @@ Reset:
 		case <-timer.After(next.Sub(now)):
 			err := exec.Execute(ctx, opts.Argument)
 			if err != nil {
-				// TODO succeed
+				logger.Error(ErrorLog, logger.Content{
+					LogError:    err.Error(),
+					LogName:     opts.Name,
+					LogExecutor: c.reflectName(exec),
+				})
 			} else {
-				// TODO failed
+				logger.Debug(DebugLog, logger.Content{
+					LogName:     opts.Name,
+					LogExecutor: c.reflectName(exec),
+				})
 			}
 		}
 	}

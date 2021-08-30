@@ -19,14 +19,15 @@ const (
 	DownstreamLog = "_MSG_.downstream"
 	StreamingLog  = "_MSG_.streaming"
 
-	LogPath       = "path"
-	LogConsumed   = "consumed"
-	LogRequest    = "request"
-	LogResponse   = "response"
-	LogUpstream   = "upstream"
-	LogDownstream = "downstream"
-	LogSecret     = "secret"
-	LogError      = "error"
+	Consumed      = "consumed"
+	LogConsumed   = LogTag + Consumed
+	LogPath       = LogTag + "path"
+	LogRequest    = LogTag + "request"
+	LogResponse   = LogTag + "response"
+	LogUpstream   = LogTag + "upstream"
+	LogDownstream = LogTag + "downstream"
+	LogSecret     = LogTag + "secret"
+	LogError      = LogTag + "error"
 )
 
 type loggerKey struct{}
@@ -57,19 +58,19 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 		resp, err := handler(context.WithValue(ctx, loggerKey{}, logger), req)
 		consumed := time.Since(ts)
 		_ = grpc.SetHeader(ctx, metadata.MD{
-			LogConsumed: []string{strconv.FormatInt(consumed.Nanoseconds()/1e6, 10)},
+			Consumed: []string{strconv.FormatInt(consumed.Nanoseconds()/1e6, 10)},
 		})
 
 		log := Content{
-			LogTag + LogPath:     info.FullMethod,
-			LogTag + LogConsumed: consumed,
-			LogTag + LogRequest:  req,
-			LogTag + LogResponse: resp,
-			LogTag + LogSecret:   service.AccountSecretFromContext(ctx),
+			LogPath:     info.FullMethod,
+			LogConsumed: consumed,
+			LogRequest:  req,
+			LogResponse: resp,
+			LogSecret:   service.AccountSecretFromContext(ctx),
 		}
 		if err != nil {
 			// Error log.
-			log[LogTag+LogError] = err.Error()
+			log[LogError] = err.Error()
 			logger.Error(ErrorLog, log)
 		} else {
 			// Access log.
@@ -89,12 +90,12 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 			logger:       logger,
 		})
 		log := Content{
-			LogTag + LogPath:   info.FullMethod,
-			LogTag + LogSecret: service.AccountSecretFromContext(stream.Context()),
+			LogPath:   info.FullMethod,
+			LogSecret: service.AccountSecretFromContext(stream.Context()),
 		}
 		if err != nil {
 			// Error log.
-			log[LogTag+LogError] = err.Error()
+			log[LogError] = err.Error()
 			logger.Error(ErrorLog, log)
 		} else {
 			// Streaming log.
@@ -118,13 +119,13 @@ func (s *ctxWrapper) Context() context.Context {
 func (s *ctxWrapper) SendMsg(m interface{}) error {
 	err := s.ServerStream.SendMsg(m)
 	log := Content{
-		LogTag + LogPath:       s.info.FullMethod,
-		LogTag + LogDownstream: m,
-		LogTag + LogSecret:     service.AccountSecretFromContext(s.ServerStream.Context()),
+		LogPath:       s.info.FullMethod,
+		LogDownstream: m,
+		LogSecret:     service.AccountSecretFromContext(s.ServerStream.Context()),
 	}
 	if err != nil {
 		// Error log.
-		log[LogTag+LogError] = err.Error()
+		log[LogError] = err.Error()
 		s.logger.Error(ErrorLog, log)
 	} else {
 		// Downstream log.
@@ -136,13 +137,13 @@ func (s *ctxWrapper) SendMsg(m interface{}) error {
 func (s *ctxWrapper) RecvMsg(m interface{}) error {
 	err := s.ServerStream.RecvMsg(m)
 	log := Content{
-		LogTag + LogPath:     s.info.FullMethod,
-		LogTag + LogUpstream: m,
-		LogTag + LogSecret:   service.AccountSecretFromContext(s.ServerStream.Context()),
+		LogPath:     s.info.FullMethod,
+		LogUpstream: m,
+		LogSecret:   service.AccountSecretFromContext(s.ServerStream.Context()),
 	}
 	if err != nil {
 		// Error log.
-		log[LogTag+LogError] = err.Error()
+		log[LogError] = err.Error()
 		s.logger.Error(ErrorLog, log)
 	} else {
 		// Upstream log.
