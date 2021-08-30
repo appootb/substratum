@@ -41,10 +41,10 @@ Reset:
 	ctx := opts.Context
 	if opts.Singleton {
 		// Blocked before acquired the locker.
-		ctx = task.LockerImplementor().Lock(opts.Context, opts.Name)
+		ctx = task.LockerImplementor().Lock(ctx, opts.Name)
 	}
 
-	ctx = context.WithImplementContext(opts.Context, opts.Component, opts.Product)
+	ctx = context.WithImplementContext(ctx, opts.Component, opts.Product)
 
 	for {
 		now := time.Now()
