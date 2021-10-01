@@ -9,8 +9,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// TODO: support more.
-
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(func(p interface{}) error {
 		debug.PrintStack()

@@ -4,12 +4,12 @@ var (
 	impl Configure
 )
 
-// Return the service implementor.
+// Implementor returns the configuration service implementor.
 func Implementor() Configure {
 	return impl
 }
 
-// Register service implementor.
+// RegisterImplementor registers the configuration service implementor.
 func RegisterImplementor(cfg Configure) {
 	impl = cfg
 }

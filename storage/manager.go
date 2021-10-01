@@ -4,12 +4,12 @@ var (
 	impl Manager
 )
 
-// Return the service implementor.
+// Implementor returns the storage manage service implementor.
 func Implementor() Manager {
 	return impl
 }
 
-// Register service implementor.
+// RegisterImplementor registers the storage manage service implementor.
 func RegisterImplementor(mgr Manager) {
 	impl = mgr
 }

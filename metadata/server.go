@@ -3,7 +3,7 @@ package metadata
 import (
 	"context"
 
-	"github.com/appootb/protobuf/go/common"
+	"github.com/appootb/substratum/proto/go/common"
 	"google.golang.org/grpc"
 )
 
@@ -37,7 +37,7 @@ func (s *ctxWrapper) Context() context.Context {
 
 func ContextWithProduct(ctx context.Context, product string) context.Context {
 	return context.WithValue(ctx, metadataKey{}, &common.Metadata{
-		Product: &product,
+		Product: product,
 	})
 }
 

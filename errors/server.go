@@ -17,12 +17,12 @@ var (
 	impl Prompter
 )
 
-// Return the service implementor.
+// Implementor returns the error prompter service implementor.
 func Implementor() Prompter {
 	return impl
 }
 
-// Register service implementor.
+// RegisterImplementor registers the error prompter service implementor.
 func RegisterImplementor(prompter Prompter) {
 	impl = prompter
 }

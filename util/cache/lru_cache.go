@@ -24,6 +24,7 @@ func (c *LRUCache) Get(key interface{}) (interface{}, bool) {
 	return c.base.get(key)
 }
 
+// GetOrLoad gets value from the cache or load by loader.
 func (c *LRUCache) GetOrLoad(key interface{}, loader LoaderFunc) (interface{}, error) {
 	c.mu.Lock()
 	value, ok := c.base.get(key)
@@ -48,7 +49,7 @@ func (c *LRUCache) GetOrLoad(key interface{}, loader LoaderFunc) (interface{}, e
 	return value, nil
 }
 
-// Return value without updating the "recently used"-ness of the key.
+// Peek returns value without updating the "recently used"-ness of the key.
 func (c *LRUCache) Peek(key interface{}) (interface{}, bool) {
 	c.mu.Lock()
 	value, ok := c.base.peek(key)
@@ -56,7 +57,7 @@ func (c *LRUCache) Peek(key interface{}) (interface{}, bool) {
 	return value, ok
 }
 
-// Delete the specified key from the cache.
+// Del the specified key from the cache.
 func (c *LRUCache) Del(key interface{}) bool {
 	c.mu.Lock()
 	exist := c.base.delete(key)
@@ -64,7 +65,7 @@ func (c *LRUCache) Del(key interface{}) bool {
 	return exist
 }
 
-// Check if a key exists in the cache.
+// Contain checks if a key exists in the cache.
 func (c *LRUCache) Contain(key interface{}) bool {
 	c.mu.RLock()
 	exist := c.base.contain(key)
@@ -72,7 +73,7 @@ func (c *LRUCache) Contain(key interface{}) bool {
 	return exist
 }
 
-// Return the number of items in the cache.
+// Len returns the number of items in the cache.
 func (c *LRUCache) Len(withoutExpired ...bool) int {
 	c.mu.RLock()
 	length := c.base.length(withoutExpired...)
@@ -80,7 +81,7 @@ func (c *LRUCache) Len(withoutExpired ...bool) int {
 	return length
 }
 
-// Return a slice of the keys in the cache.
+// Keys returns a slice of the keys in the cache.
 func (c *LRUCache) Keys(withoutExpired ...bool) []interface{} {
 	c.mu.RLock()
 	keys := c.base.keys(withoutExpired...)
@@ -88,7 +89,7 @@ func (c *LRUCache) Keys(withoutExpired ...bool) []interface{} {
 	return keys
 }
 
-// Clear the cache entities.
+// Purge clears the cache entities.
 func (c *LRUCache) Purge() {
 	c.mu.Lock()
 	c.base.purge()

@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/appootb/protobuf/go/permission"
 	"github.com/appootb/substratum/auth"
 	"github.com/appootb/substratum/configure"
 	"github.com/appootb/substratum/discovery"
 	"github.com/appootb/substratum/plugin"
+	"github.com/appootb/substratum/proto/go/permission"
 	"github.com/appootb/substratum/queue"
 	"github.com/appootb/substratum/rpc"
 	"github.com/appootb/substratum/server"
@@ -73,22 +73,22 @@ func (s *Server) Handle(scope permission.VisibleScope, pattern string, handler h
 	}
 }
 
-// Return server context.
+// Context returns the service context.
 func (s *Server) Context() context.Context {
 	return s.ctx
 }
 
-// Return the unary server interceptor for local gateway handler server.
+// UnaryInterceptor returns the unary server interceptor for local gateway handler server.
 func (s *Server) UnaryInterceptor() grpc.UnaryServerInterceptor {
 	return rpc.ChainUnaryServer()
 }
 
-// Return the stream server interceptor for local gateway handler server.
+// StreamInterceptor returns the stream server interceptor for local gateway handler server.
 func (s *Server) StreamInterceptor() grpc.StreamServerInterceptor {
 	return rpc.ChainStreamServer()
 }
 
-// Get gRPC server of the specified visible scope.
+// GetGRPCServer returns gRPC server of the specified visible scope.
 func (s *Server) GetGRPCServer(scope permission.VisibleScope) []*grpc.Server {
 	if mux, ok := s.serveMuxers[scope]; ok {
 		return []*grpc.Server{
@@ -105,7 +105,7 @@ func (s *Server) GetGRPCServer(scope permission.VisibleScope) []*grpc.Server {
 	return srv
 }
 
-// Get gateway mux of the specified visible scope.
+// GetGatewayMux returns gateway mux of the specified visible scope.
 func (s *Server) GetGatewayMux(scope permission.VisibleScope) []*runtime.ServeMux {
 	if mux, ok := s.serveMuxers[scope]; ok {
 		return []*runtime.ServeMux{

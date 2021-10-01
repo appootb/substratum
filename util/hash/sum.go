@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-// Returns the checksum of the key.
+// Sum returns the checksum of the key.
 func Sum(key interface{}) (val int64) {
 	var err error
 

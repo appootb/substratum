@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/appootb/protobuf/go/common"
 	"github.com/appootb/substratum/logger"
+	"github.com/appootb/substratum/proto/go/common"
 	"github.com/appootb/substratum/util/jsonpb"
 )
 

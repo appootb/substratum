@@ -6,8 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/appootb/protobuf/go/common"
-	"github.com/golang/protobuf/proto"
+	"github.com/appootb/substratum/proto/go/common"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 )
@@ -27,7 +26,7 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 	} else if p, ok := peer.FromContext(ctx); ok {
 		clientIP = p.Addr.String()
 	}
-	emulator := true
+	emulator := false
 	if b := md.Get("is_emulator"); len(b) > 0 {
 		emulator, _ = strconv.ParseBool(b[0])
 	}
@@ -57,30 +56,30 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 	}
 
 	return &common.Metadata{
-		Token:      proto.String(strings.Join(md["token"], "")),
-		Package:    proto.String(strings.Join(md["package"], "")),
-		Version:    proto.String(strings.Join(md["version"], "")),
-		OsVersion:  proto.String(strings.Join(md["os_version"], "")),
-		Brand:      proto.String(strings.Join(md["brand"], "")),
-		Model:      proto.String(strings.Join(md["model"], "")),
-		UserAgent:  proto.String(strings.Join(md["user_agent"], "")),
-		DeviceId:   proto.String(strings.Join(md["device_id"], "")),
-		Platform:   &platform,
-		Timestamp:  &timestamp,
-		IsEmulator: &emulator,
-		Network:    &network,
-		ClientIp:   &clientIP,
-		DeviceMac:  proto.String(strings.Join(md["device_mac"], "")),
-		Latitude:   proto.String(strings.Join(md["latitude"], "")),
-		Longitude:  proto.String(strings.Join(md["longitude"], "")),
-		Locale:     proto.String(strings.Join(md["locale"], "")),
-		Channel:    proto.String(strings.Join(md["channel"], "")),
-		Product:    proto.String(strings.Join(md["product"], "")),
-		TraceId:    proto.String(strings.Join(md["trace_id"], "")),
-		RiskId:     proto.String(strings.Join(md["risk_id"], "")),
-		Uuid:       proto.String(strings.Join(md["uuid"], "")),
-		Udid:       proto.String(strings.Join(md["udid"], "")),
-		AndroidId:  proto.String(strings.Join(md["android_id"], "")),
-		IsDebug:    &debug,
+		Token:      strings.Join(md["token"], ""),
+		Package:    strings.Join(md["package"], ""),
+		Version:    strings.Join(md["version"], ""),
+		OsVersion:  strings.Join(md["os_version"], ""),
+		Brand:      strings.Join(md["brand"], ""),
+		Model:      strings.Join(md["model"], ""),
+		UserAgent:  strings.Join(md["user_agent"], ""),
+		DeviceId:   strings.Join(md["device_id"], ""),
+		Platform:   platform,
+		Timestamp:  timestamp,
+		IsEmulator: emulator,
+		IsDebug:    debug,
+		Network:    network,
+		ClientIp:   clientIP,
+		DeviceMac:  strings.Join(md["device_mac"], ""),
+		Latitude:   strings.Join(md["latitude"], ""),
+		Longitude:  strings.Join(md["longitude"], ""),
+		Locale:     strings.Join(md["locale"], ""),
+		Channel:    strings.Join(md["channel"], ""),
+		Product:    strings.Join(md["product"], ""),
+		TraceId:    strings.Join(md["trace_id"], ""),
+		RiskId:     strings.Join(md["risk_id"], ""),
+		Uuid:       strings.Join(md["uuid"], ""),
+		Udid:       strings.Join(md["udid"], ""),
+		AndroidId:  strings.Join(md["android_id"], ""),
 	}
 }

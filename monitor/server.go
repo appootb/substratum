@@ -5,8 +5,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-// TODO: support more.
-
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return prometheus.UnaryServerInterceptor
 }

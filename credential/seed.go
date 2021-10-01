@@ -7,43 +7,43 @@ var (
 	serverImpl Server
 )
 
-// Return the service implementor.
+// ClientImplementor returns the client-side seed service implementor.
 func ClientImplementor() Client {
 	return clientImpl
 }
 
-// Register service implementor.
+// RegisterClientImplementor registers the client-side seed service implementor.
 func RegisterClientImplementor(cli Client) {
 	clientImpl = cli
 }
 
-// Return the service implementor.
+// ServerImplementor returns the server-side seed service implementor.
 func ServerImplementor() Server {
 	return serverImpl
 }
 
-// Register service implementor.
+// RegisterServerImplementor registers the server-side seed service implementor.
 func RegisterServerImplementor(svr Server) {
 	serverImpl = svr
 }
 
 // Client secret key.
 type Client interface {
-	// Add a new secret key.
-	Add(accountID uint64, keyID int64, val []byte, expire time.Duration) error
-	// Get and refresh the secret key's expiration.
-	Refresh(accountID uint64, keyID int64, expire time.Duration) ([]byte, error)
+	// Add creates a new secret key.
+	Add(uid uint64, keyID int64, val []byte, expire time.Duration) error
+	// Refresh gets and refreshes the secret key's expiration.
+	Refresh(uid uint64, keyID int64, expire time.Duration) ([]byte, error)
 	// Get secret key.
-	Get(accountID uint64, keyID int64) ([]byte, error)
-	// Revoke the secret key of the specified ID.
-	Revoke(accountID uint64, keyID int64) error
-	// Revoke all secret keys of the specified account ID.
-	RevokeAll(accountID uint64) error
-	// Lock all secret keys for a specified duration.
+	Get(uid uint64, keyID int64) ([]byte, error)
+	// Revoke removes the secret key of the specified ID.
+	Revoke(uid uint64, keyID int64) error
+	// RevokeAll removes all secret keys of the specified user ID.
+	RevokeAll(uid uint64) error
+	// Lock disables all secret keys for a specified duration.
 	// Returns codes.FailedPrecondition (9).
-	Lock(accountID uint64, reason string, duration time.Duration) error
-	// Unlock secret keys.
-	Unlock(accountID uint64) error
+	Lock(uid uint64, reason string, duration time.Duration) error
+	// Unlock enables the secret keys.
+	Unlock(uid uint64) error
 }
 
 // Server secret key.

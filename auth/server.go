@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/appootb/protobuf/go/service"
+	"github.com/appootb/substratum/service"
 	"google.golang.org/grpc"
 )
 
@@ -9,12 +9,12 @@ var (
 	impl service.Authenticator
 )
 
-// Return the service implementor.
+// Implementor returns the authenticator service implementor.
 func Implementor() service.Authenticator {
 	return impl
 }
 
-// Register service implementor.
+// RegisterImplementor register the authenticator service implementor.
 func RegisterImplementor(auth service.Authenticator) {
 	impl = auth
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/appootb/protobuf/go/code"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -24,10 +23,6 @@ func ErrorCode(err error) int32 {
 	return int32(codes.Unknown)
 }
 
-func CodeType(err error) code.Error {
-	return code.Error(ErrorCode(err))
-}
-
 func (err *StatusError) Error() string {
 	p := (*spb.Status)(err)
 	return fmt.Sprintf("status error: code = %s desc = %s", codes.Code(p.GetCode()), p.GetMessage())
@@ -37,7 +32,7 @@ func parseCode(c interface{}) int32 {
 	switch v := c.(type) {
 	case int32:
 		return v
-	case code.Error:
+	case codes.Code:
 		return int32(v)
 	default:
 		i, err := strconv.Atoi(fmt.Sprintf("%d", v))
@@ -46,6 +41,17 @@ func parseCode(c interface{}) int32 {
 		}
 		return int32(i)
 	}
+}
+
+func With(err error, msg string) error {
+	return fmt.Errorf(msg+": %w", err)
+}
+
+func Withf(err error, format string, a ...interface{}) error {
+	args := make([]interface{}, 0, len(a)+1)
+	args = append(args, a...)
+	args = append(args, err)
+	return fmt.Errorf(format+": %w", args...)
 }
 
 func New(code interface{}, msg string) error {

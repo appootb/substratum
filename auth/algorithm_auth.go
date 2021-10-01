@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/appootb/protobuf/go/common"
-	"github.com/appootb/protobuf/go/permission"
-	"github.com/appootb/protobuf/go/secret"
-	"github.com/appootb/protobuf/go/service"
 	"github.com/appootb/substratum/errors"
 	"github.com/appootb/substratum/metadata"
+	"github.com/appootb/substratum/proto/go/common"
+	"github.com/appootb/substratum/proto/go/permission"
+	"github.com/appootb/substratum/proto/go/secret"
+	"github.com/appootb/substratum/service"
 	"github.com/appootb/substratum/util/datetime"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,6 +27,7 @@ func NewAlgorithmAuth(client, server TokenParser) service.Authenticator {
 		serverTokenParser: server,
 		methodComponent:   make(map[string]string),
 		methodSubjects:    make(map[string][]permission.Subject),
+		methodRoles:       make(map[string][]string),
 	}
 }
 
@@ -35,6 +36,7 @@ type AlgorithmAuth struct {
 	serverTokenParser TokenParser
 	methodComponent   map[string]string
 	methodSubjects    map[string][]permission.Subject
+	methodRoles       map[string][]string
 }
 
 // ServiceComponentName returns the component name implements the service method.
@@ -44,10 +46,17 @@ func (n *AlgorithmAuth) ServiceComponentName(serviceMethod string) string {
 
 // RegisterServiceSubjects registers required method subjects of the service.
 // The map key of the parameter is the full url path of the method.
-func (n *AlgorithmAuth) RegisterServiceSubjects(component string, serviceMethodSubjects map[string][]permission.Subject) {
+func (n *AlgorithmAuth) RegisterServiceSubjects(component string,
+	serviceMethodSubjects map[string][]permission.Subject,
+	serviceMethodRoles map[string][]string) {
+	//
 	for methodURL, methodSubjects := range serviceMethodSubjects {
 		n.methodComponent[methodURL] = component
 		n.methodSubjects[methodURL] = methodSubjects
+	}
+	for methodURL, methodRoles := range serviceMethodRoles {
+		n.methodComponent[methodURL] = component
+		n.methodRoles[methodURL] = methodRoles
 	}
 }
 
@@ -72,9 +81,6 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 		}
 		return nil, status.Error(codes.Unauthenticated, "token required")
 	}
-	defer func() {
-		md.Token = nil
-	}()
 
 	// Parse the token.
 	var (
@@ -109,7 +115,7 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 	}
 	for _, sub := range n.methodSubjects[serviceMethod] {
 		if (sub & secretInfo.GetSubject()) == sub {
-			return secretInfo, nil
+			return n.CheckPolicy(serviceMethod, secretInfo)
 		}
 	}
 	return nil, status.Error(codes.PermissionDenied,
@@ -140,4 +146,36 @@ func (n *AlgorithmAuth) IsValidPlatform(sub permission.Subject, platform common.
 	}
 
 	return false
+}
+
+func (n *AlgorithmAuth) CheckPolicy(serviceMethod string, secretInfo *secret.Info) (*secret.Info, error) {
+	// Check roles.
+	methodRoles, ok := n.methodRoles[serviceMethod]
+	if !ok {
+		return secretInfo, nil
+	}
+	secretRoles := n.GetSecretRoles(secretInfo)
+	// Admin role.
+	if _, ok = secretRoles["admin"]; ok {
+		return secretInfo, nil
+	}
+	for _, role := range methodRoles {
+		if _, ok = secretRoles[role]; ok {
+			return secretInfo, nil
+		}
+	}
+	return nil, status.Error(codes.PermissionDenied,
+		fmt.Sprintf("roles: %v, expeced roles: %v", secretInfo.GetRoles(), methodRoles))
+}
+
+func (n *AlgorithmAuth) GetSecretRoles(secretInfo *secret.Info) map[string]bool {
+	if secretInfo == nil {
+		return map[string]bool{}
+	}
+	//
+	roles := make(map[string]bool, len(secretInfo.GetRoles()))
+	for _, role := range secretInfo.GetRoles() {
+		roles[role] = true
+	}
+	return roles
 }

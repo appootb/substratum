@@ -27,32 +27,32 @@ func (m *Message) Topic() string {
 	return m.topic
 }
 
-// Unique ID of this message.
+// UniqueID returns the unique ID of this message.
 func (m *Message) UniqueID() string {
 	return fmt.Sprintf("%s/%s-%d", m.queue, m.topic, m.timestamp.UnixNano())
 }
 
-// Message body content.
+// Content returns the message body content.
 func (m *Message) Content() []byte {
 	return m.content
 }
 
-// The creation time of the message.
+// Timestamp indicates the creation time of the message.
 func (m *Message) Timestamp() time.Time {
 	return m.timestamp
 }
 
-// The message should not be processed before this timestamp.
+// NotBefore indicates the message should not be processed before this timestamp.
 func (m *Message) NotBefore() time.Time {
 	return m.timestamp.Add(m.delay)
 }
 
-// Message retry times.
+// Retry times.
 func (m *Message) Retry() int {
 	return m.retry
 }
 
-// Return true for a ping message.
+// IsPing returns true for a ping message.
 func (m *Message) IsPing() bool {
 	return false
 }
@@ -61,7 +61,7 @@ func (m *Message) IsPing() bool {
 func (m *Message) Begin() {
 }
 
-// Indicate the message should be ignored.
+// Cancel indicates the message should be ignored.
 func (m *Message) Cancel() {
 }
 

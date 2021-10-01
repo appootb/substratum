@@ -3,14 +3,14 @@ package model
 import (
 	"context"
 
-	"github.com/appootb/protobuf/go/common"
-	"github.com/appootb/protobuf/go/secret"
-	"github.com/appootb/protobuf/go/service"
 	"github.com/appootb/substratum/client"
 	"github.com/appootb/substratum/discovery"
 	"github.com/appootb/substratum/logger"
 	"github.com/appootb/substratum/metadata"
+	"github.com/appootb/substratum/proto/go/common"
+	"github.com/appootb/substratum/proto/go/secret"
 	"github.com/appootb/substratum/queue"
+	"github.com/appootb/substratum/service"
 	"github.com/appootb/substratum/storage"
 	"github.com/appootb/substratum/task"
 	"google.golang.org/grpc"

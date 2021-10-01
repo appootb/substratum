@@ -10,17 +10,17 @@ var (
 	impl ConnPool
 )
 
-// Return the service implementor.
+// Implementor returns the gRPC connection pool service implementor.
 func Implementor() ConnPool {
 	return impl
 }
 
-// Register service implementor.
+// RegisterImplementor registers the gRPC connection pool service implementor.
 func RegisterImplementor(cp ConnPool) {
 	impl = cp
 }
 
-// gRPC client connection pool interface.
+// ConnPool is gRPC client connection pool interface.
 type ConnPool interface {
 	Get(target string) *grpc.ClientConn
 	Close()

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package appootb.api;
+
+import "google/protobuf/descriptor.proto";
+
+option cc_enable_arenas = true;
+option optimize_for = SPEED;
+
+option csharp_namespace = "Api";
+option go_package = "github.com/appootb/substratum/proto/go/api";
+option java_multiple_files = true;
+option java_outer_classname = "WebsocketProto";
+option java_package = "com.appootb.api";
+option objc_class_prefix = "CPB";
+option php_namespace = "Appootb\\Proto\\Api";
+
+
+// WebStream rules.
+message WebsocketRule {
+  string url = 1; // URL
+}
+
+// ProtoBuffer method extend.
+extend google.protobuf.MethodOptions {
+  // ID assigned by protobuf-global-extension-registry@google.com for grpc-gateway project.
+  //
+  // All IDs are the same, as assigned. It is okay that they are the same, as they extend
+  // different descriptor messages.
+  WebsocketRule websocket = 3507; // URL rule for websocket
+}

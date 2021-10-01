@@ -15,12 +15,12 @@ var (
 	impl Queue
 )
 
-// Return the service implementor.
+// Implementor returns the queue service implementor.
 func Implementor() Queue {
 	return impl
 }
 
-// Register service implementor.
+// RegisterImplementor registers the queue service implementor.
 func RegisterImplementor(s Queue) {
 	impl = s
 }
