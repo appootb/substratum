@@ -7,6 +7,7 @@ const (
 	Week = Day * 7
 )
 
+// BeginOfThisWeek returns 00:00:00 of this Monday.
 func BeginOfThisWeek(ts time.Time) time.Time {
 	offset := int(time.Monday - ts.Weekday())
 	if offset > 0 {
@@ -16,6 +17,7 @@ func BeginOfThisWeek(ts time.Time) time.Time {
 	return time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, ts.Location())
 }
 
+// EndOfThisWeek returns 23:59:59 of this Sunday.
 func EndOfThisWeek(ts time.Time) time.Time {
 	return BeginOfThisWeek(ts.Add(Week)).Add(-time.Second)
 }
@@ -30,7 +32,7 @@ func EndOfToday(ts time.Time) time.Time {
 
 func BeginOfTheLastMonth(ts time.Time) time.Time {
 	year := ts.Year()
-	month := (ts.Month() - 1) % time.December
+	month := ts.Month() - 1
 	if month == 0 {
 		month = time.December
 		year--
@@ -52,8 +54,9 @@ func EndOfThisMonth(ts time.Time) time.Time {
 
 func BeginOfTheNextMonth(ts time.Time) time.Time {
 	year := ts.Year()
-	month := (ts.Month() + 1) % time.December
-	if month == time.January {
+	month := ts.Month() + 1
+	if month > time.December {
+		month -= time.December
 		year++
 	}
 	return time.Date(year, month, 1, 0, 0, 0, 0, ts.Location())
@@ -61,8 +64,9 @@ func BeginOfTheNextMonth(ts time.Time) time.Time {
 
 func EndOfTheNextMonth(ts time.Time) time.Time {
 	year := ts.Year()
-	month := (ts.Month() + 2) % time.December
-	if month == time.January || month == time.February {
+	month := ts.Month() + 2
+	if month > time.December {
+		month -= time.December
 		year++
 	}
 	return time.Date(year, month, 1, 0, 0, 0, 0, ts.Location()).Add(-time.Second)
