@@ -7,7 +7,7 @@ import (
 	"github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/service"
 	"github.com/appootb/substratum/storage"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type Option func(*Base)

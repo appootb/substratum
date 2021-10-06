@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 func IsEmpty(err error) bool {
@@ -13,12 +13,5 @@ func IsEmpty(err error) bool {
 		return true
 	}
 	// SQL
-	if err == gorm.ErrRecordNotFound {
-		return true
-	}
-	var gormErr *gorm.Errors
-	if errors.As(err, &gormErr) {
-		return gorm.IsRecordNotFoundError(gormErr)
-	}
-	return false
+	return errors.Is(err, gorm.ErrRecordNotFound)
 }

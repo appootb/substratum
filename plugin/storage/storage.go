@@ -9,7 +9,7 @@ import (
 	es6 "github.com/elastic/go-elasticsearch/v6"
 	es7 "github.com/elastic/go-elasticsearch/v7"
 	"github.com/go-redis/redis/v8"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type Storage struct {
@@ -26,26 +26,42 @@ type Storage struct {
 	caches []redis.Cmdable
 }
 
-func (s *Storage) InitDB(configs []storage.Config, opts ...storage.SQLOption) error {
-	for i, cfg := range configs {
-		dialect, err := cfg.Dialect()
-		if err != nil {
-			return err
-		}
-		//
-		db, err := gorm.Open(string(dialect.Type()), dialect.URL())
+func (s *Storage) InitDB(master storage.Config, slaves []storage.Config, opts ...storage.SQLOption) error {
+	cfg := &gorm.Config{}
+	for _, o := range opts {
+		o(cfg, nil)
+	}
+	//
+	var (
+		err error
+		db  *gorm.DB
+	)
+	// Master
+	db, err = gorm.Open(storage.SQLDialectImplementor().Open(master), cfg)
+	if err != nil {
+		return err
+	}
+	for _, o := range opts {
+		o(nil, db)
+	}
+	s.mu.Lock()
+	s.masterDB = db
+	s.mu.Unlock()
+	// Slaves
+	if slaves == nil || len(slaves) == 0 {
+		return nil
+	}
+	s.slaveDBs = make([]*gorm.DB, 0, len(slaves))
+	for _, slave := range slaves {
+		db, err = gorm.Open(storage.SQLDialectImplementor().Open(slave), cfg)
 		if err != nil {
 			return err
 		}
 		for _, o := range opts {
-			o(db)
+			o(nil, db)
 		}
 		s.mu.Lock()
-		if i > 0 {
-			s.slaveDBs = append(s.slaveDBs, db)
-		} else {
-			s.masterDB = db
-		}
+		s.slaveDBs = append(s.slaveDBs, db)
 		s.mu.Unlock()
 	}
 	return nil
@@ -57,12 +73,12 @@ func (s *Storage) InitElasticSearch(config storage.Config, opts ...storage.Elast
 		return err
 	}
 	//
-	switch dialect.Type() {
-	case storage.DialectElasticSearch6:
+	switch config.Schema {
+	case storage.ElasticSearch6:
 		cfg6 := es6.Config{
 			Addresses: []string{dialect.URL()},
-			Username:  dialect.Meta().Username,
-			Password:  dialect.Meta().Password,
+			Username:  config.Username,
+			Password:  config.Password,
 		}
 		for _, o := range opts {
 			o(&cfg6, nil)
@@ -74,11 +90,11 @@ func (s *Storage) InitElasticSearch(config storage.Config, opts ...storage.Elast
 		s.mu.Lock()
 		s.elastic6 = cli6
 		s.mu.Unlock()
-	case storage.DialectElasticSearch7:
+	case storage.ElasticSearch7:
 		cfg7 := es7.Config{
 			Addresses: []string{dialect.URL()},
-			Username:  dialect.Meta().Username,
-			Password:  dialect.Meta().Password,
+			Username:  config.Username,
+			Password:  config.Password,
 		}
 		for _, o := range opts {
 			o(nil, &cfg7)
