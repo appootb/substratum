@@ -33,16 +33,7 @@ func (c *LRUCache) GetOrLoad(key interface{}, loader LoaderFunc) (interface{}, e
 		return value, nil
 	}
 	// try load
-	value, err := c.base.loaderLock.Invoke(key, func() (interface{}, error) {
-		v, dur, e := loader(key)
-		if e != nil {
-			return nil, e
-		}
-		c.mu.Lock()
-		c.base.set(key, v, dur)
-		c.mu.Unlock()
-		return v, nil
-	})
+	value, err := c.base.loaderLock.Invoke(key, loader)
 	if err != nil {
 		return nil, err
 	}

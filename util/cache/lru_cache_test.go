@@ -183,7 +183,7 @@ func TestLRULoad(t *testing.T) {
 		go func() {
 			v, err := c.GetOrLoad(1, fn)
 			if err != nil || v.(int) != 1 {
-				t.Fatal("1 should be contained")
+				panic("1 should be contained")
 			}
 			wg.Done()
 		}()
@@ -193,4 +193,36 @@ func TestLRULoad(t *testing.T) {
 	if count != 1 {
 		t.Fatal("should be loaded only once")
 	}
+}
+
+func TestGetOrLoad(t *testing.T) {
+	c := New(LRU)
+	c.Set("BenchmarkGetOrLoad", "val", time.Second)
+	time.Sleep(time.Second)
+
+	run := make(chan bool)
+	ready := sync.WaitGroup{}
+	done := sync.WaitGroup{}
+	//
+	begin := time.Now()
+	for i := 0; i < 200; i++ {
+		ready.Add(1)
+		done.Add(1)
+		go func() {
+			ready.Done()
+			<-run
+
+			c.GetOrLoad("BenchmarkGetOrLoad", func(_ interface{}) (interface{}, time.Duration, error) {
+				time.Sleep(time.Second)
+				return "val", 0, nil
+			})
+			done.Done()
+		}()
+	}
+
+	ready.Wait()
+	close(run)
+	done.Wait()
+	//
+	t.Log("Duration: ", time.Now().Sub(begin))
 }
