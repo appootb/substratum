@@ -2,7 +2,6 @@ package pool
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	pctx "github.com/appootb/substratum/plugin/context"
@@ -16,13 +15,13 @@ const (
 )
 
 type Consumer interface {
-	Handle(context.Context, map[interface{}][]interface{})
+	Handle(context.Context, interface{}, []interface{})
 }
 
-type ConsumerFunc func(context.Context, map[interface{}][]interface{})
+type ConsumerFunc func(context.Context, interface{}, []interface{})
 
-func (fn ConsumerFunc) Handle(ctx context.Context, arg map[interface{}][]interface{}) {
-	fn(ctx, arg)
+func (fn ConsumerFunc) Handle(ctx context.Context, key interface{}, values []interface{}) {
+	fn(ctx, key, values)
 }
 
 type ConsumerOption func(slot *consumerSlot)
@@ -33,15 +32,15 @@ func WithConsumerContext(ctx context.Context) ConsumerOption {
 	}
 }
 
-func WithConsumerQueueLength(queueLen int) ConsumerOption {
+func WithConsumerChanLength(chanLen int) ConsumerOption {
 	return func(slot *consumerSlot) {
-		slot.length = queueLen
+		slot.chanLength = chanLen
 	}
 }
 
-func WithConsumerMaxMerge(merge int) ConsumerOption {
+func WithConsumerMaxMerge(length int) ConsumerOption {
 	return func(slot *consumerSlot) {
-		slot.merge = merge
+		slot.length = length
 	}
 }
 
@@ -63,22 +62,23 @@ func WithConsumerProduct(product string) ConsumerOption {
 	}
 }
 
+type consumerData struct {
+	k, v interface{}
+}
+
 type consumerSlot struct {
 	ctx  context.Context
 	stop context.CancelFunc
 
-	length    int
-	merge     int
-	duration  time.Duration
 	component string
 	product   string
 
-	ops uint64
-	add uint64
+	chanLength int
+	length     int
+	duration   time.Duration
 
-	sync.RWMutex
-	queue  chan interface{}
-	values map[interface{}][]interface{}
+	ch    chan interface{}
+	cache map[interface{}][]interface{}
 }
 
 type ConsumerPool struct {
@@ -97,100 +97,62 @@ func NewConsumer(slotSize int, handler Consumer, opts ...ConsumerOption) *Consum
 
 func newConsumerSlot(handler Consumer, opts []ConsumerOption) *consumerSlot {
 	slot := &consumerSlot{
-		ctx:      context.Background(),
-		values:   make(map[interface{}][]interface{}),
-		length:   DefaultConsumerQueueLength,
-		merge:    DefaultConsumerMaxMerge,
-		duration: DefaultConsumerMaxDuration,
+		ctx:        context.Background(),
+		cache:      map[interface{}][]interface{}{},
+		chanLength: DefaultConsumerQueueLength,
+		length:     DefaultConsumerMaxMerge,
+		duration:   DefaultConsumerMaxDuration,
 	}
 	for _, o := range opts {
 		o(slot)
 	}
 	slot.ctx, slot.stop = context.WithCancel(slot.ctx)
-	slot.queue = make(chan interface{}, slot.length)
+	slot.ch = make(chan interface{}, slot.chanLength)
 	go slot.run(handler)
 	return slot
 }
 
 func (slot *consumerSlot) run(handler Consumer) {
+	ticker := time.NewTicker(slot.duration)
+	defer ticker.Stop()
+
 	for {
-		var (
-			keys   []interface{}
-			sleepy bool
-		)
-
 		select {
-		case key := <-slot.queue:
-			keys = append(keys, key)
+		case v := <-slot.ch:
+			data := v.(*consumerData)
+			slot.cache[data.k] = append(slot.cache[data.k], data.v)
+			if len(slot.cache[data.k]) >= slot.length {
+				go slot.callback(handler, map[interface{}][]interface{}{
+					data.k: slot.cache[data.k],
+				})
+				delete(slot.cache, data.k)
+			}
+		case <-ticker.C:
+			if len(slot.cache) > 0 {
+				go slot.callback(handler, slot.cache)
+				slot.cache = map[interface{}][]interface{}{}
+			}
 		case <-slot.ctx.Done():
-			// slot is closing
-			select {
-			case key := <-slot.queue:
-				keys = append(keys, key)
-			default:
-				return
-			}
-		}
-
-	MergeLabel:
-		for i := 0; i < slot.merge-1; i++ {
-			select {
-			case key := <-slot.queue:
-				keys = append(keys, key)
-			default:
-				sleepy = true
-				break MergeLabel
-			}
-		}
-
-		values := make(map[interface{}][]interface{}, len(keys))
-
-		slot.Lock()
-		for _, key := range keys {
-			if v, ok := slot.values[key]; ok {
-				if len(v) != 0 {
-					values[key] = v
-				}
-				delete(slot.values, key)
-			}
-		}
-		slot.ops += uint64(len(values))
-		slot.Unlock()
-
-		ctx := pctx.WithImplementContext(slot.ctx, slot.component, slot.product)
-		handler.Handle(ctx, values)
-		if sleepy {
-			time.Sleep(slot.duration)
+			return
 		}
 	}
 }
 
-func (pool *ConsumerPool) Add(key interface{}, values ...interface{}) bool {
+func (slot *consumerSlot) callback(handler Consumer, cache map[interface{}][]interface{}) {
+	ctx := pctx.WithImplementContext(slot.ctx, slot.component, slot.product)
+	for k, v := range cache {
+		handler.Handle(ctx, k, v)
+	}
+}
+
+func (pool *ConsumerPool) Add(key interface{}, value interface{}) bool {
 	idx := hash.Sum(key) % int64(len(pool.slots))
 	slot := pool.slots[idx]
 
 	select {
-	case <-slot.ctx.Done():
-		return false
+	case slot.ch <- &consumerData{key, value}:
+		return true
 	default:
+		return false
 	}
-
-	slot.Lock()
-	defer slot.Unlock()
-
-	vals, ok := slot.values[key]
-	if !ok {
-		select {
-		case slot.queue <- key:
-		default:
-			// chan is full
-			return false
-		}
-		slot.values[key] = values
-	} else {
-		slot.values[key] = append(vals, values...)
-	}
-
-	slot.add++
-	return true
 }
