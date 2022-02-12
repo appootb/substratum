@@ -11,6 +11,33 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
+const (
+	KeyToken      = "token"
+	KeyPlatform   = "platform"
+	KeyNetwork    = "network"
+	KeyPackage    = "package"
+	KeyVersion    = "version"
+	KeyOSVersion  = "os_version"
+	KeyBrand      = "brand"
+	KeyModel      = "model"
+	KeyDeviceID   = "device_id"
+	KeyTimestamp  = "timestamp"
+	KeyIsEmulator = "is_emulator"
+	KeyIsDebug    = "is_debug"
+	KeyLatitude   = "latitude"
+	KeyLongitude  = "longitude"
+	KeyLocale     = "locale"
+	KeyChannel    = "channel"
+	KeyProduct    = "product"
+	KeyTraceID    = "trace_id"
+	KeyRiskID     = "risk_id"
+	KeyUUID       = "uuid"
+	KeyUDID       = "udid"
+	KeyUserAgent  = "user_agent"
+	KeyDeviceMac  = "device_mac"
+	KeyAndroidID  = "android_id"
+)
+
 var (
 	Debug = os.Getenv("DEBUG")
 )
@@ -27,11 +54,11 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		clientIP = p.Addr.String()
 	}
 	emulator := false
-	if b := md.Get("is_emulator"); len(b) > 0 {
+	if b := md.Get(KeyIsEmulator); len(b) > 0 {
 		emulator, _ = strconv.ParseBool(b[0])
 	}
 	platform := common.Platform_PLATFORM_UNSPECIFIED
-	if pf := md.Get("platform"); len(pf) > 0 {
+	if pf := md.Get(KeyPlatform); len(pf) > 0 {
 		if i, err := strconv.Atoi(pf[0]); err != nil {
 			platform = common.Platform(common.Platform_value[pf[0]])
 		} else {
@@ -39,11 +66,11 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		}
 	}
 	timestamp := int64(0)
-	if ts := md.Get("timestamp"); len(ts) > 0 {
+	if ts := md.Get(KeyTimestamp); len(ts) > 0 {
 		timestamp, _ = strconv.ParseInt(ts[0], 10, 64)
 	}
 	network := common.Network_NETWORK_UNSPECIFIED
-	if net := md.Get("network"); len(net) > 0 {
+	if net := md.Get(KeyNetwork); len(net) > 0 {
 		if i, err := strconv.Atoi(net[0]); err != nil {
 			network = common.Network(common.Network_value[net[0]])
 		} else {
@@ -51,35 +78,35 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		}
 	}
 	debug := false
-	if b := md.Get("is_debug"); len(b) > 0 && Debug != "" {
+	if b := md.Get(KeyIsDebug); len(b) > 0 && Debug != "" {
 		debug, _ = strconv.ParseBool(b[0])
 	}
 
 	return &common.Metadata{
-		Token:      strings.Join(md["token"], ""),
-		Package:    strings.Join(md["package"], ""),
-		Version:    strings.Join(md["version"], ""),
-		OsVersion:  strings.Join(md["os_version"], ""),
-		Brand:      strings.Join(md["brand"], ""),
-		Model:      strings.Join(md["model"], ""),
-		UserAgent:  strings.Join(md["user_agent"], ""),
-		DeviceId:   strings.Join(md["device_id"], ""),
+		Token:      strings.Join(md[KeyToken], ""),
+		Package:    strings.Join(md[KeyPackage], ""),
+		Version:    strings.Join(md[KeyVersion], ""),
+		OsVersion:  strings.Join(md[KeyOSVersion], ""),
+		Brand:      strings.Join(md[KeyBrand], ""),
+		Model:      strings.Join(md[KeyModel], ""),
+		UserAgent:  strings.Join(md[KeyUserAgent], ""),
+		DeviceId:   strings.Join(md[KeyDeviceID], ""),
 		Platform:   platform,
 		Timestamp:  timestamp,
 		IsEmulator: emulator,
 		IsDebug:    debug,
 		Network:    network,
 		ClientIp:   clientIP,
-		DeviceMac:  strings.Join(md["device_mac"], ""),
-		Latitude:   strings.Join(md["latitude"], ""),
-		Longitude:  strings.Join(md["longitude"], ""),
-		Locale:     strings.Join(md["locale"], ""),
-		Channel:    strings.Join(md["channel"], ""),
-		Product:    strings.Join(md["product"], ""),
-		TraceId:    strings.Join(md["trace_id"], ""),
-		RiskId:     strings.Join(md["risk_id"], ""),
-		Uuid:       strings.Join(md["uuid"], ""),
-		Udid:       strings.Join(md["udid"], ""),
-		AndroidId:  strings.Join(md["android_id"], ""),
+		DeviceMac:  strings.Join(md[KeyDeviceMac], ""),
+		Latitude:   strings.Join(md[KeyLatitude], ""),
+		Longitude:  strings.Join(md[KeyLongitude], ""),
+		Locale:     strings.Join(md[KeyLocale], ""),
+		Channel:    strings.Join(md[KeyChannel], ""),
+		Product:    strings.Join(md[KeyProduct], ""),
+		TraceId:    strings.Join(md[KeyTraceID], ""),
+		RiskId:     strings.Join(md[KeyRiskID], ""),
+		Uuid:       strings.Join(md[KeyUUID], ""),
+		Udid:       strings.Join(md[KeyUDID], ""),
+		AndroidId:  strings.Join(md[KeyAndroidID], ""),
 	}
 }

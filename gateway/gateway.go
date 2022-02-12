@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/textproto"
 
+	md "github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/util/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
@@ -27,7 +28,22 @@ func New(opts []runtime.ServeMuxOption) *runtime.ServeMux {
 }
 
 func URLQueryMetadata(_ context.Context, r *http.Request) metadata.MD {
-	return metadata.MD(r.URL.Query())
+	queryMD := make(metadata.MD, len(r.URL.Query()))
+	for k, v := range r.URL.Query() {
+		switch k {
+		case md.KeyToken,
+			md.KeyPlatform, md.KeyNetwork,
+			md.KeyPackage, md.KeyVersion,
+			md.KeyOSVersion, md.KeyBrand, md.KeyModel, md.KeyDeviceID,
+			md.KeyTimestamp, md.KeyIsEmulator, md.KeyIsDebug,
+			md.KeyLatitude, md.KeyLongitude, md.KeyLocale,
+			md.KeyChannel, md.KeyProduct,
+			md.KeyTraceID,
+			md.KeyRiskID, md.KeyUUID, md.KeyUDID, md.KeyUserAgent, md.KeyDeviceMac, md.KeyAndroidID:
+			queryMD[k] = v
+		}
+	}
+	return queryMD
 }
 
 func ProtoErrorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler,
@@ -35,19 +51,19 @@ func ProtoErrorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler run
 	w.Header().Del("Trailer")
 	w.Header().Set("Content-Type", marshaler.ContentType())
 
-	md, ok := runtime.ServerMetadataFromContext(ctx)
+	ctxMD, ok := runtime.ServerMetadataFromContext(ctx)
 	if !ok {
 		// TODO
 	}
 	// Metadata
-	for k, vs := range md.HeaderMD {
+	for k, vs := range ctxMD.HeaderMD {
 		nk := fmt.Sprintf("%s%s", runtime.MetadataHeaderPrefix, k)
 		for _, v := range vs {
 			w.Header().Add(nk, v)
 		}
 	}
 	// Trailer header
-	for k := range md.TrailerMD {
+	for k := range ctxMD.TrailerMD {
 		tk := textproto.CanonicalMIMEHeaderKey(fmt.Sprintf("%s%s", runtime.MetadataTrailerPrefix, k))
 		w.Header().Add("Trailer", tk)
 	}
@@ -69,7 +85,7 @@ func ProtoErrorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler run
 	}
 
 	// Trailer
-	for k, vs := range md.TrailerMD {
+	for k, vs := range ctxMD.TrailerMD {
 		tk := fmt.Sprintf("%s%s", runtime.MetadataTrailerPrefix, k)
 		for _, v := range vs {
 			w.Header().Add(tk, v)
