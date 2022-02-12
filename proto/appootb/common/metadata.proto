@@ -30,7 +30,7 @@ enum Platform {
   PLATFORM_H5      = 1; // H5
   PLATFORM_BROWSER = 2; // Browser
   PLATFORM_CHROME  = 4; // ChromeOS
-  PLATFORM_WEB     = 7; // WEB，H5 | Browser | ChromeOS
+  PLATFORM_WEB     = 7; // WEB, H5 | Browser | ChromeOS
 
   PLATFORM_LINUX   = 16;  // Linux
   PLATFORM_WINDOWS = 32;  // Windows
