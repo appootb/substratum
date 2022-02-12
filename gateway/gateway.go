@@ -7,12 +7,12 @@ import (
 	"net/textproto"
 
 	"github.com/appootb/substratum/util/jsonpb"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 var DefaultOptions = []runtime.ServeMuxOption{
@@ -81,7 +81,7 @@ func StreamErrorHandler(ctx context.Context, err error) *runtime.StreamError {
 	// TODO
 	code := codes.Unknown
 	message := err.Error()
-	var details []*any.Any
+	var details []*anypb.Any
 	if s, ok := status.FromError(err); ok {
 		code = s.Code()
 		message = s.Message()
