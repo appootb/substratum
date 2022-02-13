@@ -7,9 +7,9 @@ import (
 	"github.com/appootb/substratum/plugin/credential"
 	"github.com/appootb/substratum/proto/go/permission"
 	"github.com/appootb/substratum/proto/go/secret"
-	"github.com/appootb/substratum/util/datetime"
 	"github.com/appootb/substratum/util/hash"
 	"github.com/gbrlsnchs/jwt/v3"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func init() {
@@ -26,8 +26,8 @@ func TestJwtToken_Generate(t *testing.T) {
 		Account:   123456789,
 		KeyId:     hash.Sum("TestJwtToken_Generate"),
 		Subject:   permission.Subject_MOBILE,
-		IssuedAt:  datetime.WithTime(now).Proto(),
-		ExpiredAt: datetime.WithTime(now.Add(time.Hour)).Proto(),
+		IssuedAt:  timestamppb.New(now),
+		ExpiredAt: timestamppb.New(now.Add(time.Hour)),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -50,8 +50,8 @@ func TestJwtToken_Expire(t *testing.T) {
 		Account:   123456789,
 		KeyId:     hash.Sum("TestJwtToken_Expire"),
 		Subject:   permission.Subject_SERVER,
-		IssuedAt:  datetime.WithTime(now.Add(-time.Hour)).Proto(),
-		ExpiredAt: datetime.WithTime(now.Add(-time.Minute)).Proto(),
+		IssuedAt:  timestamppb.New(now.Add(-time.Hour)),
+		ExpiredAt: timestamppb.New(now.Add(-time.Minute)),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -72,8 +72,8 @@ func TestJwtToken_Before(t *testing.T) {
 		Account:   123456789,
 		KeyId:     hash.Sum("TestJwtToken_Before"),
 		Subject:   permission.Subject_PC,
-		IssuedAt:  datetime.WithTime(now.Add(time.Minute * 2)).Proto(),
-		ExpiredAt: datetime.WithTime(now.Add(time.Hour)).Proto(),
+		IssuedAt:  timestamppb.New(now.Add(time.Minute * 2)),
+		ExpiredAt: timestamppb.New(now.Add(time.Hour)),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -93,8 +93,8 @@ func TestJwtToken_TokenNotBefore(t *testing.T) {
 		Account:   123456789,
 		KeyId:     hash.Sum("TestJwtToken_TokenNotBefore"),
 		Subject:   permission.Subject_GUEST,
-		IssuedAt:  datetime.WithTime(now.Add(time.Minute * 2)).Proto(),
-		ExpiredAt: datetime.WithTime(now.Add(time.Hour)).Proto(),
+		IssuedAt:  timestamppb.New(now.Add(time.Minute * 2)),
+		ExpiredAt: timestamppb.New(now.Add(time.Hour)),
 	})
 	if err != nil {
 		t.Fatal(err)

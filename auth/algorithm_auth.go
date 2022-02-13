@@ -11,9 +11,9 @@ import (
 	"github.com/appootb/substratum/proto/go/permission"
 	"github.com/appootb/substratum/proto/go/secret"
 	"github.com/appootb/substratum/service"
-	"github.com/appootb/substratum/util/datetime"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type TokenParser interface {
@@ -66,8 +66,8 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 	anonymousMethod := n.IsAnonymousMethod(serviceMethod)
 	emptySecret := &secret.Info{
 		Roles:     []string{},
-		IssuedAt:  datetime.WithTime(dt).Proto(),
-		ExpiredAt: datetime.WithTime(dt).Proto(),
+		IssuedAt:  timestamppb.New(dt),
+		ExpiredAt: timestamppb.New(dt),
 	}
 
 	// Get request metadata.

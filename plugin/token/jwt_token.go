@@ -18,9 +18,9 @@ import (
 	"github.com/appootb/substratum/proto/go/permission"
 	"github.com/appootb/substratum/proto/go/secret"
 	"github.com/appootb/substratum/token"
-	"github.com/appootb/substratum/util/datetime"
 	"github.com/gbrlsnchs/jwt/v3"
 	"github.com/gbrlsnchs/jwt/v3/jwtutil"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -36,12 +36,12 @@ func Init() {
 type JwtToken struct{}
 
 func (t *JwtToken) sign(s *secret.Info, key []byte) (string, error) {
-	issuedAt := datetime.FromProtoTime(s.GetIssuedAt()).Time
+	issuedAt := s.GetIssuedAt().AsTime()
 	payload := &jwt.Payload{
 		Issuer:         s.GetIssuer(),
 		Subject:        s.GetSubject().String(),
 		Audience:       s.GetRoles(),
-		ExpirationTime: jwt.NumericDate(datetime.FromProtoTime(s.GetExpiredAt()).Time),
+		ExpirationTime: jwt.NumericDate(s.GetExpiredAt().AsTime()),
 		NotBefore:      jwt.NumericDate(issuedAt.Add(-time.Minute)),
 		IssuedAt:       jwt.NumericDate(issuedAt),
 		JWTID:          strconv.FormatUint(s.GetAccount(), 10),
@@ -130,8 +130,8 @@ func (t *JwtToken) Generate(s *secret.Info) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	dur := datetime.FromProtoTime(s.GetExpiredAt()).Time.Sub(datetime.FromProtoTime(s.GetIssuedAt()).Time)
-	if err := credential.ClientImplementor().Add(s.GetAccount(), s.GetKeyId(), key, dur); err != nil {
+	dur := s.GetExpiredAt().AsTime().Sub(s.GetIssuedAt().AsTime())
+	if err = credential.ClientImplementor().Add(s.GetAccount(), s.GetKeyId(), key, dur); err != nil {
 		return "", err
 	}
 	return t.sign(s, key)
@@ -146,18 +146,18 @@ func (t *JwtToken) Refresh(s *secret.Info) (string, error) {
 	if s.GetType() == secret.Type_SERVER {
 		key, err = credential.ServerImplementor().Get(s.GetKeyId())
 	} else {
-		dur := datetime.FromProtoTime(s.GetExpiredAt()).Time.Sub(datetime.FromProtoTime(s.GetIssuedAt()).Time)
+		dur := s.GetExpiredAt().AsTime().Sub(s.GetIssuedAt().AsTime())
 		key, err = credential.ClientImplementor().Refresh(s.GetAccount(), s.GetKeyId(), dur)
 	}
 	if err != nil {
 		return "", err
 	}
 	// Calculate new timestamp.
-	issuedAt := datetime.FromProtoTime(s.GetIssuedAt()).Time
-	expiredAt := datetime.FromProtoTime(s.GetExpiredAt()).Time
+	issuedAt := s.GetIssuedAt().AsTime()
+	expiredAt := s.GetExpiredAt().AsTime()
 	now := time.Now()
-	s.IssuedAt = datetime.WithTime(now).Proto()
-	s.ExpiredAt = datetime.WithTime(now.Add(expiredAt.Sub(issuedAt))).Proto()
+	s.IssuedAt = timestamppb.New(now)
+	s.ExpiredAt = timestamppb.New(now.Add(expiredAt.Sub(issuedAt)))
 	return t.sign(s, key)
 }
 
@@ -227,14 +227,14 @@ func (t *JwtToken) ParseRaw(token string) (*secret.Info, error) {
 		sub = permission.Subject(i)
 	}
 	return &secret.Info{
-		Type:      secret.Type(secret.Type_value[header.ContentType]),
+		Type:      secret.Type_value[header.ContentType],
 		Algorithm: alg,
 		Subject:   sub,
 		Issuer:    payload.Issuer,
 		Account:   accountID,
 		KeyId:     keyID,
 		Roles:     payload.Audience,
-		IssuedAt:  datetime.WithTime(payload.IssuedAt.Time).Proto(),
-		ExpiredAt: datetime.WithTime(payload.ExpirationTime.Time).Proto(),
+		IssuedAt:  timestamppb.New(payload.IssuedAt.Time),
+		ExpiredAt: timestamppb.New(payload.ExpirationTime.Time),
 	}, nil
 }

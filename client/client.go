@@ -11,10 +11,10 @@ import (
 	"github.com/appootb/substratum/proto/go/secret"
 	"github.com/appootb/substratum/service"
 	"github.com/appootb/substratum/token"
-	"github.com/appootb/substratum/util/datetime"
 	"github.com/appootb/substratum/util/iphelper"
 	"github.com/appootb/substratum/util/random"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func WithContext(ctx context.Context, keyID int64) context.Context {
@@ -52,8 +52,8 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 		KeyId:     keyID,
 		Roles:     []string{},
 		Subject:   subject,
-		IssuedAt:  datetime.WithTime(now).Proto(),
-		ExpiredAt: datetime.WithTime(now.Add(time.Minute)).Proto(),
+		IssuedAt:  timestamppb.New(now),
+		ExpiredAt: timestamppb.New(now.Add(time.Minute)),
 	}
 	val, _ := token.Implementor().Generate(secretInfo)
 	md["token"] = []string{val}
@@ -80,8 +80,8 @@ func WithMetadata(md *common.Metadata, keyID int64) context.Context {
 		KeyId:     keyID,
 		Roles:     []string{},
 		Subject:   permission.Subject_SERVER,
-		IssuedAt:  datetime.WithTime(now).Proto(),
-		ExpiredAt: datetime.WithTime(now.Add(time.Minute)).Proto(),
+		IssuedAt:  timestamppb.New(now),
+		ExpiredAt: timestamppb.New(now.Add(time.Minute)),
 	}
 	val, _ := token.Implementor().Generate(secretInfo)
 	traceID := md.GetTraceId()

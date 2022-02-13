@@ -80,7 +80,7 @@ func ProtoErrorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler run
 	if err != nil {
 		buf = []byte(`{"error": "failed to marshal error message"}`)
 	}
-	if _, err := w.Write(buf); err != nil {
+	if _, err = w.Write(buf); err != nil {
 		// TODO
 	}
 
