@@ -227,7 +227,7 @@ func (t *JwtToken) ParseRaw(token string) (*secret.Info, error) {
 		sub = permission.Subject(i)
 	}
 	return &secret.Info{
-		Type:      secret.Type_value[header.ContentType],
+		Type:      secret.Type(secret.Type_value[header.ContentType]),
 		Algorithm: alg,
 		Subject:   sub,
 		Issuer:    payload.Issuer,
