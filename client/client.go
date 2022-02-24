@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func WithContext(ctx context.Context, keyID int64) context.Context {
+func WithContext(ctx context.Context, keyID int64, product ...string) context.Context {
 	now := time.Now()
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -56,6 +56,9 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 		ExpiredAt: datetime.WithTime(now.Add(time.Minute)).Proto(),
 	}
 	val, _ := token.Implementor().Generate(secretInfo)
+	if len(product) > 0 && product[0] != "" {
+		md["product"] = []string{product[0]}
+	}
 	md["token"] = []string{val}
 	md["platform"] = []string{strconv.Itoa(int(platform))}
 	md["timestamp"] = []string{strconv.FormatInt(now.UnixNano()/1e6, 10)}
