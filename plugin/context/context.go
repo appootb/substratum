@@ -13,8 +13,15 @@ import (
 	"github.com/appootb/substratum/task"
 )
 
-func WithImplementContext(ctx context.Context, component, product string) context.Context {
-	return client.ContextWithConnPool(discovery.ContextWithDiscovery(logger.ContextWithLogger(
-		queue.ContextWithQueueService(storage.ContextWithStorage(task.ContextWithTaskService(
-			metadata.ContextWithProduct(service.ContextWithComponentName(ctx, component), product)))))))
+func WithImplementContext(ctx context.Context, component string, product ...string) context.Context {
+	if len(product) > 0 && product[0] != "" {
+		ctx = metadata.ContextWithProduct(ctx, product[0])
+	}
+	return client.ContextWithConnPool(
+		discovery.ContextWithDiscovery(
+			logger.ContextWithLogger(
+				queue.ContextWithQueueService(
+					storage.ContextWithStorage(
+						task.ContextWithTaskService(
+							service.ContextWithComponentName(ctx, component)))))))
 }

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	appootb "github.com/appootb/substratum/metadata"
+	md "github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/proto/go/common"
 	"github.com/appootb/substratum/proto/go/permission"
 	"github.com/appootb/substratum/proto/go/secret"
@@ -17,14 +17,18 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func WithContext(ctx context.Context, keyID int64) context.Context {
+const (
+	DefaultIssuer = "appootb"
+)
+
+func WithContext(ctx context.Context, keyID int64, product ...string) context.Context {
 	now := time.Now()
-	md, ok := metadata.FromIncomingContext(ctx)
+	outgoingMD, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		if reqMD := appootb.RequestMetadata(ctx); reqMD != nil {
+		if reqMD := md.RequestMetadata(ctx); reqMD != nil {
 			return WithMetadata(reqMD, keyID)
 		}
-		md = metadata.MD{}
+		outgoingMD = metadata.MD{}
 	}
 	account := uint64(0)
 	subject := permission.Subject_SERVER
@@ -33,21 +37,17 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 		subject |= accountSecret.GetSubject()
 	}
 	platform := common.Platform_PLATFORM_SERVER
-	if pf := md.Get("platform"); len(pf) > 0 {
+	if pf := outgoingMD.Get(md.KeyPlatform); len(pf) > 0 {
 		if i, err := strconv.Atoi(pf[0]); err != nil {
 			platform |= common.Platform(common.Platform_value[pf[0]])
 		} else {
 			platform |= common.Platform(i)
 		}
 	}
-	issuer := "appootb"
-	if pkg := md.Get("package"); len(pkg) > 0 {
-		issuer = pkg[0]
-	}
 	secretInfo := &secret.Info{
 		Type:      secret.Type_SERVER,
 		Algorithm: secret.Algorithm_HMAC,
-		Issuer:    issuer,
+		Issuer:    DefaultIssuer,
 		Account:   account,
 		KeyId:     keyID,
 		Roles:     []string{},
@@ -55,62 +55,67 @@ func WithContext(ctx context.Context, keyID int64) context.Context {
 		IssuedAt:  timestamppb.New(now),
 		ExpiredAt: timestamppb.New(now.Add(time.Minute)),
 	}
+	if pkg := outgoingMD.Get(md.KeyPackage); len(pkg) > 0 {
+		secretInfo.Issuer = pkg[0]
+	}
 	val, _ := token.Implementor().Generate(secretInfo)
-	md["token"] = []string{val}
-	md["platform"] = []string{strconv.Itoa(int(platform))}
-	md["timestamp"] = []string{strconv.FormatInt(now.UnixNano()/1e6, 10)}
-	md["x-forwarded-for"] = append(md.Get("x-forwarded-for"), iphelper.LocalIP())
-	return metadata.NewOutgoingContext(ctx, md)
+	if len(product) > 0 && product[0] != "" {
+		outgoingMD[md.KeyProduct] = []string{product[0]}
+	}
+	outgoingMD[md.KeyToken] = []string{val}
+	outgoingMD[md.KeyPlatform] = []string{strconv.Itoa(int(platform))}
+	outgoingMD[md.KeyTimestamp] = []string{strconv.FormatInt(now.UnixNano()/1e6, 10)}
+	outgoingMD[md.KeyOriginalIP] = append(outgoingMD.Get(md.KeyOriginalIP), iphelper.LocalIP())
+	return metadata.NewOutgoingContext(ctx, outgoingMD)
 }
 
-func WithMetadata(md *common.Metadata, keyID int64) context.Context {
+func WithMetadata(incomingMD *common.Metadata, keyID int64) context.Context {
 	now := time.Now()
-	issuer := "appootb"
-	if md.Package != "" {
-		issuer = md.GetPackage()
-	}
 	platform := common.Platform_PLATFORM_SERVER
-	if md.Platform != common.Platform_PLATFORM_UNSPECIFIED {
-		platform |= md.GetPlatform()
+	if incomingMD.Platform != common.Platform_PLATFORM_UNSPECIFIED {
+		platform |= incomingMD.GetPlatform()
 	}
 	secretInfo := &secret.Info{
 		Type:      secret.Type_SERVER,
 		Algorithm: secret.Algorithm_HMAC,
-		Issuer:    issuer,
+		Issuer:    DefaultIssuer,
 		KeyId:     keyID,
 		Roles:     []string{},
 		Subject:   permission.Subject_SERVER,
 		IssuedAt:  timestamppb.New(now),
 		ExpiredAt: timestamppb.New(now.Add(time.Minute)),
 	}
+	if incomingMD.Package != "" {
+		secretInfo.Issuer = incomingMD.GetPackage()
+	}
 	val, _ := token.Implementor().Generate(secretInfo)
-	traceID := md.GetTraceId()
+	traceID := incomingMD.GetTraceId()
 	if traceID == "" {
 		traceID = random.String(32)
 	}
 	outgoingMD := metadata.New(map[string]string{
-		"token":       val,
-		"package":     md.GetPackage(),
-		"version":     md.GetVersion(),
-		"os_version":  md.GetOsVersion(),
-		"brand":       md.GetBrand(),
-		"model":       md.GetModel(),
-		"device_id":   md.GetDeviceId(),
-		"platform":    strconv.Itoa(int(platform)),
-		"timestamp":   strconv.FormatInt(now.UnixNano()/1e6, 10),
-		"is_emulator": strconv.FormatBool(md.GetIsEmulator()),
-		"network":     md.GetNetwork().String(),
-		"latitude":    md.GetLatitude(),
-		"longitude":   md.GetLongitude(),
-		"locale":      md.GetLocale(),
-		"channel":     md.GetChannel(),
-		"product":     md.GetProduct(),
-		"trace_id":    traceID,
-		"risk_id":     md.GetRiskId(),
-		"uuid":        md.GetUuid(),
-		"udid":        md.GetUdid(),
-		"is_debug":    strconv.FormatBool(md.GetIsDebug()),
+		md.KeyToken:      val,
+		md.KeyPackage:    incomingMD.GetPackage(),
+		md.KeyVersion:    incomingMD.GetVersion(),
+		md.KeyOSVersion:  incomingMD.GetOsVersion(),
+		md.KeyBrand:      incomingMD.GetBrand(),
+		md.KeyModel:      incomingMD.GetModel(),
+		md.KeyDeviceID:   incomingMD.GetDeviceId(),
+		md.KeyPlatform:   strconv.Itoa(int(platform)),
+		md.KeyTimestamp:  strconv.FormatInt(now.UnixNano()/1e6, 10),
+		md.KeyIsEmulator: strconv.FormatBool(incomingMD.GetIsEmulator()),
+		md.KeyNetwork:    incomingMD.GetNetwork().String(),
+		md.KeyLatitude:   incomingMD.GetLatitude(),
+		md.KeyLongitude:  incomingMD.GetLongitude(),
+		md.KeyLocale:     incomingMD.GetLocale(),
+		md.KeyChannel:    incomingMD.GetChannel(),
+		md.KeyProduct:    incomingMD.GetProduct(),
+		md.KeyTraceID:    traceID,
+		md.KeyRiskID:     incomingMD.GetRiskId(),
+		md.KeyUUID:       incomingMD.GetUuid(),
+		md.KeyUDID:       incomingMD.GetUdid(),
+		md.KeyIsDebug:    strconv.FormatBool(incomingMD.GetIsDebug()),
 	})
-	outgoingMD.Set("x-forwarded-for", md.GetClientIp(), iphelper.LocalIP())
+	outgoingMD.Set(md.KeyOriginalIP, incomingMD.GetClientIp(), iphelper.LocalIP())
 	return metadata.NewOutgoingContext(context.Background(), outgoingMD)
 }

@@ -36,6 +36,7 @@ const (
 	KeyUserAgent  = "user_agent"
 	KeyDeviceMac  = "device_mac"
 	KeyAndroidID  = "android_id"
+	KeyOriginalIP = "x-forwarded-for"
 )
 
 var (
@@ -48,7 +49,7 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		return nil
 	}
 	clientIP := ""
-	if ips := md.Get("x-forwarded-for"); len(ips) > 0 {
+	if ips := md.Get(KeyOriginalIP); len(ips) > 0 {
 		clientIP = ips[0]
 	} else if p, ok := peer.FromContext(ctx); ok {
 		clientIP = p.Addr.String()

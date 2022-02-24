@@ -28,6 +28,10 @@ func New(opts ...Option) Base {
 	return base
 }
 
+func (m Base) RpcContext(keyID int64, product ...string) context.Context {
+	return client.WithContext(m.Context(), keyID, product...)
+}
+
 func (m Base) Context() context.Context {
 	return m.ctx
 }
