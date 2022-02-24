@@ -25,7 +25,7 @@ func WithContext(ctx context.Context, keyID int64, product ...string) context.Co
 	now := time.Now()
 	outgoingMD, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		if reqMD := md.RequestMetadata(ctx); reqMD != nil {
+		if reqMD := md.IncomingMetadata(ctx); reqMD != nil {
 			return WithMetadata(reqMD, keyID)
 		}
 		outgoingMD = metadata.MD{}

@@ -37,7 +37,7 @@ func (m Base) Context() context.Context {
 }
 
 func (m Base) Metadata() *common.Metadata {
-	return metadata.RequestMetadata(m.ctx)
+	return metadata.IncomingMetadata(m.ctx)
 }
 
 func (m Base) AccountSecret() *secret.Info {

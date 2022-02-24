@@ -14,7 +14,7 @@ type Helper struct {
 }
 
 func newHelper(ctx context.Context) *Helper {
-	md := metadata.RequestMetadata(ctx)
+	md := metadata.IncomingMetadata(ctx)
 	md.Token = ""
 	return &Helper{
 		Logger: impl,

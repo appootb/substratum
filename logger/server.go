@@ -34,7 +34,7 @@ type loggerKey struct{}
 
 func ContextWithLogger(ctx context.Context) context.Context {
 	return context.WithValue(ctx, loggerKey{}, &Helper{
-		md:     md.RequestMetadata(ctx),
+		md:     md.IncomingMetadata(ctx),
 		Logger: impl,
 	})
 }

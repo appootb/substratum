@@ -41,7 +41,7 @@ func ContextWithProduct(ctx context.Context, product string) context.Context {
 	})
 }
 
-func RequestMetadata(ctx context.Context) *common.Metadata {
+func IncomingMetadata(ctx context.Context) *common.Metadata {
 	if md := ctx.Value(metadataKey{}); md != nil {
 		return md.(*common.Metadata)
 	}

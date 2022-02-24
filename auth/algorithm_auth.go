@@ -71,7 +71,7 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 	}
 
 	// Get request metadata.
-	md := metadata.RequestMetadata(ctx)
+	md := metadata.IncomingMetadata(ctx)
 	if md == nil {
 		return nil, status.Error(codes.Unauthenticated, "request metadata not set")
 	}

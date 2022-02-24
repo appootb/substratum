@@ -17,7 +17,7 @@ func WithContext(ctx context.Context) Option {
 		component := service.ComponentNameFromContext(ctx)
 		base.rw = storage.ContextStorage(ctx, component).GetDB()
 		base.ro = storage.ContextStorage(ctx, component).GetDB(true)
-		if md := metadata.RequestMetadata(ctx); md != nil && md.GetIsDebug() {
+		if md := metadata.IncomingMetadata(ctx); md != nil && md.GetIsDebug() {
 			base.rw = base.rw.Debug()
 			base.ro = base.ro.Debug()
 		}
