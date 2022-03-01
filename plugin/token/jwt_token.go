@@ -36,12 +36,12 @@ func Init() {
 type JwtToken struct{}
 
 func (t *JwtToken) sign(s *secret.Info, key []byte) (string, error) {
-	issuedAt := s.GetIssuedAt().AsTime()
+	issuedAt := s.GetIssuedAt().AsTime().In(time.Local)
 	payload := &jwt.Payload{
 		Issuer:         s.GetIssuer(),
 		Subject:        s.GetSubject().String(),
 		Audience:       s.GetRoles(),
-		ExpirationTime: jwt.NumericDate(s.GetExpiredAt().AsTime()),
+		ExpirationTime: jwt.NumericDate(s.GetExpiredAt().AsTime().In(time.Local)),
 		NotBefore:      jwt.NumericDate(issuedAt.Add(-time.Minute)),
 		IssuedAt:       jwt.NumericDate(issuedAt),
 		JWTID:          strconv.FormatUint(s.GetAccount(), 10),
@@ -153,8 +153,8 @@ func (t *JwtToken) Refresh(s *secret.Info) (string, error) {
 		return "", err
 	}
 	// Calculate new timestamp.
-	issuedAt := s.GetIssuedAt().AsTime()
-	expiredAt := s.GetExpiredAt().AsTime()
+	issuedAt := s.GetIssuedAt().AsTime().In(time.Local)
+	expiredAt := s.GetExpiredAt().AsTime().In(time.Local)
 	now := time.Now()
 	s.IssuedAt = timestamppb.New(now)
 	s.ExpiredAt = timestamppb.New(now.Add(expiredAt.Sub(issuedAt)))
