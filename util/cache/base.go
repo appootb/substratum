@@ -39,14 +39,14 @@ func (c *base) set(key, value interface{}, expire time.Duration) {
 	}
 
 	// Add new item
-	entry := &entry{
+	item := &entry{
 		key:   key,
 		value: value,
 	}
 	if expire > 0 {
-		entry.expire = time.Now().Add(expire)
+		item.expire = time.Now().Add(expire)
 	}
-	c.items[key] = c.evictList.PushFront(entry)
+	c.items[key] = c.evictList.PushFront(item)
 
 	// Verify size not exceeded
 	if c.evictList.Len() > c.size {
@@ -59,20 +59,23 @@ func (c *base) set(key, value interface{}, expire time.Duration) {
 
 func (c *base) get(key interface{}) (interface{}, bool) {
 	if el, ok := c.items[key]; ok {
-		entry := el.Value.(*entry)
-		if entry.ExpiredAt(time.Now()) {
+		item := el.Value.(*entry)
+		if item.ExpiredAt(time.Now()) {
 			c.removeElement(el)
 			return nil, false
 		}
 		c.evictList.MoveToFront(el)
-		return entry.value, true
+		return item.value, true
 	}
 	return nil, false
 }
 
-func (c *base) peek(key interface{}) (interface{}, bool) {
+func (c *base) peek(key interface{}, withExpired ...bool) (interface{}, bool) {
 	if el, ok := c.items[key]; ok {
-		return el.Value.(*entry).value, true
+		item := el.Value.(*entry)
+		if (len(withExpired) > 0 && withExpired[0]) || !item.ExpiredAt(time.Now()) {
+			return item.value, true
+		}
 	}
 	return nil, false
 }
@@ -93,8 +96,8 @@ func (c *base) contain(key interface{}) bool {
 	return !el.Value.(*entry).ExpiredAt(time.Now())
 }
 
-func (c *base) length(withoutExpired ...bool) int {
-	if len(withoutExpired) == 0 || !withoutExpired[0] {
+func (c *base) length(withExpired ...bool) int {
+	if len(withExpired) > 0 && withExpired[0] {
 		return c.evictList.Len()
 	}
 
@@ -108,14 +111,13 @@ func (c *base) length(withoutExpired ...bool) int {
 	return length
 }
 
-func (c *base) keys(withoutExpired ...bool) []interface{} {
+func (c *base) keys(withExpired ...bool) []interface{} {
+	now := time.Now()
 	keys := make([]interface{}, 0, len(c.items))
 	for el := c.evictList.Back(); el != nil; el = el.Prev() {
-		entry := el.Value.(*entry)
-		if len(withoutExpired) == 0 || !withoutExpired[0] {
-			keys = append(keys, entry.key)
-		} else if !entry.ExpiredAt(time.Now()) {
-			keys = append(keys, entry.key)
+		item := el.Value.(*entry)
+		if (len(withExpired) > 0 && withExpired[0]) || !item.ExpiredAt(now) {
+			keys = append(keys, item.key)
 		}
 	}
 	return keys
@@ -130,6 +132,6 @@ func (c *base) purge() {
 
 func (c *base) removeElement(el *list.Element) {
 	c.evictList.Remove(el)
-	entry := el.Value.(*entry)
-	delete(c.items, entry.key)
+	item := el.Value.(*entry)
+	delete(c.items, item.key)
 }

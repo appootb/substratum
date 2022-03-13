@@ -21,7 +21,7 @@ type syncLocker struct {
 
 func (sg *syncLocker) Invoke(key interface{}, fn LoaderFunc) (interface{}, error) {
 	sg.mu.Lock()
-	if v, ok := sg.cache.Peek(key); ok {
+	if v, ok := sg.cache.Peek(key, false); ok {
 		sg.mu.Unlock()
 		return v, nil
 	}
@@ -40,7 +40,9 @@ func (sg *syncLocker) Invoke(key interface{}, fn LoaderFunc) (interface{}, error
 
 	// do invoke, and close caller channel
 	c.val, c.dur, c.err = fn(key)
-	sg.cache.Set(key, c.val, c.dur)
+	if c.err == nil && c.dur != 0 {
+		sg.cache.Set(key, c.val, c.dur)
+	}
 	close(c.ch)
 	// remove from caller map
 	sg.mu.Lock()

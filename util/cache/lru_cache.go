@@ -41,9 +41,9 @@ func (c *LRUCache) GetOrLoad(key interface{}, loader LoaderFunc) (interface{}, e
 }
 
 // Peek returns value without updating the "recently used"-ness of the key.
-func (c *LRUCache) Peek(key interface{}) (interface{}, bool) {
+func (c *LRUCache) Peek(key interface{}, withExpired ...bool) (interface{}, bool) {
 	c.mu.Lock()
-	value, ok := c.base.peek(key)
+	value, ok := c.base.peek(key, withExpired...)
 	c.mu.Unlock()
 	return value, ok
 }
@@ -65,17 +65,17 @@ func (c *LRUCache) Contain(key interface{}) bool {
 }
 
 // Len returns the number of items in the cache.
-func (c *LRUCache) Len(withoutExpired ...bool) int {
+func (c *LRUCache) Len(withExpired ...bool) int {
 	c.mu.RLock()
-	length := c.base.length(withoutExpired...)
+	length := c.base.length(withExpired...)
 	c.mu.RUnlock()
 	return length
 }
 
 // Keys returns a slice of the keys in the cache.
-func (c *LRUCache) Keys(withoutExpired ...bool) []interface{} {
+func (c *LRUCache) Keys(withExpired ...bool) []interface{} {
 	c.mu.RLock()
-	keys := c.base.keys(withoutExpired...)
+	keys := c.base.keys(withExpired...)
 	c.mu.RUnlock()
 	return keys
 }

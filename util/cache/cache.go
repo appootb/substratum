@@ -9,11 +9,17 @@ type EvictType string
 
 const (
 	LRU EvictType = "lru"
+	LFU           = "lfu"
 	ARC           = "arc"
 )
 
 const (
 	DefaultSize = 100
+)
+
+const (
+	DurationPersistence = -1
+	DurationMemoryLock  = 0
 )
 
 // Cache is the interface for LRU/ARC cache.
@@ -28,7 +34,7 @@ type Cache interface {
 	GetOrLoad(key interface{}, loader LoaderFunc) (interface{}, error)
 
 	// Peek returns value without updating the "recently used"-ness of the key.
-	Peek(key interface{}) (interface{}, bool)
+	Peek(key interface{}, withExpired ...bool) (interface{}, bool)
 
 	// Del the specified key from the cache.
 	Del(key interface{}) bool
@@ -37,10 +43,10 @@ type Cache interface {
 	Contain(key interface{}) bool
 
 	// Len returns the number of items in the cache.
-	Len(withoutExpired ...bool) int
+	Len(withExpired ...bool) int
 
 	// Keys returns a slice of the keys in the cache.
-	Keys(withoutExpired ...bool) []interface{}
+	Keys(withExpired ...bool) []interface{}
 
 	// Purge clears the cache entities.
 	Purge()

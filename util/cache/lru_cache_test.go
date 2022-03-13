@@ -19,7 +19,7 @@ func BenchmarkLRU_Rand(b *testing.B) {
 	var hit, miss int
 	for i := 0; i < 2*b.N; i++ {
 		if i%2 == 0 {
-			c.Set(trace[i], trace[i], 0)
+			c.Set(trace[i], trace[i], DurationPersistence)
 		} else {
 			_, ok := c.Get(trace[i])
 			if ok {
@@ -47,7 +47,7 @@ func BenchmarkLRU_Freq(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		c.Set(trace[i], trace[i], 0)
+		c.Set(trace[i], trace[i], DurationPersistence)
 	}
 	var hit, miss int
 	for i := 0; i < b.N; i++ {
@@ -65,7 +65,7 @@ func TestLRU(t *testing.T) {
 	c := New(LRU, WithSize(128))
 
 	for i := 0; i < 256; i++ {
-		c.Set(i, i, 0)
+		c.Set(i, i, DurationPersistence)
 	}
 	if c.Len() != 128 {
 		t.Fatalf("bad len: %v", c.Len())
@@ -116,13 +116,13 @@ func TestLRU(t *testing.T) {
 func TestLRUContains(t *testing.T) {
 	c := New(LRU, WithSize(2))
 
-	c.Set(1, 1, 0)
-	c.Set(2, 2, 0)
+	c.Set(1, 1, DurationPersistence)
+	c.Set(2, 2, DurationPersistence)
 	if !c.Contain(1) {
 		t.Fatal("1 should be contained")
 	}
 
-	c.Set(3, 3, 0)
+	c.Set(3, 3, DurationPersistence)
 	if c.Contain(1) {
 		t.Fatal("Contains should not have updated recent-ness of 1")
 	}
@@ -131,13 +131,13 @@ func TestLRUContains(t *testing.T) {
 func TestLRUPeek(t *testing.T) {
 	c := New(LRU, WithSize(2))
 
-	c.Set(1, 1, 0)
-	c.Set(2, 2, 0)
+	c.Set(1, 1, DurationPersistence)
+	c.Set(2, 2, DurationPersistence)
 	if v, ok := c.Peek(1); !ok || v != 1 {
 		t.Errorf("1 should be set to 1: %v, %v", v, ok)
 	}
 
-	c.Set(3, 3, 0)
+	c.Set(3, 3, DurationPersistence)
 	if c.Contain(1) {
 		t.Errorf("should not have updated recent-ness of 1")
 	}
@@ -146,7 +146,7 @@ func TestLRUPeek(t *testing.T) {
 func TestLRUTimeout(t *testing.T) {
 	c := New(LRU, WithSize(2))
 
-	c.Set(1, 1, 0)
+	c.Set(1, 1, DurationPersistence)
 	c.Set(2, 2, time.Millisecond*100)
 	if !c.Contain(1) || !c.Contain(2) {
 		t.Fatal("1 and 2 should be contained")
@@ -162,7 +162,7 @@ func TestLRUTimeout(t *testing.T) {
 		t.Fatalf("bad len: %v", c.Len())
 	}
 
-	c.Set(3, 3, 0)
+	c.Set(3, 3, DurationPersistence)
 	if !c.Contain(1) {
 		t.Fatal("Contains should not have updated recent-ness of 2")
 	}
@@ -172,7 +172,7 @@ func TestLRULoad(t *testing.T) {
 	count := 0
 	fn := func(key interface{}) (interface{}, time.Duration, error) {
 		count++
-		return 1, 0, nil
+		return 1, DurationPersistence, nil
 	}
 
 	c := New(LRU, WithSize(2))
@@ -191,7 +191,7 @@ func TestLRULoad(t *testing.T) {
 	wg.Wait()
 
 	if count != 1 {
-		t.Fatal("should be loaded only once")
+		t.Fatal("should be loaded only once", count)
 	}
 }
 
@@ -200,6 +200,7 @@ func TestGetOrLoad(t *testing.T) {
 	c.Set("BenchmarkGetOrLoad", "val", time.Second)
 	time.Sleep(time.Second)
 
+	count := 0
 	run := make(chan bool)
 	ready := sync.WaitGroup{}
 	done := sync.WaitGroup{}
@@ -212,9 +213,10 @@ func TestGetOrLoad(t *testing.T) {
 			ready.Done()
 			<-run
 
-			c.GetOrLoad("BenchmarkGetOrLoad", func(_ interface{}) (interface{}, time.Duration, error) {
+			_, _ = c.GetOrLoad("BenchmarkGetOrLoad", func(_ interface{}) (interface{}, time.Duration, error) {
 				time.Sleep(time.Second)
-				return "val", 0, nil
+				count++
+				return "val", DurationMemoryLock, nil
 			})
 			done.Done()
 		}()
@@ -225,4 +227,9 @@ func TestGetOrLoad(t *testing.T) {
 	done.Wait()
 	//
 	t.Log("Duration: ", time.Now().Sub(begin))
+	t.Log("Times: ", count)
+	//
+	if _, ok := c.Peek("BenchmarkGetOrLoad", true); ok {
+		t.Fatal("should be empty")
+	}
 }

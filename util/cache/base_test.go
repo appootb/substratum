@@ -3,6 +3,7 @@ package cache
 import (
 	"container/list"
 	"testing"
+	"time"
 )
 
 func newBase(size int) *base {
@@ -17,7 +18,7 @@ func TestBase(t *testing.T) {
 	c := newBase(128)
 
 	for i := 0; i < 256; i++ {
-		c.set(i, i, 0)
+		c.set(i, i, DurationPersistence)
 	}
 	if l := c.length(); l != 128 {
 		t.Fatalf("bad length: %v", l)
@@ -75,13 +76,13 @@ func TestBase(t *testing.T) {
 func TestBase_Contains(t *testing.T) {
 	c := newBase(2)
 
-	c.set(1, 1, 0)
-	c.set(2, 2, 0)
+	c.set(1, 1, DurationPersistence)
+	c.set(2, 2, DurationPersistence)
 	if !c.contain(1) {
 		t.Fatal("1 should be contained")
 	}
 
-	c.set(3, 3, 0)
+	c.set(3, 3, DurationPersistence)
 	if c.contain(1) {
 		t.Fatal("Contains should not have updated recent-ness of 1")
 	}
@@ -90,14 +91,27 @@ func TestBase_Contains(t *testing.T) {
 func TestLRU_Peek(t *testing.T) {
 	c := newBase(2)
 
-	c.set(1, 1, 0)
-	c.set(2, 2, 0)
+	c.set(1, 1, DurationPersistence)
+	c.set(2, 2, DurationPersistence)
 	if v, ok := c.peek(1); !ok || v != 1 {
 		t.Fatalf("1 should be set to 1: %v, %v", v, ok)
 	}
 
-	c.set(3, 3, 0)
+	c.set(3, 3, DurationPersistence)
 	if c.contain(1) {
 		t.Fatal("should not have updated recent-ness of 1")
+	}
+}
+
+func TestLRU_PeekExpired(t *testing.T) {
+	c := newBase(2)
+
+	c.set(1, 1, time.Nanosecond)
+	if v, ok := c.peek(1, true); !ok || v != 1 {
+		t.Fatalf("1 should be set to 1: %v, %v", v, ok)
+	}
+
+	if _, ok := c.peek(1, false); ok {
+		t.Fatalf("1 should be expired")
 	}
 }
