@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/appootb/substratum/metadata"
-	"github.com/appootb/substratum/service"
-	"github.com/appootb/substratum/storage"
+	"github.com/appootb/substratum/v2/metadata"
+	"github.com/appootb/substratum/v2/service"
+	"github.com/appootb/substratum/v2/storage"
 	"gorm.io/gorm"
 )
 
@@ -17,7 +17,7 @@ func WithContext(ctx context.Context) Option {
 		component := service.ComponentNameFromContext(ctx)
 		base.rw = storage.ContextStorage(ctx, component).GetDB()
 		base.ro = storage.ContextStorage(ctx, component).GetDB(true)
-		if md := metadata.IncomingMetadata(ctx); md != nil && md.GetIsDebug() {
+		if md := metadata.IncomingMetadata(ctx); md != nil && md.GetIsDevelop() {
 			base.rw = base.rw.Debug()
 			base.ro = base.ro.Debug()
 		}

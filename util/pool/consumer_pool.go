@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	pctx "github.com/appootb/substratum/plugin/context"
-	"github.com/appootb/substratum/util/hash"
+	pctx "github.com/appootb/substratum/v2/plugin/context"
+	"github.com/appootb/substratum/v2/util/hash"
 )
 
 const (
@@ -56,12 +56,6 @@ func WithConsumerComponent(component string) ConsumerOption {
 	}
 }
 
-func WithConsumerProduct(product string) ConsumerOption {
-	return func(slot *consumerSlot) {
-		slot.product = product
-	}
-}
-
 type consumerData struct {
 	k, v interface{}
 }
@@ -71,7 +65,6 @@ type consumerSlot struct {
 	stop context.CancelFunc
 
 	component string
-	product   string
 
 	chanLength int
 	length     int
@@ -139,7 +132,7 @@ func (slot *consumerSlot) run(handler Consumer) {
 }
 
 func (slot *consumerSlot) callback(handler Consumer, cache map[interface{}][]interface{}) {
-	ctx := pctx.WithImplementContext(slot.ctx, slot.component, slot.product)
+	ctx := pctx.WithImplementContext(slot.ctx, slot.component)
 	for k, v := range cache {
 		handler.Handle(ctx, k, v)
 	}

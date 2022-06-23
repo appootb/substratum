@@ -4,9 +4,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/appootb/substratum/client"
+	"github.com/appootb/substratum/v2/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func Init() {
@@ -31,7 +32,7 @@ func (p *ConnPool) Get(target string) *grpc.ClientConn {
 func (p *ConnPool) NewConn(target string) *grpc.ClientConn {
 	// TODO: support more schema
 	cli, err := grpc.Dial(target,
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithConnectParams(grpc.ConnectParams{
 			Backoff: backoff.Config{
 				BaseDelay:  time.Second,

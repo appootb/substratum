@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/appootb/substratum/plugin/credential"
-	"github.com/appootb/substratum/proto/go/permission"
-	"github.com/appootb/substratum/proto/go/secret"
-	"github.com/appootb/substratum/util/hash"
+	"github.com/appootb/substratum/v2/plugin/credential"
+	"github.com/appootb/substratum/v2/proto/go/permission"
+	"github.com/appootb/substratum/v2/proto/go/secret"
+	"github.com/appootb/substratum/v2/util/hash"
 	"github.com/gbrlsnchs/jwt/v3"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

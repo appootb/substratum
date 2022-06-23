@@ -3,20 +3,16 @@ package context
 import (
 	"context"
 
-	"github.com/appootb/substratum/client"
-	"github.com/appootb/substratum/discovery"
-	"github.com/appootb/substratum/logger"
-	"github.com/appootb/substratum/metadata"
-	"github.com/appootb/substratum/queue"
-	"github.com/appootb/substratum/service"
-	"github.com/appootb/substratum/storage"
-	"github.com/appootb/substratum/task"
+	"github.com/appootb/substratum/v2/client"
+	"github.com/appootb/substratum/v2/discovery"
+	"github.com/appootb/substratum/v2/logger"
+	"github.com/appootb/substratum/v2/queue"
+	"github.com/appootb/substratum/v2/service"
+	"github.com/appootb/substratum/v2/storage"
+	"github.com/appootb/substratum/v2/task"
 )
 
-func WithImplementContext(ctx context.Context, component string, product ...string) context.Context {
-	if len(product) > 0 && product[0] != "" {
-		ctx = metadata.ContextWithProduct(ctx, product[0])
-	}
+func WithImplementContext(ctx context.Context, component string) context.Context {
 	return client.ContextWithConnPool(
 		discovery.ContextWithDiscovery(
 			logger.ContextWithLogger(

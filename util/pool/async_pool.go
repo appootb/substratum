@@ -3,7 +3,7 @@ package pool
 import (
 	"context"
 
-	pctx "github.com/appootb/substratum/plugin/context"
+	pctx "github.com/appootb/substratum/v2/plugin/context"
 )
 
 const (
@@ -47,12 +47,6 @@ func WithAsyncComponent(component string) AsyncOption {
 	}
 }
 
-func WithAsyncProduct(product string) AsyncOption {
-	return func(pool *AsyncPool) {
-		pool.product = product
-	}
-}
-
 type AsyncPool struct {
 	ctx  context.Context
 	stop context.CancelFunc
@@ -60,7 +54,6 @@ type AsyncPool struct {
 	concurrency int
 	chanLength  int
 	component   string
-	product     string
 
 	ch chan interface{}
 }
@@ -99,7 +92,7 @@ func (pool *AsyncPool) run(h AsyncHandler) {
 	for {
 		select {
 		case d := <-pool.ch:
-			ctx := pctx.WithImplementContext(pool.ctx, pool.component, pool.product)
+			ctx := pctx.WithImplementContext(pool.ctx, pool.component)
 			h.Handle(ctx, d)
 		case <-pool.ctx.Done():
 			return

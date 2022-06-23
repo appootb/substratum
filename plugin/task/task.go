@@ -6,11 +6,11 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/appootb/substratum/logger"
-	"github.com/appootb/substratum/plugin/context"
-	"github.com/appootb/substratum/task"
-	"github.com/appootb/substratum/util/scheduler"
-	"github.com/appootb/substratum/util/timer"
+	"github.com/appootb/substratum/v2/logger"
+	"github.com/appootb/substratum/v2/plugin/context"
+	"github.com/appootb/substratum/v2/task"
+	"github.com/appootb/substratum/v2/util/scheduler"
+	"github.com/appootb/substratum/v2/util/timer"
 )
 
 const (
@@ -57,7 +57,7 @@ Reset:
 		ctx = task.LockerImplementor().Lock(ctx, opts.Name)
 	}
 
-	ctx = context.WithImplementContext(ctx, opts.Component, opts.Product)
+	ctx = context.WithImplementContext(ctx, opts.Component)
 
 	for {
 		now := time.Now()

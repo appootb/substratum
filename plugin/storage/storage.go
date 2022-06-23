@@ -4,10 +4,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/appootb/substratum/storage"
-	"github.com/appootb/substratum/util/hash"
-	es6 "github.com/elastic/go-elasticsearch/v6"
-	es7 "github.com/elastic/go-elasticsearch/v7"
+	"github.com/appootb/substratum/v2/storage"
+	"github.com/appootb/substratum/v2/util/hash"
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 )
@@ -15,9 +13,6 @@ import (
 type Storage struct {
 	mu sync.RWMutex
 
-	// ElasticSearch
-	elastic6 *es6.Client
-	elastic7 *es7.Client
 	// SQL DBs
 	masterDB *gorm.DB
 	slaveIdx uint64
@@ -67,49 +62,6 @@ func (s *Storage) InitDB(master storage.Config, slaves []storage.Config, opts ..
 	return nil
 }
 
-func (s *Storage) InitElasticSearch(config storage.Config, opts ...storage.ElasticOption) error {
-	dialect, err := config.Dialect()
-	if err != nil {
-		return err
-	}
-	//
-	switch config.Schema {
-	case storage.ElasticSearch6:
-		cfg6 := es6.Config{
-			Addresses: []string{dialect.URL()},
-			Username:  config.Username,
-			Password:  config.Password,
-		}
-		for _, o := range opts {
-			o(&cfg6, nil)
-		}
-		cli6, err := es6.NewClient(cfg6)
-		if err != nil {
-			return err
-		}
-		s.mu.Lock()
-		s.elastic6 = cli6
-		s.mu.Unlock()
-	case storage.ElasticSearch7:
-		cfg7 := es7.Config{
-			Addresses: []string{dialect.URL()},
-			Username:  config.Username,
-			Password:  config.Password,
-		}
-		for _, o := range opts {
-			o(nil, &cfg7)
-		}
-		cli7, err := es7.NewClient(cfg7)
-		if err != nil {
-			return err
-		}
-		s.mu.Lock()
-		s.elastic7 = cli7
-		s.mu.Unlock()
-	}
-	return nil
-}
-
 func (s *Storage) InitRedis(configs []storage.Config, opts ...storage.RedisOption) error {
 	for _, cfg := range configs {
 		dialect, err := cfg.Dialect()
@@ -143,18 +95,6 @@ func (s *Storage) GetDB(readOnly ...bool) *gorm.DB {
 	}
 	idx := atomic.AddUint64(&s.slaveIdx, 1)
 	return s.slaveDBs[idx%slaves]
-}
-
-func (s *Storage) GetESv6() *es6.Client {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.elastic6
-}
-
-func (s *Storage) GetESv7() *es7.Client {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.elastic7
 }
 
 func (s *Storage) GetRedisz() []redis.Cmdable {

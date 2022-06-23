@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/appootb/substratum/proto/go/permission"
+	"github.com/appootb/substratum/v2/proto/go/permission"
 )
 
 const (
@@ -17,19 +17,19 @@ const (
 type ServerOption func(*Server)
 
 func WithDefaultClientMux() ServerOption {
-	return WithMux(permission.VisibleScope_CLIENT, DefaultClientRpcPort, DefaultClientGatewayPort)
+	return WithServeMux(permission.VisibleScope_CLIENT, DefaultClientRpcPort, DefaultClientGatewayPort)
 }
 
 func WithDefaultServerMux() ServerOption {
-	return WithMux(permission.VisibleScope_SERVER, DefaultServerRpcPort, DefaultServerGatewayPort)
+	return WithServeMux(permission.VisibleScope_SERVER, DefaultServerRpcPort, DefaultServerGatewayPort)
 }
 
-func WithMux(scope permission.VisibleScope, rpcPort, gatewayPort uint16) ServerOption {
+func WithServeMux(scope permission.VisibleScope, rpcPort, gatewayPort uint16) ServerOption {
 	return func(s *Server) {
 		if _, ok := s.serveMuxers[scope]; ok {
 			return
 		}
-		err := s.AddMux(scope, rpcPort, gatewayPort)
+		err := s.AddServeMux(scope, rpcPort, gatewayPort)
 		if err != nil {
 			panic(err)
 		}

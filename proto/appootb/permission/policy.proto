@@ -4,16 +4,7 @@ package appootb.permission.policy;
 
 import "google/protobuf/descriptor.proto";
 
-option cc_enable_arenas = true;
-option optimize_for = SPEED;
-
-option csharp_namespace = "Permission";
 option go_package = "github.com/appootb/substratum/proto/go/permission";
-option java_multiple_files = true;
-option java_outer_classname = "PolicyProto";
-option java_package = "com.appootb.permission";
-option objc_class_prefix = "CPB";
-option php_namespace = "Appootb\\Proto\\Permission";
 
 
 // ProtoBuffer method extend.

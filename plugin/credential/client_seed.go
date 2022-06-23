@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/appootb/substratum/errors"
+	"github.com/appootb/substratum/v2/errors"
 	"google.golang.org/grpc/codes"
 )
 

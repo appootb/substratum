@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/appootb/substratum/plugin"
+	"github.com/appootb/substratum/v2/plugin"
 )
 
 func TestMain(m *testing.M) {

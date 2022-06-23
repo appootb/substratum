@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/appootb/substratum/discovery"
-	"github.com/appootb/substratum/errors"
-	"github.com/appootb/substratum/util/iphelper"
+	"github.com/appootb/substratum/v2/discovery"
+	"github.com/appootb/substratum/v2/errors"
+	"github.com/appootb/substratum/v2/util/iphelper"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/resolver"
 )
@@ -22,9 +22,9 @@ type DiscoveryResolver struct {
 //
 // It could be called multiple times concurrently.
 func (r *DiscoveryResolver) ResolveNow(_ resolver.ResolveNowOptions) {
-	nodes := discovery.Implementor().GetNodes(r.target.Endpoint)
+	nodes := discovery.Implementor().GetNodes(r.target.URL.Opaque)
 	if len(nodes) == 0 {
-		r.cc.ReportError(errors.New(codes.NotFound, r.target.Endpoint))
+		r.cc.ReportError(errors.New(codes.NotFound, r.target.URL.Opaque))
 		return
 	}
 	//
@@ -43,7 +43,7 @@ func (r *DiscoveryResolver) ResolveNow(_ resolver.ResolveNowOptions) {
 			Addr: addr,
 		})
 	}
-	r.cc.UpdateState(resolver.State{
+	_ = r.cc.UpdateState(resolver.State{
 		Addresses: addrs,
 	})
 }

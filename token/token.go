@@ -1,8 +1,8 @@
 package token
 
 import (
-	"github.com/appootb/substratum/proto/go/common"
-	"github.com/appootb/substratum/proto/go/secret"
+	"github.com/appootb/substratum/v2/proto/go/common"
+	"github.com/appootb/substratum/v2/proto/go/secret"
 )
 
 var (

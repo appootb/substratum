@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/appootb/substratum/queue"
-	"github.com/appootb/substratum/util/timer"
+	"github.com/appootb/substratum/v2/queue"
+	"github.com/appootb/substratum/v2/util/timer"
 )
 
 type Debug struct {

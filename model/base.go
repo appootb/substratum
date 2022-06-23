@@ -3,16 +3,16 @@ package model
 import (
 	"context"
 
-	"github.com/appootb/substratum/client"
-	"github.com/appootb/substratum/discovery"
-	"github.com/appootb/substratum/logger"
-	"github.com/appootb/substratum/metadata"
-	"github.com/appootb/substratum/proto/go/common"
-	"github.com/appootb/substratum/proto/go/secret"
-	"github.com/appootb/substratum/queue"
-	"github.com/appootb/substratum/service"
-	"github.com/appootb/substratum/storage"
-	"github.com/appootb/substratum/task"
+	"github.com/appootb/substratum/v2/client"
+	"github.com/appootb/substratum/v2/discovery"
+	"github.com/appootb/substratum/v2/logger"
+	"github.com/appootb/substratum/v2/metadata"
+	"github.com/appootb/substratum/v2/proto/go/common"
+	"github.com/appootb/substratum/v2/proto/go/secret"
+	"github.com/appootb/substratum/v2/queue"
+	"github.com/appootb/substratum/v2/service"
+	"github.com/appootb/substratum/v2/storage"
+	"github.com/appootb/substratum/v2/task"
 	"google.golang.org/grpc"
 )
 
@@ -28,8 +28,8 @@ func New(opts ...Option) Base {
 	return base
 }
 
-func (m Base) RpcContext(keyID int64, product ...string) context.Context {
-	return client.WithContext(m.Context(), keyID, product...)
+func (m Base) RpcContext(keyID int64) context.Context {
+	return client.WithContext(m.Context(), keyID)
 }
 
 func (m Base) Context() context.Context {

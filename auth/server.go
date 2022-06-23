@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/appootb/substratum/service"
+	"github.com/appootb/substratum/v2/service"
 	"google.golang.org/grpc"
 )
 

@@ -1,7 +1,7 @@
 package errors
 
 import (
-	"github.com/appootb/substratum/errors"
+	"github.com/appootb/substratum/v2/errors"
 )
 
 func Init() {

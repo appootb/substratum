@@ -5,14 +5,14 @@ import (
 	"strconv"
 	"time"
 
-	md "github.com/appootb/substratum/metadata"
-	"github.com/appootb/substratum/proto/go/common"
-	"github.com/appootb/substratum/proto/go/permission"
-	"github.com/appootb/substratum/proto/go/secret"
-	"github.com/appootb/substratum/service"
-	"github.com/appootb/substratum/token"
-	"github.com/appootb/substratum/util/iphelper"
-	"github.com/appootb/substratum/util/random"
+	md "github.com/appootb/substratum/v2/metadata"
+	"github.com/appootb/substratum/v2/proto/go/common"
+	"github.com/appootb/substratum/v2/proto/go/permission"
+	"github.com/appootb/substratum/v2/proto/go/secret"
+	"github.com/appootb/substratum/v2/service"
+	"github.com/appootb/substratum/v2/token"
+	"github.com/appootb/substratum/v2/util/iphelper"
+	"github.com/appootb/substratum/v2/util/random"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -21,7 +21,7 @@ const (
 	DefaultIssuer = "appootb"
 )
 
-func WithContext(ctx context.Context, keyID int64, product ...string) context.Context {
+func WithContext(ctx context.Context, keyID int64) context.Context {
 	now := time.Now()
 	outgoingMD, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -58,10 +58,8 @@ func WithContext(ctx context.Context, keyID int64, product ...string) context.Co
 	if pkg := outgoingMD.Get(md.KeyPackage); len(pkg) > 0 {
 		secretInfo.Issuer = pkg[0]
 	}
+	// TODO: cache outgoing tokens
 	val, _ := token.Implementor().Generate(secretInfo)
-	if len(product) > 0 && product[0] != "" {
-		outgoingMD[md.KeyProduct] = []string{product[0]}
-	}
 	outgoingMD[md.KeyToken] = []string{val}
 	outgoingMD[md.KeyPlatform] = []string{strconv.Itoa(int(platform))}
 	outgoingMD[md.KeyTimestamp] = []string{strconv.FormatInt(now.UnixNano()/1e6, 10)}
@@ -88,33 +86,37 @@ func WithMetadata(incomingMD *common.Metadata, keyID int64) context.Context {
 	if incomingMD.Package != "" {
 		secretInfo.Issuer = incomingMD.GetPackage()
 	}
+	// TODO: cache outgoing tokens
 	val, _ := token.Implementor().Generate(secretInfo)
 	traceID := incomingMD.GetTraceId()
 	if traceID == "" {
 		traceID = random.String(32)
 	}
 	outgoingMD := metadata.New(map[string]string{
-		md.KeyToken:      val,
-		md.KeyPackage:    incomingMD.GetPackage(),
-		md.KeyVersion:    incomingMD.GetVersion(),
-		md.KeyOSVersion:  incomingMD.GetOsVersion(),
-		md.KeyBrand:      incomingMD.GetBrand(),
-		md.KeyModel:      incomingMD.GetModel(),
-		md.KeyDeviceID:   incomingMD.GetDeviceId(),
-		md.KeyPlatform:   strconv.Itoa(int(platform)),
-		md.KeyTimestamp:  strconv.FormatInt(now.UnixNano()/1e6, 10),
-		md.KeyIsEmulator: strconv.FormatBool(incomingMD.GetIsEmulator()),
-		md.KeyNetwork:    incomingMD.GetNetwork().String(),
-		md.KeyLatitude:   incomingMD.GetLatitude(),
-		md.KeyLongitude:  incomingMD.GetLongitude(),
-		md.KeyLocale:     incomingMD.GetLocale(),
-		md.KeyChannel:    incomingMD.GetChannel(),
-		md.KeyProduct:    incomingMD.GetProduct(),
-		md.KeyTraceID:    traceID,
-		md.KeyRiskID:     incomingMD.GetRiskId(),
-		md.KeyUUID:       incomingMD.GetUuid(),
-		md.KeyUDID:       incomingMD.GetUdid(),
-		md.KeyIsDebug:    strconv.FormatBool(incomingMD.GetIsDebug()),
+		md.KeyProduct:     incomingMD.GetProduct(),
+		md.KeyPackage:     incomingMD.GetPackage(),
+		md.KeyVersion:     incomingMD.GetVersion(),
+		md.KeyOSVersion:   incomingMD.GetOsVersion(),
+		md.KeyBrand:       incomingMD.GetBrand(),
+		md.KeyModel:       incomingMD.GetModel(),
+		md.KeyDeviceID:    incomingMD.GetDeviceId(),
+		md.KeyFingerprint: incomingMD.GetFingerprint(),
+		md.KeyLocale:      incomingMD.GetLocale(),
+		md.KeyLatitude:    incomingMD.GetLatitude(),
+		md.KeyLongitude:   incomingMD.GetLongitude(),
+		md.KeyPlatform:    strconv.Itoa(int(platform)),
+		md.KeyNetwork:     incomingMD.GetNetwork().String(),
+		md.KeyTimestamp:   strconv.FormatInt(now.UnixNano()/1e6, 10),
+		md.KeyTraceID:     traceID,
+		md.KeyIsEmulator:  strconv.FormatBool(incomingMD.GetIsEmulator()),
+		md.KeyIsDevelop:   strconv.FormatBool(incomingMD.GetIsDevelop()),
+		md.KeyIsTesting:   strconv.FormatBool(incomingMD.GetIsTesting()),
+		md.KeyChannel:     incomingMD.GetChannel(),
+		md.KeyUUID:        incomingMD.GetUuid(),
+		md.KeyIMEI:        incomingMD.GetImei(),
+		md.KeyDeviceMac:   incomingMD.GetDeviceMac(),
+		md.KeyUserAgent:   incomingMD.GetUserAgent(),
+		md.KeyToken:       val,
 	})
 	outgoingMD.Set(md.KeyOriginalIP, incomingMD.GetClientIp(), iphelper.LocalIP())
 	return metadata.NewOutgoingContext(context.Background(), outgoingMD)

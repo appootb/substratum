@@ -3,7 +3,7 @@ package task
 import (
 	"context"
 
-	"github.com/appootb/substratum/task"
+	"github.com/appootb/substratum/v2/task"
 )
 
 func Init() {

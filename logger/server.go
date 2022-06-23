@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	md "github.com/appootb/substratum/metadata"
-	"github.com/appootb/substratum/service"
+	md "github.com/appootb/substratum/v2/metadata"
+	"github.com/appootb/substratum/v2/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )

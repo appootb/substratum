@@ -3,7 +3,7 @@ package gateway
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"golang.org/x/net/websocket"
 	"google.golang.org/grpc/metadata"
 )

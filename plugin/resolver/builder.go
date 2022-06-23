@@ -1,7 +1,7 @@
 package resolver
 
 import (
-	builder "github.com/appootb/substratum/resolver"
+	builder "github.com/appootb/substratum/v2/resolver"
 	"google.golang.org/grpc/resolver"
 )
 

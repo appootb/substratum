@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/appootb/grc"
-	"github.com/appootb/substratum/discovery"
+	"github.com/appootb/substratum/v2/discovery"
 )
 
 func Init() {

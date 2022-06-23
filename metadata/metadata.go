@@ -6,41 +6,43 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/appootb/substratum/proto/go/common"
+	"github.com/appootb/substratum/v2/proto/go/common"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 )
 
 const (
-	KeyToken      = "token"
-	KeyPlatform   = "platform"
-	KeyNetwork    = "network"
-	KeyPackage    = "package"
-	KeyVersion    = "version"
-	KeyOSVersion  = "os_version"
-	KeyBrand      = "brand"
-	KeyModel      = "model"
-	KeyDeviceID   = "device_id"
-	KeyTimestamp  = "timestamp"
-	KeyIsEmulator = "is_emulator"
-	KeyIsDebug    = "is_debug"
-	KeyLatitude   = "latitude"
-	KeyLongitude  = "longitude"
-	KeyLocale     = "locale"
-	KeyChannel    = "channel"
-	KeyProduct    = "product"
-	KeyTraceID    = "trace_id"
-	KeyRiskID     = "risk_id"
-	KeyUUID       = "uuid"
-	KeyUDID       = "udid"
-	KeyUserAgent  = "user_agent"
-	KeyDeviceMac  = "device_mac"
-	KeyAndroidID  = "android_id"
+	KeyProduct     = "product"
+	KeyPackage     = "package"
+	KeyVersion     = "version"
+	KeyOSVersion   = "os"
+	KeyBrand       = "brand"
+	KeyModel       = "model"
+	KeyDeviceID    = "udid"
+	KeyFingerprint = "fingerprint"
+	KeyLocale      = "locale"
+	KeyLatitude    = "lat"
+	KeyLongitude   = "lon"
+	KeyPlatform    = "platform"
+	KeyNetwork     = "network"
+	KeyTimestamp   = "time"
+	KeyTraceID     = "sn"
+	KeyIsEmulator  = "emulator"
+	KeyIsDevelop   = "dev"
+	KeyIsTesting   = "test"
+	KeyChannel     = "channel"
+	KeyUUID        = "uuid"
+	KeyIMEI        = "imei"
+	KeyDeviceMac   = "mac"
+	KeyUserAgent   = "ua"
+	KeyToken       = "token"
+
 	KeyOriginalIP = "x-forwarded-for"
 )
 
 var (
-	Debug = os.Getenv("DEBUG")
+	EnvDevelop = os.Getenv("DEVELOPMENT")
+	EnvTesting = os.Getenv("TESTING")
 )
 
 func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
@@ -48,16 +50,7 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 	if !ok {
 		return nil
 	}
-	clientIP := ""
-	if ips := md.Get(KeyOriginalIP); len(ips) > 0 {
-		clientIP = ips[0]
-	} else if p, ok := peer.FromContext(ctx); ok {
-		clientIP = p.Addr.String()
-	}
-	emulator := false
-	if b := md.Get(KeyIsEmulator); len(b) > 0 {
-		emulator, _ = strconv.ParseBool(b[0])
-	}
+	// Platform
 	platform := common.Platform_PLATFORM_UNSPECIFIED
 	if pf := md.Get(KeyPlatform); len(pf) > 0 {
 		if i, err := strconv.Atoi(pf[0]); err != nil {
@@ -66,10 +59,7 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 			platform = common.Platform(i)
 		}
 	}
-	timestamp := int64(0)
-	if ts := md.Get(KeyTimestamp); len(ts) > 0 {
-		timestamp, _ = strconv.ParseInt(ts[0], 10, 64)
-	}
+	// Network
 	network := common.Network_NETWORK_UNSPECIFIED
 	if net := md.Get(KeyNetwork); len(net) > 0 {
 		if i, err := strconv.Atoi(net[0]); err != nil {
@@ -78,36 +68,59 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 			network = common.Network(i)
 		}
 	}
-	debug := false
-	if b := md.Get(KeyIsDebug); len(b) > 0 && Debug != "" {
-		debug, _ = strconv.ParseBool(b[0])
+	// Timestamp
+	timestamp := int64(0)
+	if ts := md.Get(KeyTimestamp); len(ts) > 0 {
+		timestamp, _ = strconv.ParseInt(ts[0], 10, 64)
+	}
+	// Emulator
+	emulator := false
+	if b := md.Get(KeyIsEmulator); len(b) > 0 {
+		emulator, _ = strconv.ParseBool(b[0])
+	}
+	// Develop
+	develop := false
+	if b := md.Get(KeyIsDevelop); len(b) > 0 && EnvDevelop != "" {
+		develop, _ = strconv.ParseBool(b[0])
+	}
+	// Testing
+	testing := false
+	if b := md.Get(KeyIsTesting); len(b) > 0 && EnvTesting != "" {
+		testing, _ = strconv.ParseBool(b[0])
+	}
+	// Client IP
+	clientIP := ""
+	if ips := md.Get(KeyOriginalIP); len(ips) > 0 {
+		clientIP = ips[0]
+	} else if p, ok := peer.FromContext(ctx); ok {
+		clientIP = p.Addr.String()
 	}
 
 	return &common.Metadata{
-		Token:      strings.Join(md[KeyToken], ""),
-		Package:    strings.Join(md[KeyPackage], ""),
-		Version:    strings.Join(md[KeyVersion], ""),
-		OsVersion:  strings.Join(md[KeyOSVersion], ""),
-		Brand:      strings.Join(md[KeyBrand], ""),
-		Model:      strings.Join(md[KeyModel], ""),
-		UserAgent:  strings.Join(md[KeyUserAgent], ""),
-		DeviceId:   strings.Join(md[KeyDeviceID], ""),
-		Platform:   platform,
-		Timestamp:  timestamp,
-		IsEmulator: emulator,
-		IsDebug:    debug,
-		Network:    network,
-		ClientIp:   clientIP,
-		DeviceMac:  strings.Join(md[KeyDeviceMac], ""),
-		Latitude:   strings.Join(md[KeyLatitude], ""),
-		Longitude:  strings.Join(md[KeyLongitude], ""),
-		Locale:     strings.Join(md[KeyLocale], ""),
-		Channel:    strings.Join(md[KeyChannel], ""),
-		Product:    strings.Join(md[KeyProduct], ""),
-		TraceId:    strings.Join(md[KeyTraceID], ""),
-		RiskId:     strings.Join(md[KeyRiskID], ""),
-		Uuid:       strings.Join(md[KeyUUID], ""),
-		Udid:       strings.Join(md[KeyUDID], ""),
-		AndroidId:  strings.Join(md[KeyAndroidID], ""),
+		Product:     strings.Join(md[KeyProduct], ""),
+		Package:     strings.Join(md[KeyPackage], ""),
+		Version:     strings.Join(md[KeyVersion], ""),
+		OsVersion:   strings.Join(md[KeyOSVersion], ""),
+		Brand:       strings.Join(md[KeyBrand], ""),
+		Model:       strings.Join(md[KeyModel], ""),
+		DeviceId:    strings.Join(md[KeyDeviceID], ""),
+		Fingerprint: strings.Join(md[KeyFingerprint], ""),
+		Locale:      strings.Join(md[KeyLocale], ""),
+		Latitude:    strings.Join(md[KeyLatitude], ""),
+		Longitude:   strings.Join(md[KeyLongitude], ""),
+		Platform:    platform,
+		Network:     network,
+		Timestamp:   timestamp,
+		TraceId:     strings.Join(md[KeyTraceID], ""),
+		IsEmulator:  emulator,
+		IsDevelop:   develop,
+		IsTesting:   testing,
+		Channel:     strings.Join(md[KeyChannel], ""),
+		Uuid:        strings.Join(md[KeyUUID], ""),
+		Imei:        strings.Join(md[KeyIMEI], ""),
+		DeviceMac:   strings.Join(md[KeyDeviceMac], ""),
+		ClientIp:    clientIP,
+		UserAgent:   strings.Join(md[KeyUserAgent], ""),
+		Token:       strings.Join(md[KeyToken], ""),
 	}
 }

@@ -3,18 +3,18 @@ package plugin
 import (
 	"sync"
 
-	"github.com/appootb/substratum/plugin/auth"
-	"github.com/appootb/substratum/plugin/client"
-	"github.com/appootb/substratum/plugin/configure"
-	"github.com/appootb/substratum/plugin/credential"
-	"github.com/appootb/substratum/plugin/discovery"
-	"github.com/appootb/substratum/plugin/errors"
-	"github.com/appootb/substratum/plugin/logger"
-	"github.com/appootb/substratum/plugin/queue"
-	"github.com/appootb/substratum/plugin/resolver"
-	"github.com/appootb/substratum/plugin/storage"
-	"github.com/appootb/substratum/plugin/task"
-	"github.com/appootb/substratum/plugin/token"
+	"github.com/appootb/substratum/v2/plugin/auth"
+	"github.com/appootb/substratum/v2/plugin/client"
+	"github.com/appootb/substratum/v2/plugin/configure"
+	"github.com/appootb/substratum/v2/plugin/credential"
+	"github.com/appootb/substratum/v2/plugin/discovery"
+	"github.com/appootb/substratum/v2/plugin/errors"
+	"github.com/appootb/substratum/v2/plugin/logger"
+	"github.com/appootb/substratum/v2/plugin/queue"
+	"github.com/appootb/substratum/v2/plugin/resolver"
+	"github.com/appootb/substratum/v2/plugin/storage"
+	"github.com/appootb/substratum/v2/plugin/task"
+	"github.com/appootb/substratum/v2/plugin/token"
 )
 
 var (

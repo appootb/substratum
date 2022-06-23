@@ -9,16 +9,7 @@ import "google/protobuf/descriptor.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
-option cc_enable_arenas = true;
-option optimize_for = SPEED;
-
-option csharp_namespace = "Validate";
 option go_package = "github.com/appootb/substratum/proto/go/validate";
-option java_multiple_files = true;
-option java_outer_classname = "ValidateProto";
-option java_package = "com.appootb.validate";
-option objc_class_prefix = "CPB";
-option php_namespace = "Appootb\\Proto\\Validate";
 
 
 // Validation rules applied at the message level

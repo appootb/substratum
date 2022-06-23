@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"github.com/appootb/substratum/proto/go/permission"
-	"github.com/appootb/substratum/proto/go/secret"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/appootb/substratum/v2/proto/go/permission"
+	"github.com/appootb/substratum/v2/proto/go/secret"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

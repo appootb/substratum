@@ -2,7 +2,7 @@ package configure
 
 import (
 	"github.com/appootb/grc"
-	"github.com/appootb/substratum/configure"
+	"github.com/appootb/substratum/v2/configure"
 )
 
 func Init() {

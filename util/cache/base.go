@@ -31,6 +31,11 @@ type base struct {
 }
 
 func (c *base) set(key, value interface{}, expire time.Duration) {
+	if expire == 0 {
+		c.delete(key)
+		return
+	}
+
 	// Check for existing item
 	if el, ok := c.items[key]; ok {
 		c.evictList.MoveToFront(el)

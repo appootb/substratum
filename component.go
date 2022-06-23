@@ -3,11 +3,11 @@ package substratum
 import (
 	"net/http"
 
-	"github.com/appootb/substratum/configure"
-	"github.com/appootb/substratum/queue"
-	"github.com/appootb/substratum/service"
-	"github.com/appootb/substratum/storage"
-	"github.com/appootb/substratum/task"
+	"github.com/appootb/substratum/v2/configure"
+	"github.com/appootb/substratum/v2/queue"
+	"github.com/appootb/substratum/v2/service"
+	"github.com/appootb/substratum/v2/storage"
+	"github.com/appootb/substratum/v2/task"
 )
 
 // Component interface.
@@ -26,7 +26,7 @@ type Component interface {
 	InitStorage(storage.Storage) error
 
 	// RegisterHandler registers HTTP handler.
-	RegisterHandler(outer, inner *http.ServeMux) error
+	RegisterHandler(outer, inner http.Handler) error
 
 	// RegisterService registers the service.
 	RegisterService(service.Authenticator, service.Implementor) error

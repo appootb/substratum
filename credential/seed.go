@@ -40,7 +40,7 @@ type Client interface {
 	// RevokeAll removes all secret keys of the specified user ID.
 	RevokeAll(uid uint64) error
 	// Lock disables all secret keys for a specified duration.
-	// Returns codes.FailedPrecondition (9).
+	// And returns codes.FailedPrecondition (9).
 	Lock(uid uint64, reason string, duration time.Duration) error
 	// Unlock enables the secret keys.
 	Unlock(uid uint64) error

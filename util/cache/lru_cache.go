@@ -10,7 +10,8 @@ type LRUCache struct {
 	mu sync.RWMutex
 }
 
-// Set key-value pair with an expiration.
+// Set key-value pair with an expiration (expire > 0).
+// If expire equals 0, the key-value pair will be deleted.
 func (c *LRUCache) Set(key, value interface{}, expire time.Duration) {
 	c.mu.Lock()
 	c.base.set(key, value, expire)

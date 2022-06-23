@@ -33,6 +33,10 @@ func NextID() (uint64, error) {
 	return Default.Next()
 }
 
+func Timestamp(id uint64) time.Time {
+	return Default.Timestamp(id)
+}
+
 func PartitionID(id uint64) uint64 {
 	return (id >> BitLengthSequence) & PartitionIDBitMask
 }

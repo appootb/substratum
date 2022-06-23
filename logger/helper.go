@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/appootb/substratum/metadata"
-	"github.com/appootb/substratum/proto/go/common"
+	"github.com/appootb/substratum/v2/metadata"
+	"github.com/appootb/substratum/v2/proto/go/common"
 )
 
 type Helper struct {

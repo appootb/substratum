@@ -1,7 +1,7 @@
 package queue
 
 import (
-	"github.com/appootb/substratum/queue"
+	"github.com/appootb/substratum/v2/queue"
 )
 
 type EmptyIdempotent struct{}

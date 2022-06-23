@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/appootb/substratum/gateway"
-	"github.com/appootb/substratum/logger"
-	"github.com/appootb/substratum/rpc"
-	"github.com/appootb/substratum/util/iphelper"
+	"github.com/appootb/substratum/v2/gateway"
+	"github.com/appootb/substratum/v2/logger"
+	"github.com/appootb/substratum/v2/rpc"
+	"github.com/appootb/substratum/v2/util/iphelper"
 	prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 )
@@ -61,20 +61,15 @@ func (m *ServeMux) RPCServer() *grpc.Server {
 	return m.rpcSrv
 }
 
-func (m *ServeMux) HTTPMux() *http.ServeMux {
-	return m.httpMux
+func (m *ServeMux) HTTPMux(comp string) http.Handler {
+	return &httpServeMux{
+		component: comp,
+		serveMux:  m.httpMux,
+	}
 }
 
 func (m *ServeMux) GatewayMux() *runtime.ServeMux {
 	return m.gatewayMux
-}
-
-func (m *ServeMux) Handle(pattern string, handler http.Handler) {
-	m.httpMux.Handle(pattern, handler)
-}
-
-func (m *ServeMux) HandleFunc(pattern string, handler http.HandlerFunc) {
-	m.httpMux.HandleFunc(pattern, handler)
 }
 
 func (m *ServeMux) Serve() {

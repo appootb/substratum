@@ -3,7 +3,7 @@ package logger
 import (
 	"os"
 
-	"github.com/appootb/substratum/proto/go/common"
+	"github.com/appootb/substratum/v2/proto/go/common"
 )
 
 var (

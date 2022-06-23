@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/appootb/substratum/logger"
-	"github.com/appootb/substratum/proto/go/common"
-	"github.com/appootb/substratum/util/jsonpb"
+	"github.com/appootb/substratum/v2/logger"
+	"github.com/appootb/substratum/v2/proto/go/common"
+	"github.com/appootb/substratum/v2/util/jsonpb"
 )
 
 func Init() {

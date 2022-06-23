@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/appootb/substratum/logger"
+	"github.com/appootb/substratum/v2/logger"
 )
 
 type Message struct {

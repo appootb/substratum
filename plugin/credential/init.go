@@ -1,6 +1,6 @@
 package credential
 
-import "github.com/appootb/substratum/credential"
+import "github.com/appootb/substratum/v2/credential"
 
 func Init() {
 	if credential.ClientImplementor() == nil {

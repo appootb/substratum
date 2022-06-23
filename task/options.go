@@ -9,7 +9,6 @@ type Option func(options *Options)
 type Options struct {
 	context.Context
 	Component string
-	Product   string
 	Name      string
 	Singleton bool
 	Argument  interface{}
@@ -26,12 +25,6 @@ var EmptyOptions = func() *Options {
 func WithComponent(component string) Option {
 	return func(opts *Options) {
 		opts.Component = component
-	}
-}
-
-func WithProduct(product string) Option {
-	return func(opts *Options) {
-		opts.Product = product
 	}
 }
 

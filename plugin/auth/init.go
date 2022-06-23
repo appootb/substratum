@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"github.com/appootb/substratum/auth"
-	"github.com/appootb/substratum/token"
+	"github.com/appootb/substratum/v2/auth"
+	"github.com/appootb/substratum/v2/token"
 )
 
 func Init() {

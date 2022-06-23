@@ -3,21 +3,20 @@ package substratum
 import (
 	"context"
 	"errors"
-	"net/http"
 	"time"
 
-	"github.com/appootb/substratum/auth"
-	"github.com/appootb/substratum/configure"
-	"github.com/appootb/substratum/discovery"
-	"github.com/appootb/substratum/plugin"
-	"github.com/appootb/substratum/proto/go/permission"
-	"github.com/appootb/substratum/queue"
-	"github.com/appootb/substratum/rpc"
-	"github.com/appootb/substratum/server"
-	"github.com/appootb/substratum/storage"
-	"github.com/appootb/substratum/task"
-	"github.com/appootb/substratum/util/snowflake"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/appootb/substratum/v2/auth"
+	"github.com/appootb/substratum/v2/configure"
+	"github.com/appootb/substratum/v2/discovery"
+	"github.com/appootb/substratum/v2/plugin"
+	"github.com/appootb/substratum/v2/proto/go/permission"
+	"github.com/appootb/substratum/v2/queue"
+	"github.com/appootb/substratum/v2/rpc"
+	"github.com/appootb/substratum/v2/server"
+	"github.com/appootb/substratum/v2/storage"
+	"github.com/appootb/substratum/v2/task"
+	"github.com/appootb/substratum/v2/util/snowflake"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 )
 
@@ -45,32 +44,6 @@ func NewServer(opts ...ServerOption) Service {
 		opt(srv)
 	}
 	return srv
-}
-
-func (s *Server) HandleFunc(scope permission.VisibleScope, pattern string, handler http.HandlerFunc) {
-	if m, ok := s.serveMuxers[scope]; ok {
-		m.HandleFunc(pattern, handler)
-		return
-	}
-	if scope != permission.VisibleScope_ALL {
-		return
-	}
-	for _, m := range s.serveMuxers {
-		m.HandleFunc(pattern, handler)
-	}
-}
-
-func (s *Server) Handle(scope permission.VisibleScope, pattern string, handler http.Handler) {
-	if mux, ok := s.serveMuxers[scope]; ok {
-		mux.Handle(pattern, handler)
-		return
-	}
-	if scope != permission.VisibleScope_ALL {
-		return
-	}
-	for _, mux := range s.serveMuxers {
-		mux.Handle(pattern, handler)
-	}
 }
 
 // Context returns the service context.
@@ -122,7 +95,7 @@ func (s *Server) GetGatewayMux(scope permission.VisibleScope) []*runtime.ServeMu
 	return srv
 }
 
-func (s *Server) AddMux(scope permission.VisibleScope, rpcPort, gatewayPort uint16) error {
+func (s *Server) AddServeMux(scope permission.VisibleScope, rpcPort, gatewayPort uint16) error {
 	var err error
 	if _, ok := s.serveMuxers[scope]; ok {
 		return errors.New("ServerMux for the specified scope has already been registered")
@@ -148,8 +121,8 @@ func (s *Server) Register(comp Component, rpcs ...string) error {
 	if err := comp.InitStorage(storage.Implementor().Get(name)); err != nil {
 		return err
 	}
-	if err := comp.RegisterHandler(s.serveMuxers[permission.VisibleScope_CLIENT].HTTPMux(),
-		s.serveMuxers[permission.VisibleScope_SERVER].HTTPMux()); err != nil {
+	if err := comp.RegisterHandler(s.serveMuxers[permission.VisibleScope_CLIENT].HTTPMux(name),
+		s.serveMuxers[permission.VisibleScope_SERVER].HTTPMux(name)); err != nil {
 		return err
 	}
 	if err := comp.RegisterService(auth.Implementor(), s); err != nil {
