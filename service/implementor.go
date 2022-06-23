@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/appootb/substratum/v2/proto/go/permission"
 	"github.com/appootb/substratum/v2/proto/go/secret"
@@ -10,6 +11,15 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+// HttpHandler interface.
+type HttpHandler interface {
+	// Handle registers the handler for the given pattern.
+	Handle(pattern string, handler http.Handler)
+
+	// HandleFunc registers the handler function for the given pattern.
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+}
 
 // Implementor interface.
 type Implementor interface {

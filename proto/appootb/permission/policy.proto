@@ -4,7 +4,7 @@ package appootb.permission.policy;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/appootb/substratum/proto/go/permission";
+option go_package = "github.com/appootb/substratum/v2/proto/go/permission";
 
 
 // ProtoBuffer method extend.

@@ -9,6 +9,7 @@ import (
 	"github.com/appootb/substratum/v2/gateway"
 	"github.com/appootb/substratum/v2/logger"
 	"github.com/appootb/substratum/v2/rpc"
+	"github.com/appootb/substratum/v2/service"
 	"github.com/appootb/substratum/v2/util/iphelper"
 	prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -61,7 +62,7 @@ func (m *ServeMux) RPCServer() *grpc.Server {
 	return m.rpcSrv
 }
 
-func (m *ServeMux) HTTPMux(comp string) http.Handler {
+func (m *ServeMux) HTTPMux(comp string) service.HttpHandler {
 	return &httpServeMux{
 		component: comp,
 		serveMux:  m.httpMux,

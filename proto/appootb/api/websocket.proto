@@ -4,7 +4,7 @@ package appootb.api;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/appootb/substratum/proto/go/api";
+option go_package = "github.com/appootb/substratum/v2/proto/go/api";
 
 
 // WebStream rules.

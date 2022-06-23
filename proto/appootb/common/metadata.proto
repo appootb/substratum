@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package appootb.common;
 
-option go_package = "github.com/appootb/substratum/proto/go/common";
+option go_package = "github.com/appootb/substratum/v2/proto/go/common";
 
 
 // Network enums.
