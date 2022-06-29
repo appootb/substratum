@@ -37,7 +37,8 @@ const (
 	KeyUserAgent   = "ua"
 	KeyToken       = "token"
 
-	KeyOriginalIP = "x-forwarded-for"
+	KeyIANAUserAgent = "user-agent"
+	KeyOriginalIP    = "x-forwarded-for"
 )
 
 var (
@@ -95,6 +96,13 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 	} else if p, ok := peer.FromContext(ctx); ok {
 		clientIP = p.Addr.String()
 	}
+	// User agent
+	userAgent := ""
+	if ua := md[KeyUserAgent]; len(ua) > 0 && ua[0] != "" {
+		userAgent = ua[0]
+	} else {
+		userAgent = strings.Join(md[KeyIANAUserAgent], "")
+	}
 
 	return &common.Metadata{
 		Product:     strings.Join(md[KeyProduct], ""),
@@ -120,7 +128,7 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		Imei:        strings.Join(md[KeyIMEI], ""),
 		DeviceMac:   strings.Join(md[KeyDeviceMac], ""),
 		ClientIp:    clientIP,
-		UserAgent:   strings.Join(md[KeyUserAgent], ""),
+		UserAgent:   userAgent,
 		Token:       strings.Join(md[KeyToken], ""),
 	}
 }

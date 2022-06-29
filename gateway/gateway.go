@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	MetadataHeaderPrefix  = "appootb-"
-	MetadataTrailerPrefix = "trailer-"
+	MetadataHeaderPrefix  = "Appootb-"
+	MetadataTrailerPrefix = "Trailer-"
 )
 
 var DefaultOptions = []runtime.ServeMuxOption{
@@ -72,7 +72,7 @@ func isPermanentHTTPHeader(hdr string) bool {
 func IncomingHeaderMatcher(key string) (string, bool) {
 	key = textproto.CanonicalMIMEHeaderKey(key)
 	if isPermanentHTTPHeader(key) {
-		return runtime.MetadataPrefix + key, true
+		return key, true
 	} else if strings.HasPrefix(key, MetadataHeaderPrefix) {
 		return key[len(MetadataHeaderPrefix):], true
 	}
@@ -124,7 +124,6 @@ func ProtoErrorHandler(ctx context.Context, _ *runtime.ServeMux, marshaler runti
 		w.Header().Add("Trailer", tk)
 	}
 	// Write response
-	w.WriteHeader(http.StatusInternalServerError)
 	body := &spb.Status{
 		Code:    int32(codes.Unknown),
 		Message: err.Error(),
