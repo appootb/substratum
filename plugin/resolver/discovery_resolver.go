@@ -22,9 +22,10 @@ type DiscoveryResolver struct {
 //
 // It could be called multiple times concurrently.
 func (r *DiscoveryResolver) ResolveNow(_ resolver.ResolveNowOptions) {
-	nodes := discovery.Implementor().GetNodes(r.target.URL.Opaque)
+	_, endpoint, _ := strings.Cut(r.target.URL.Path, "/")
+	nodes := discovery.Implementor().GetNodes(endpoint)
 	if len(nodes) == 0 {
-		r.cc.ReportError(errors.New(codes.NotFound, r.target.URL.Opaque))
+		r.cc.ReportError(errors.New(codes.NotFound, endpoint))
 		return
 	}
 	//
