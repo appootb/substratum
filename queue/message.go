@@ -18,10 +18,10 @@ func (fn ConsumerFunc) Handle(ctx context.Context, m Message) error {
 
 // Message interface.
 type Message interface {
-	// Queue name of this message.
-	Queue() string
 	// Topic name of this message.
 	Topic() string
+	// Group name of this message.
+	Group() string
 
 	// UniqueID returns the unique ID of this message.
 	UniqueID() string
@@ -53,13 +53,13 @@ type MessageOperation interface {
 
 type PingMessage struct{}
 
-// Queue name of this message.
-func (m *PingMessage) Queue() string {
+// Topic name of this message.
+func (m *PingMessage) Topic() string {
 	return ""
 }
 
-// Topic name of this message.
-func (m *PingMessage) Topic() string {
+// Group name of this message.
+func (m *PingMessage) Group() string {
 	return ""
 }
 

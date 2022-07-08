@@ -5,8 +5,15 @@ import (
 	"time"
 )
 
+type ConsumeOffset int
+
 const (
-	DefaultTopic       = "default"
+	ConsumeFromLatest ConsumeOffset = iota
+	ConsumeFromEarliest
+)
+
+const (
+	DefaultGroup       = "default"
 	DefaultConcurrency = 1
 	DefaultMaxRetry    = 3
 )
@@ -25,11 +32,12 @@ func RegisterImplementor(s Queue) {
 	impl = s
 }
 
+// Queue interface.
 type Queue interface {
-	// Publish writes a message body to the specified queue.
-	Publish(queue string, content []byte, opts ...PublishOption) error
-	// Subscribe consumes the messages of the specified queue.
-	Subscribe(queue string, handler Consumer, opts ...SubscribeOption) error
+	// Publish writes a message body to the specified topic.
+	Publish(topic string, content []byte, opts ...PublishOption) error
+	// Subscribe consumes the messages of the specified topic.
+	Subscribe(topic string, handler Consumer, opts ...SubscribeOption) error
 }
 
 type PublishOption func(*PublishOptions)
@@ -42,12 +50,20 @@ var EmptyPublishOptions = func() *PublishOptions {
 
 type PublishOptions struct {
 	context.Context
-	Delay time.Duration
+	Key        uint64
+	Delay      time.Duration
+	Properties map[string]string
 }
 
 func WithPublishContext(ctx context.Context) PublishOption {
 	return func(opts *PublishOptions) {
 		opts.Context = ctx
+	}
+}
+
+func WithPublishKey(key uint64) PublishOption {
+	return func(opts *PublishOptions) {
+		opts.Key = key
 	}
 }
 
@@ -57,21 +73,34 @@ func WithPublishDelay(delay time.Duration) PublishOption {
 	}
 }
 
+func WithProperty(key, value string) PublishOption {
+	return func(opts *PublishOptions) {
+		if opts.Properties != nil {
+			opts.Properties[key] = value
+			return
+		}
+		opts.Properties = map[string]string{
+			key: value,
+		}
+	}
+}
+
 type SubscribeOption func(*SubscribeOptions)
 
 type SubscribeOptions struct {
 	context.Context
 	Component   string
-	Topic       string
+	Group       string
 	Concurrency int
 	MaxRetry    int
+	InitOffset  ConsumeOffset
 	Idempotent  Idempotent
 }
 
 var EmptySubscribeOptions = func() *SubscribeOptions {
 	return &SubscribeOptions{
 		Context:     context.Background(),
-		Topic:       DefaultTopic,
+		Group:       DefaultGroup,
 		Concurrency: DefaultConcurrency,
 		MaxRetry:    DefaultMaxRetry,
 		Idempotent:  IdempotentImplementor(),
@@ -90,9 +119,9 @@ func WithConsumeComponent(component string) SubscribeOption {
 	}
 }
 
-func WithConsumeTopic(topic string) SubscribeOption {
+func WithConsumeGroup(name string) SubscribeOption {
 	return func(opts *SubscribeOptions) {
-		opts.Topic = topic
+		opts.Group = name
 	}
 }
 
@@ -105,6 +134,12 @@ func WithConsumeConcurrency(concurrency int) SubscribeOption {
 func WithConsumeRetry(retry int) SubscribeOption {
 	return func(opts *SubscribeOptions) {
 		opts.MaxRetry = retry
+	}
+}
+
+func WithInitOffset(offset ConsumeOffset) SubscribeOption {
+	return func(opts *SubscribeOptions) {
+		opts.InitOffset = offset
 	}
 }
 

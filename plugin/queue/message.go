@@ -9,17 +9,12 @@ import (
 
 type Message struct {
 	svc       *Debug
-	queue     string
 	topic     string
+	group     string
 	content   []byte
 	retry     int
 	timestamp time.Time
 	delay     time.Duration
-}
-
-// Queue name of this message.
-func (m *Message) Queue() string {
-	return m.queue
 }
 
 // Topic name of this message.
@@ -27,9 +22,14 @@ func (m *Message) Topic() string {
 	return m.topic
 }
 
+// Group name of this message.
+func (m *Message) Group() string {
+	return m.group
+}
+
 // UniqueID returns the unique ID of this message.
 func (m *Message) UniqueID() string {
-	return fmt.Sprintf("%s/%s-%d", m.queue, m.topic, m.timestamp.UnixNano())
+	return fmt.Sprintf("%s/%s-%d", m.topic, m.group, m.timestamp.UnixNano())
 }
 
 // Content returns the message body content.
@@ -78,8 +78,8 @@ func (m *Message) Requeue() {
 // Fail indicates a failed process.
 func (m *Message) Fail() {
 	logger.Error("queue_failed", logger.Content{
-		"queue":     m.queue,
 		"topic":     m.topic,
+		"group":     m.group,
 		"timestamp": m.timestamp,
 		"retry":     m.retry,
 		"delay":     m.delay,

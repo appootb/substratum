@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"context"
 	"sync"
 	"time"
 
@@ -21,71 +20,17 @@ func (m *Debug) Ping() error {
 	return nil
 }
 
-func (m *Debug) MaxDelay() time.Duration {
-	return -1
-}
-
-func (m *Debug) GetQueues() ([]string, error) {
-	var queues []string
-	m.queues.Range(func(queue, _ interface{}) bool {
-		queues = append(queues, queue.(string))
-		return true
-	})
-	return queues, nil
-}
-
-func (m *Debug) GetTopics() (map[string][]string, error) {
-	topics := map[string][]string{}
-	m.queues.Range(func(queue, chs interface{}) bool {
-		ts, _ := chs.(*sync.Map)
-		ts.Range(func(topic, _ interface{}) bool {
-			topics[queue.(string)] = append(topics[queue.(string)], topic.(string))
-			return true
-		})
-		return true
-	})
-	return topics, nil
-}
-
-func (m *Debug) GetQueueLength(queue string) (map[string]int64, error) {
-	length := map[string]int64{}
-	topics, ok := m.queues.Load(queue)
+func (m *Debug) Read(topic string, ch chan<- queue.MessageWrapper, opts *queue.SubscribeOptions) error {
+	groups, ok := m.queues.Load(topic)
 	if !ok {
-		return length, nil
+		groups = &sync.Map{}
+		m.queues.Store(topic, groups)
 	}
-	ts, _ := topics.(*sync.Map)
-	ts.Range(func(key, value interface{}) bool {
-		ch := value.(chan *Message)
-		length[key.(string)] = int64(len(ch))
-		return true
-	})
-	return length, nil
-}
-
-func (m *Debug) GetTopicLength(queue, topic string) (int64, error) {
-	topics, ok := m.queues.Load(queue)
-	if !ok {
-		return 0, nil
-	}
-	ts, _ := topics.(*sync.Map)
-	ch, ok := ts.Load(topic)
-	if !ok {
-		return 0, nil
-	}
-	return int64(len(ch.(chan *Message))), nil
-}
-
-func (m *Debug) Read(_ context.Context, queue, topic string, ch chan<- queue.MessageWrapper) error {
-	topics, ok := m.queues.Load(queue)
-	if !ok {
-		topics = &sync.Map{}
-		m.queues.Store(queue, topics)
-	}
-	ts, _ := topics.(*sync.Map)
+	gs, _ := groups.(*sync.Map)
 	var cache chan *Message
-	if c, ok := ts.Load(topic); !ok {
+	if c, ok := gs.Load(opts.Group); !ok {
 		cache = make(chan *Message, 100)
-		ts.Store(topic, cache)
+		gs.Store(opts.Group, cache)
 	} else {
 		cache = c.(chan *Message)
 	}
@@ -93,25 +38,25 @@ func (m *Debug) Read(_ context.Context, queue, topic string, ch chan<- queue.Mes
 	return nil
 }
 
-func (m *Debug) Write(_ context.Context, queue string, delay time.Duration, content []byte) error {
-	topics, ok := m.queues.Load(queue)
+func (m *Debug) Write(topic string, content []byte, opts *queue.PublishOptions) error {
+	groups, ok := m.queues.Load(topic)
 	if !ok {
-		topics = &sync.Map{}
-		m.queues.Store(queue, topics)
+		groups = &sync.Map{}
+		m.queues.Store(topic, groups)
 	}
-	ts, _ := topics.(*sync.Map)
-	ts.Range(func(key, value interface{}) bool {
+	gs, _ := groups.(*sync.Map)
+	gs.Range(func(key, value interface{}) bool {
 		ch := value.(chan *Message)
 		msg := &Message{
 			svc:       m,
-			queue:     queue,
-			topic:     key.(string),
+			topic:     topic,
+			group:     key.(string),
 			content:   content,
 			timestamp: time.Now(),
-			delay:     delay,
+			delay:     opts.Delay,
 		}
-		if delay > 0 {
-			timer.AfterFunc(delay, func() {
+		if opts.Delay > 0 {
+			timer.AfterFunc(opts.Delay, func() {
 				m.enqueue(ch, msg)
 			})
 		} else {
@@ -143,12 +88,12 @@ func (m *Debug) enqueue(ch chan *Message, msg *Message) {
 }
 
 func (m *Debug) requeue(msg *Message) {
-	topics, ok := m.queues.Load(msg.queue)
+	groups, ok := m.queues.Load(msg.topic)
 	if !ok {
 		return
 	}
-	ts, _ := topics.(*sync.Map)
-	c, ok := ts.Load(msg.topic)
+	ts, _ := groups.(*sync.Map)
+	c, ok := ts.Load(msg.group)
 	if !ok {
 		return
 	}
