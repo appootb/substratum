@@ -7,6 +7,7 @@ import (
 	"github.com/appootb/substratum/v2/metadata"
 	"github.com/appootb/substratum/v2/service"
 	"github.com/appootb/substratum/v2/storage"
+	"github.com/appootb/substratum/v2/util/snowflake"
 	"gorm.io/gorm"
 )
 
@@ -31,9 +32,15 @@ func WithDB(tx *gorm.DB) Option {
 	}
 }
 
-func WithPrimaryKey(id uint64) Option {
+func WithPrimaryKey(pk uint64) Option {
 	return func(base *Base) {
-		base.ID = id
+		base.ID = pk
+	}
+}
+
+func WithSnowflake(id uint64) Option {
+	return func(base *Base) {
+		base.CreatedAt = snowflake.Timestamp(id)
 	}
 }
 
