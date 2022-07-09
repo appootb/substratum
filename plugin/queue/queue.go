@@ -57,12 +57,12 @@ func (m *Queue) Subscribe(topic string, handler queue.Consumer, opts ...queue.Su
 		return err
 	}
 	for i := 0; i < options.Concurrency; i++ {
-		go m.process(messageChan, handler, options)
+		go m.process(topic, messageChan, handler, options)
 	}
 	return nil
 }
 
-func (m *Queue) process(ch <-chan queue.MessageWrapper, h queue.Consumer, opts *queue.SubscribeOptions) {
+func (m *Queue) process(topic string, ch <-chan queue.MessageWrapper, h queue.Consumer, opts *queue.SubscribeOptions) {
 	ctx := context.WithImplementContext(opts.Context, opts.Component)
 
 	for {
@@ -113,16 +113,16 @@ func (m *Queue) process(ch <-chan queue.MessageWrapper, h queue.Consumer, opts *
 		if err != nil {
 			logger.Error(ErrorLog, logger.Content{
 				LogError:  err.Error(),
-				LogTopic:  msg.Topic(),
-				LogGroup:  msg.Group(),
-				LogKey:    msg.UniqueID(),
+				LogTopic:  topic,
+				LogGroup:  opts.Group,
+				LogKey:    msg.Key(),
 				LogStatus: status,
 			})
 		} else {
 			logger.Debug(DebugLog, logger.Content{
-				LogTopic:  msg.Topic(),
-				LogGroup:  msg.Group(),
-				LogKey:    msg.UniqueID(),
+				LogTopic:  topic,
+				LogGroup:  opts.Group,
+				LogKey:    msg.Key(),
 				LogStatus: status,
 			})
 		}
