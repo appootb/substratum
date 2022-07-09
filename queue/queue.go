@@ -2,7 +2,10 @@ package queue
 
 import (
 	"context"
+	"strconv"
 	"time"
+
+	"github.com/appootb/substratum/v2/util/snowflake"
 )
 
 type ConsumeOffset int
@@ -43,14 +46,19 @@ type Queue interface {
 type PublishOption func(*PublishOptions)
 
 var EmptyPublishOptions = func() *PublishOptions {
+	key, _ := snowflake.NextID()
 	return &PublishOptions{
-		Context: context.Background(),
+		Context:    context.Background(),
+		Sequence:   key,
+		Key:        strconv.FormatUint(key, 10),
+		Properties: map[string]string{},
 	}
 }
 
 type PublishOptions struct {
 	context.Context
-	Key        uint64
+	Sequence   uint64
+	Key        string
 	Delay      time.Duration
 	Properties map[string]string
 }
@@ -61,7 +69,13 @@ func WithPublishContext(ctx context.Context) PublishOption {
 	}
 }
 
-func WithPublishKey(key uint64) PublishOption {
+func WithPublishSequence(seq uint64) PublishOption {
+	return func(opts *PublishOptions) {
+		opts.Sequence = seq
+	}
+}
+
+func WithPublishUniqueKey(key string) PublishOption {
 	return func(opts *PublishOptions) {
 		opts.Key = key
 	}

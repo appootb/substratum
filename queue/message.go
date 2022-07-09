@@ -18,19 +18,18 @@ func (fn ConsumerFunc) Handle(ctx context.Context, m Message) error {
 
 // Message interface.
 type Message interface {
-	// Topic name of this message.
-	Topic() string
-	// Group name of this message.
-	Group() string
-
-	// UniqueID returns the unique ID of this message.
-	UniqueID() string
+	// Key returns the unique key ID of this message.
+	Key() string
 	// Content returns the message body content.
 	Content() []byte
+	// Properties returns the properties of this message.
+	Properties() map[string]string
+
 	// Timestamp indicates the creation time of the message.
 	Timestamp() time.Time
 	// NotBefore indicates the message should not be processed before this timestamp.
 	NotBefore() time.Time
+
 	// Retry times.
 	Retry() int
 	// IsPing returns true for a ping message.
@@ -53,24 +52,19 @@ type MessageOperation interface {
 
 type PingMessage struct{}
 
-// Topic name of this message.
-func (m *PingMessage) Topic() string {
-	return ""
-}
-
-// Group name of this message.
-func (m *PingMessage) Group() string {
-	return ""
-}
-
-// UniqueID returns the unique ID of this message.
-func (m *PingMessage) UniqueID() string {
+// Key returns the unique key ID of this message.
+func (m *PingMessage) Key() string {
 	return ""
 }
 
 // Content returns the message body content.
 func (m *PingMessage) Content() []byte {
 	return nil
+}
+
+// Properties returns the properties of this message.
+func (m *PingMessage) Properties() map[string]string {
+	return map[string]string{}
 }
 
 // Timestamp indicates the creation time of the message.

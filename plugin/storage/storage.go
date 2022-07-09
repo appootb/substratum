@@ -4,6 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/appootb/substratum/v2/configure"
 	"github.com/appootb/substratum/v2/storage"
 	"github.com/appootb/substratum/v2/util/hash"
 	"github.com/go-redis/redis/v8"
@@ -21,7 +22,7 @@ type Storage struct {
 	caches []redis.Cmdable
 }
 
-func (s *Storage) InitDB(master storage.Config, slaves []storage.Config, opts ...storage.SQLOption) error {
+func (s *Storage) InitDB(master configure.Address, slaves []configure.Address, opts ...storage.SQLOption) error {
 	cfg := &gorm.Config{}
 	for _, o := range opts {
 		o(cfg, nil)
@@ -62,13 +63,9 @@ func (s *Storage) InitDB(master storage.Config, slaves []storage.Config, opts ..
 	return nil
 }
 
-func (s *Storage) InitRedis(configs []storage.Config, opts ...storage.RedisOption) error {
+func (s *Storage) InitRedis(configs []configure.Address, opts ...storage.RedisOption) error {
 	for _, cfg := range configs {
-		dialect, err := cfg.Dialect()
-		if err != nil {
-			return err
-		}
-		//
+		dialect := redisCache{cfg}
 		options, err := redis.ParseURL(dialect.URL())
 		if err != nil {
 			return err

@@ -17,24 +17,19 @@ type Message struct {
 	delay     time.Duration
 }
 
-// Topic name of this message.
-func (m *Message) Topic() string {
-	return m.topic
-}
-
-// Group name of this message.
-func (m *Message) Group() string {
-	return m.group
-}
-
-// UniqueID returns the unique ID of this message.
-func (m *Message) UniqueID() string {
+// Key returns the unique key ID of this message.
+func (m *Message) Key() string {
 	return fmt.Sprintf("%s/%s-%d", m.topic, m.group, m.timestamp.UnixNano())
 }
 
 // Content returns the message body content.
 func (m *Message) Content() []byte {
 	return m.content
+}
+
+// Properties returns the properties of this message.
+func (m *Message) Properties() map[string]string {
+	return map[string]string{}
 }
 
 // Timestamp indicates the creation time of the message.
