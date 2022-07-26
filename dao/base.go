@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -21,6 +22,10 @@ func (m Base) DB(readOnly bool) *gorm.DB {
 	} else {
 		return m.rw
 	}
+}
+
+func (m Base) Tx(fn func(tx *gorm.DB) error, opts ...*sql.TxOptions) error {
+	return m.rw.Transaction(fn, opts...)
 }
 
 func New(opts ...Option) Base {
