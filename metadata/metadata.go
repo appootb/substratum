@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -12,19 +13,19 @@ import (
 )
 
 const (
-	KeyProduct     = "product"
-	KeyPackage     = "package"
-	KeyVersion     = "version"
+	KeyProduct     = "prd"
+	KeyPackage     = "pkg"
+	KeyVersion     = "ver"
 	KeyOSVersion   = "os"
 	KeyBrand       = "brand"
 	KeyModel       = "model"
 	KeyDeviceID    = "udid"
-	KeyFingerprint = "fingerprint"
-	KeyLocale      = "locale"
+	KeyFingerprint = "fp"
+	KeyLocale      = "loc"
 	KeyLatitude    = "lat"
 	KeyLongitude   = "lon"
-	KeyPlatform    = "platform"
-	KeyNetwork     = "network"
+	KeyPlatform    = "plf"
+	KeyNetwork     = "net"
 	KeyTimestamp   = "time"
 	KeyTraceID     = "sn"
 	KeyIsEmulator  = "emulator"
@@ -47,88 +48,90 @@ var (
 )
 
 func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
+	var md url.Values
+	if v, ok := metadata.FromIncomingContext(ctx); !ok {
 		return nil
+	} else {
+		md = url.Values(v)
 	}
 	// Platform
 	platform := common.Platform_PLATFORM_UNSPECIFIED
-	if pf := md.Get(KeyPlatform); len(pf) > 0 {
-		if i, err := strconv.Atoi(pf[0]); err != nil {
-			platform = common.Platform(common.Platform_value[pf[0]])
+	if md.Has(KeyPlatform) {
+		if i, err := strconv.Atoi(md.Get(KeyPlatform)); err != nil {
+			platform = common.Platform(common.Platform_value[strings.ToUpper(md.Get(KeyPlatform))])
 		} else {
 			platform = common.Platform(i)
 		}
 	}
 	// Network
 	network := common.Network_NETWORK_UNSPECIFIED
-	if net := md.Get(KeyNetwork); len(net) > 0 {
-		if i, err := strconv.Atoi(net[0]); err != nil {
-			network = common.Network(common.Network_value[net[0]])
+	if md.Has(KeyNetwork) {
+		if i, err := strconv.Atoi(md.Get(KeyNetwork)); err != nil {
+			network = common.Network(common.Network_value[strings.ToUpper(md.Get(KeyNetwork))])
 		} else {
 			network = common.Network(i)
 		}
 	}
 	// Timestamp
 	timestamp := int64(0)
-	if ts := md.Get(KeyTimestamp); len(ts) > 0 {
-		timestamp, _ = strconv.ParseInt(ts[0], 10, 64)
+	if md.Has(KeyTimestamp) {
+		timestamp, _ = strconv.ParseInt(md.Get(KeyTimestamp), 10, 64)
 	}
 	// Emulator
 	emulator := false
-	if b := md.Get(KeyIsEmulator); len(b) > 0 {
-		emulator, _ = strconv.ParseBool(b[0])
+	if md.Has(KeyIsEmulator) {
+		emulator, _ = strconv.ParseBool(md.Get(KeyIsEmulator))
 	}
 	// Develop
 	develop := false
-	if b := md.Get(KeyIsDevelop); len(b) > 0 && EnvDevelop != "" {
-		develop, _ = strconv.ParseBool(b[0])
+	if md.Has(KeyIsDevelop) && EnvDevelop != "" {
+		develop, _ = strconv.ParseBool(md.Get(KeyIsDevelop))
 	}
 	// Testing
 	testing := false
-	if b := md.Get(KeyIsTesting); len(b) > 0 && EnvTesting != "" {
-		testing, _ = strconv.ParseBool(b[0])
+	if md.Has(KeyIsTesting) && EnvTesting != "" {
+		testing, _ = strconv.ParseBool(md.Get(KeyIsTesting))
 	}
 	// Client IP
 	clientIP := ""
-	if ips := md.Get(KeyOriginalIP); len(ips) > 0 {
-		clientIP = ips[0]
+	if md.Has(KeyOriginalIP) {
+		clientIP = md.Get(KeyOriginalIP)
 	} else if p, ok := peer.FromContext(ctx); ok {
 		clientIP = p.Addr.String()
 	}
 	// User agent
 	userAgent := ""
-	if ua := md[KeyUserAgent]; len(ua) > 0 && ua[0] != "" {
-		userAgent = ua[0]
+	if md.Has(KeyUserAgent) {
+		userAgent = md.Get(KeyUserAgent)
 	} else {
-		userAgent = strings.Join(md[KeyIANAUserAgent], "")
+		userAgent = md.Get(KeyIANAUserAgent)
 	}
 
 	return &common.Metadata{
-		Product:     strings.Join(md[KeyProduct], ""),
-		Package:     strings.Join(md[KeyPackage], ""),
-		Version:     strings.Join(md[KeyVersion], ""),
-		OsVersion:   strings.Join(md[KeyOSVersion], ""),
-		Brand:       strings.Join(md[KeyBrand], ""),
-		Model:       strings.Join(md[KeyModel], ""),
-		DeviceId:    strings.Join(md[KeyDeviceID], ""),
-		Fingerprint: strings.Join(md[KeyFingerprint], ""),
-		Locale:      strings.Join(md[KeyLocale], ""),
-		Latitude:    strings.Join(md[KeyLatitude], ""),
-		Longitude:   strings.Join(md[KeyLongitude], ""),
+		Product:     md.Get(KeyProduct),
+		Package:     md.Get(KeyPackage),
+		Version:     md.Get(KeyVersion),
+		OsVersion:   md.Get(KeyOSVersion),
+		Brand:       md.Get(KeyBrand),
+		Model:       md.Get(KeyModel),
+		DeviceId:    md.Get(KeyDeviceID),
+		Fingerprint: md.Get(KeyFingerprint),
+		Locale:      md.Get(KeyLocale),
+		Latitude:    md.Get(KeyLatitude),
+		Longitude:   md.Get(KeyLongitude),
 		Platform:    platform,
 		Network:     network,
 		Timestamp:   timestamp,
-		TraceId:     strings.Join(md[KeyTraceID], ""),
+		TraceId:     md.Get(KeyTraceID),
 		IsEmulator:  emulator,
 		IsDevelop:   develop,
 		IsTesting:   testing,
-		Channel:     strings.Join(md[KeyChannel], ""),
-		Uuid:        strings.Join(md[KeyUUID], ""),
-		Imei:        strings.Join(md[KeyIMEI], ""),
-		DeviceMac:   strings.Join(md[KeyDeviceMac], ""),
+		Channel:     md.Get(KeyChannel),
+		Uuid:        md.Get(KeyUUID),
+		Imei:        md.Get(KeyIMEI),
+		DeviceMac:   md.Get(KeyDeviceMac),
 		ClientIp:    clientIP,
 		UserAgent:   userAgent,
-		Token:       strings.Join(md[KeyToken], ""),
+		Token:       md.Get(KeyToken),
 	}
 }
