@@ -15,6 +15,7 @@ type Option func(*Base)
 
 func WithContext(ctx context.Context) Option {
 	return func(base *Base) {
+		base.ctx = ctx
 		component := service.ComponentNameFromContext(ctx)
 		base.rw = storage.ContextStorage(ctx, component).GetDB()
 		base.ro = storage.ContextStorage(ctx, component).GetDB(true)
@@ -25,8 +26,9 @@ func WithContext(ctx context.Context) Option {
 	}
 }
 
-func WithDB(tx *gorm.DB) Option {
+func WithDB(ctx context.Context, tx *gorm.DB) Option {
 	return func(base *Base) {
+		base.ctx = ctx
 		base.rw = tx
 		base.ro = tx
 	}
