@@ -17,6 +17,16 @@ type Message struct {
 	delay     time.Duration
 }
 
+// Topic name of this message.
+func (m *Message) Topic() string {
+	return m.topic
+}
+
+// Group name of this message.
+func (m *Message) Group() string {
+	return m.group
+}
+
 // Key returns the unique key ID of this message.
 func (m *Message) Key() string {
 	return fmt.Sprintf("%s/%s-%d", m.topic, m.group, m.timestamp.UnixNano())

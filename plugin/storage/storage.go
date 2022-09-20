@@ -5,9 +5,11 @@ import (
 	"sync/atomic"
 
 	"github.com/appootb/substratum/v2/configure"
+	"github.com/appootb/substratum/v2/errors"
 	"github.com/appootb/substratum/v2/storage"
 	"github.com/appootb/substratum/v2/util/hash"
 	"github.com/go-redis/redis/v8"
+	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 )
 
@@ -20,6 +22,9 @@ type Storage struct {
 	slaveDBs []*gorm.DB
 	// Redis caches
 	caches []redis.Cmdable
+
+	// Common instances
+	common map[configure.Schema]interface{}
 }
 
 func (s *Storage) InitDB(master configure.Address, slaves []configure.Address, opts ...storage.SQLOption) error {
@@ -104,4 +109,26 @@ func (s *Storage) GetRedis(key interface{}) redis.Cmdable {
 	caches := s.GetRedisz()
 	sum := hash.Sum(key)
 	return caches[sum%int64(len(caches))]
+}
+
+func (s *Storage) InitCommon(config configure.Address) error {
+	impl := storage.CommonDialectImplementor(config.Schema)
+	if impl == nil {
+		return errors.Newf(codes.FailedPrecondition, "unknown storage schema: %s", config.Schema)
+	}
+	dialect, err := impl.Open(config)
+	if err != nil {
+		return err
+	}
+	//
+	s.mu.Lock()
+	s.common[config.Schema] = dialect
+	s.mu.Unlock()
+	return nil
+}
+
+func (s *Storage) GetCommon(schema configure.Schema) interface{} {
+	s.mu.RLock()
+	s.mu.RUnlock()
+	return s.common[schema]
 }

@@ -3,6 +3,7 @@ package storage
 import (
 	"sync"
 
+	"github.com/appootb/substratum/v2/configure"
 	"github.com/appootb/substratum/v2/storage"
 )
 
@@ -17,7 +18,9 @@ type Manager struct {
 }
 
 func (m *Manager) New(component string) {
-	m.Store(component, &Storage{})
+	m.Store(component, &Storage{
+		common: make(map[configure.Schema]interface{}),
+	})
 }
 
 func (m *Manager) Get(component string) storage.Storage {

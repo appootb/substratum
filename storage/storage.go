@@ -13,4 +13,7 @@ type Storage interface {
 	GetDB(readOnly ...bool) *gorm.DB
 	GetRedisz() []redis.Cmdable
 	GetRedis(key interface{}) redis.Cmdable
+
+	InitCommon(config configure.Address) error
+	GetCommon(schema configure.Schema) interface{}
 }

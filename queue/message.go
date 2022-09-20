@@ -18,6 +18,11 @@ func (fn ConsumerFunc) Handle(ctx context.Context, m Message) error {
 
 // Message interface.
 type Message interface {
+	// Topic name of this message.
+	Topic() string
+	// Group name of this message.
+	Group() string
+
 	// Key returns the unique key ID of this message.
 	Key() string
 	// Content returns the message body content.
@@ -51,6 +56,16 @@ type MessageOperation interface {
 }
 
 type PingMessage struct{}
+
+// Topic name of this message.
+func (m *PingMessage) Topic() string {
+	return ""
+}
+
+// Group name of this message.
+func (m *PingMessage) Group() string {
+	return ""
+}
 
 // Key returns the unique key ID of this message.
 func (m *PingMessage) Key() string {
