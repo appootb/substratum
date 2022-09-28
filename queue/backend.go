@@ -1,7 +1,5 @@
 package queue
 
-import "github.com/appootb/substratum/v2/configure"
-
 var (
 	backendImpl Backend
 )
@@ -16,11 +14,6 @@ func RegisterBackendImplementor(backend Backend) {
 	backendImpl = backend
 }
 
-// InitBackend initializes the queue backend instance.
-func InitBackend(addr configure.Address) error {
-	return backendImpl.Init(addr)
-}
-
 // MessageWrapper interface.
 type MessageWrapper interface {
 	Message
@@ -29,9 +22,6 @@ type MessageWrapper interface {
 
 // Backend interface.
 type Backend interface {
-	// Init queue backend instance.
-	Init(cfg configure.Address) error
-
 	// Type returns backend type.
 	Type() string
 	// Ping connects the backend server if not connected.

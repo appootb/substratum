@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/appootb/substratum/v2/configure"
 	"github.com/appootb/substratum/v2/util/snowflake"
 )
 
@@ -38,9 +37,6 @@ func RegisterImplementor(s Queue) {
 
 // Queue interface.
 type Queue interface {
-	// Initialize queue backend instance.
-	Initialize(cfg configure.Address) error
-
 	// Publish writes a message body to the specified topic.
 	Publish(topic string, content []byte, opts ...PublishOption) error
 	// Subscribe consumes the messages of the specified topic.

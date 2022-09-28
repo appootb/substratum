@@ -23,7 +23,6 @@ const (
 
 	Kafka    Schema = "kafka"
 	Pulsar   Schema = "pulsar"
-	Pulsars  Schema = "pulsar+ssl"
 	RocketMQ Schema = "rocketmq"
 )
 

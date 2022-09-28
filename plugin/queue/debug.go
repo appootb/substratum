@@ -4,18 +4,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/appootb/substratum/v2/configure"
 	"github.com/appootb/substratum/v2/queue"
 	"github.com/appootb/substratum/v2/util/timer"
 )
 
 type Debug struct {
 	queues sync.Map
-}
-
-// Init queue backend instance.
-func (m *Debug) Init(configure.Address) error {
-	return nil
 }
 
 func (m *Debug) Type() string {

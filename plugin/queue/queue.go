@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"github.com/appootb/substratum/v2/configure"
 	"github.com/appootb/substratum/v2/logger"
 	"github.com/appootb/substratum/v2/plugin/context"
 	"github.com/appootb/substratum/v2/queue"
@@ -31,11 +30,6 @@ func Init() {
 }
 
 type Queue struct{}
-
-// Initialize queue backend instance.
-func (m *Queue) Initialize(cfg configure.Address) error {
-	return queue.BackendImplementor().Init(cfg)
-}
 
 // Publish writes a message body to the specified topic.
 func (m *Queue) Publish(topic string, content []byte, opts ...queue.PublishOption) error {
