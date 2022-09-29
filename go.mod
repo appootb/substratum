@@ -3,7 +3,7 @@ module github.com/appootb/substratum/v2
 go 1.14
 
 require (
-	github.com/appootb/grc v0.1.2
+	github.com/appootb/grc v1.0.0
 	github.com/gbrlsnchs/jwt/v3 v3.0.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
