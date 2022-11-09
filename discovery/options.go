@@ -8,7 +8,6 @@ type Option func(options *Options)
 
 type Options struct {
 	Isolate  bool
-	Path     string
 	TTL      time.Duration
 	Services []string
 }
@@ -22,12 +21,6 @@ var EmptyOptions = func() *Options {
 func WithIsolate(isolate bool) Option {
 	return func(opts *Options) {
 		opts.Isolate = isolate
-	}
-}
-
-func WithPath(path string) Option {
-	return func(opts *Options) {
-		opts.Path = path
 	}
 }
 

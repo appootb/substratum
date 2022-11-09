@@ -64,11 +64,11 @@ func (m *Discovery) Register(component, addr string, opts ...discovery.Option) (
 		o(options)
 	}
 	//
-	if err := m.initialize(options.Path); err != nil {
+	if err := m.initialize(); err != nil {
 		return 0, err
 	}
 	//
-	idKey := fmt.Sprintf("%s/%s/%s", options.Path, ServiceNodeIDKey, component)
+	idKey := fmt.Sprintf("%s/%s", ServiceNodeIDKey, component)
 	uniqueID, err := discovery.BackendImplementor().Incr(idKey)
 	if err != nil {
 		return 0, err
@@ -86,7 +86,7 @@ func (m *Discovery) Register(component, addr string, opts ...discovery.Option) (
 			ServicePrefix: strings.Join(options.Services, ","),
 		},
 	}
-	nodeKey := fmt.Sprintf("%s/%s/%s/%s", options.Path, ServicePrefix, component, addr)
+	nodeKey := fmt.Sprintf("%s/%s/%s", ServicePrefix, component, addr)
 	if err = discovery.BackendImplementor().KeepAlive(nodeKey, info.String(), options.TTL); err != nil {
 		return 0, err
 	}
@@ -132,13 +132,13 @@ func (m *Discovery) GetAddresses(service string) []string {
 	return addrs
 }
 
-func (m *Discovery) initialize(path string) error {
+func (m *Discovery) initialize() error {
 	if atomic.AddInt32(&m.initialized, 1) != 1 {
 		return nil
 	}
 	//
 	// Get services.
-	path = fmt.Sprintf("%s/%s/", path, ServicePrefix)
+	path := ServicePrefix + "/"
 	version, err := m.getServices(path)
 	if err != nil {
 		return err

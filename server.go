@@ -23,7 +23,6 @@ import (
 
 type Server struct {
 	ctx          context.Context
-	servicePath  string
 	keepAliveTTL time.Duration
 
 	components  []Component
@@ -154,7 +153,6 @@ func (s *Server) Serve(isolate ...bool) error {
 	for _, comp := range s.components {
 		nodeID, err := discovery.Implementor().Register(comp.Name(), addr,
 			discovery.WithIsolate(len(isolate) > 0 && isolate[0]),
-			discovery.WithPath(s.servicePath),
 			discovery.WithTTL(s.keepAliveTTL),
 			discovery.WithServices(s.rpcServices[comp.Name()]))
 		if err != nil {

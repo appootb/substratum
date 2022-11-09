@@ -79,7 +79,7 @@ func (m *Configure) Register(component string, v interface{}, opts ...configure.
 		return &InvalidUnmarshalError{reflect.TypeOf(cfg)}
 	}
 
-	basePath := fmt.Sprintf("%s/%s/%s/", options.Path, ConfigPrefix, component)
+	basePath := fmt.Sprintf("%s/%s/", ConfigPrefix, component)
 	// Create/update default config value if not exist.
 	if options.AutoCreation {
 		err := m.migrate(basePath, reflect.TypeOf(v))

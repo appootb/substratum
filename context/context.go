@@ -22,13 +22,7 @@ func Cancel() {
 }
 
 func ServerContext(component string) context.Context {
-	return client.ContextWithConnPool(
-		discovery.ContextWithDiscovery(
-			logger.ContextWithLogger(
-				queue.ContextWithQueueService(
-					storage.ContextWithStorage(
-						task.ContextWithTaskService(
-							service.ContextWithComponentName(ictx.Context, component)))))))
+	return WithServerContext(ictx.Context, component)
 }
 
 func WithServerContext(ctx context.Context, component string) context.Context {
