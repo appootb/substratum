@@ -130,7 +130,7 @@ func (slot *consumerSlot) run(handler Consumer) {
 
 func (slot *consumerSlot) callback(handler Consumer, cache map[interface{}][]interface{}) {
 	for k, v := range cache {
-		handler.Handle(sctx.ServerContext(slot.component), k, v)
+		handler.Handle(sctx.ServerContext(slot.component, slot.product), k, v)
 	}
 }
 

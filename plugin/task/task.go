@@ -76,7 +76,7 @@ Reset:
 			}
 
 		case <-timer.After(next.Sub(now)):
-			err := exec.Execute(sctx.ServerContext(opts.Component), opts.Argument)
+			err := exec.Execute(sctx.ServerContext(opts.Component, opts.Product), opts.Argument)
 			if err != nil {
 				logger.Error(ErrorLog, logger.Content{
 					LogError:    err.Error(),

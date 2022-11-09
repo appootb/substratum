@@ -85,7 +85,7 @@ func (pool *AsyncPool) run(h AsyncHandler) {
 	for {
 		select {
 		case d := <-pool.ch:
-			h.Handle(sctx.ServerContext(pool.component), d)
+			h.Handle(sctx.ServerContext(pool.component, pool.product), d)
 
 		case <-ictx.Context.Done():
 			return

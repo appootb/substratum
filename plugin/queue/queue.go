@@ -85,7 +85,7 @@ func (m *Queue) process(ch <-chan queue.MessageWrapper, h queue.Consumer, opts *
 			goto ProcessEnd
 		}
 
-		err = h.Handle(sctx.ServerContext(opts.Component), msg)
+		err = h.Handle(sctx.ServerContext(opts.Component, opts.Product), msg)
 		if err == nil {
 			msg.End()
 			status = queue.Succeeded
