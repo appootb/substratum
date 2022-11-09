@@ -42,6 +42,12 @@ func WithContext(ctx context.Context) ServerOption {
 	}
 }
 
+func WithServiceBasePath(path string) ServerOption {
+	return func(s *Server) {
+		s.servicePath = path
+	}
+}
+
 func WithKeepAliveTTL(ttl time.Duration) ServerOption {
 	return func(s *Server) {
 		s.keepAliveTTL = ttl

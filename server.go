@@ -8,6 +8,7 @@ import (
 	"github.com/appootb/substratum/v2/auth"
 	"github.com/appootb/substratum/v2/configure"
 	"github.com/appootb/substratum/v2/discovery"
+	ictx "github.com/appootb/substratum/v2/internal/context"
 	"github.com/appootb/substratum/v2/plugin"
 	"github.com/appootb/substratum/v2/proto/go/permission"
 	"github.com/appootb/substratum/v2/queue"
@@ -22,6 +23,7 @@ import (
 
 type Server struct {
 	ctx          context.Context
+	servicePath  string
 	keepAliveTTL time.Duration
 
 	components  []Component
@@ -34,7 +36,7 @@ func NewServer(opts ...ServerOption) Service {
 	plugin.Register()
 	// New server
 	srv := &Server{
-		ctx:          context.Background(),
+		ctx:          ictx.Context,
 		keepAliveTTL: 3 * time.Second,
 		rpcServices:  make(map[string][]string),
 		serveMuxers:  make(map[permission.VisibleScope]*server.ServeMux),
@@ -147,20 +149,22 @@ func (s *Server) Serve(isolate ...bool) error {
 		mux.Serve()
 	}
 
-	if len(isolate) == 0 || !isolate[0] {
-		// Register node.
-		addr := s.serveMuxers[permission.VisibleScope_SERVER].ConnAddr()
-		for _, comp := range s.components {
-			nodeID, err := discovery.Implementor().RegisterNode(comp.Name(), addr, s.rpcServices[comp.Name()], s.keepAliveTTL)
-			if err != nil {
-				return err
-			}
-			// TODO:
-			// NodeID is unique in component scope on different node.
-			// If multiple components are registered within an unique server,
-			// snowflake's node ID might be the same on different nodes.
-			snowflake.SetPartitionID(nodeID)
+	// Register node.
+	addr := s.serveMuxers[permission.VisibleScope_SERVER].ConnAddr()
+	for _, comp := range s.components {
+		nodeID, err := discovery.Implementor().Register(comp.Name(), addr,
+			discovery.WithIsolate(len(isolate) > 0 && isolate[0]),
+			discovery.WithPath(s.servicePath),
+			discovery.WithTTL(s.keepAliveTTL),
+			discovery.WithServices(s.rpcServices[comp.Name()]))
+		if err != nil {
+			return err
 		}
+		// TODO:
+		// NodeID is unique in component scope on different node.
+		// If multiple components are registered within an unique server,
+		// snowflake's node ID might be the same on different nodes.
+		snowflake.SetPartitionID(nodeID)
 	}
 
 	// Wait for cancellation.

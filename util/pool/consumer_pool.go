@@ -4,7 +4,8 @@ import (
 	"context"
 	"time"
 
-	pctx "github.com/appootb/substratum/v2/plugin/context"
+	sctx "github.com/appootb/substratum/v2/context"
+	ictx "github.com/appootb/substratum/v2/internal/context"
 	"github.com/appootb/substratum/v2/util/hash"
 )
 
@@ -25,12 +26,6 @@ func (fn ConsumerFunc) Handle(ctx context.Context, key interface{}, values []int
 }
 
 type ConsumerOption func(slot *consumerSlot)
-
-func WithConsumerContext(ctx context.Context) ConsumerOption {
-	return func(slot *consumerSlot) {
-		slot.ctx = ctx
-	}
-}
 
 func WithConsumerChanLength(chanLen int) ConsumerOption {
 	return func(slot *consumerSlot) {
@@ -61,9 +56,6 @@ type consumerData struct {
 }
 
 type consumerSlot struct {
-	ctx  context.Context
-	stop context.CancelFunc
-
 	component string
 
 	chanLength int
@@ -90,7 +82,6 @@ func NewConsumer(slotSize int, handler Consumer, opts ...ConsumerOption) *Consum
 
 func newConsumerSlot(handler Consumer, opts []ConsumerOption) *consumerSlot {
 	slot := &consumerSlot{
-		ctx:        context.Background(),
 		cache:      map[interface{}][]interface{}{},
 		chanLength: DefaultConsumerQueueLength,
 		length:     DefaultConsumerMaxMerge,
@@ -99,7 +90,6 @@ func newConsumerSlot(handler Consumer, opts []ConsumerOption) *consumerSlot {
 	for _, o := range opts {
 		o(slot)
 	}
-	slot.ctx, slot.stop = context.WithCancel(slot.ctx)
 	slot.ch = make(chan interface{}, slot.chanLength)
 	go slot.run(handler)
 	return slot
@@ -125,16 +115,15 @@ func (slot *consumerSlot) run(handler Consumer) {
 				go slot.callback(handler, slot.cache)
 				slot.cache = map[interface{}][]interface{}{}
 			}
-		case <-slot.ctx.Done():
+		case <-ictx.Context.Done():
 			return
 		}
 	}
 }
 
 func (slot *consumerSlot) callback(handler Consumer, cache map[interface{}][]interface{}) {
-	ctx := pctx.WithImplementContext(slot.ctx, slot.component)
 	for k, v := range cache {
-		handler.Handle(ctx, k, v)
+		handler.Handle(sctx.ServerContext(slot.component), k, v)
 	}
 }
 

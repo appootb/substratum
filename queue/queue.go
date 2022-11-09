@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	ictx "github.com/appootb/substratum/v2/internal/context"
 	"github.com/appootb/substratum/v2/util/snowflake"
 )
 
@@ -48,7 +49,7 @@ type PublishOption func(*PublishOptions)
 var EmptyPublishOptions = func() *PublishOptions {
 	key, _ := snowflake.NextID()
 	return &PublishOptions{
-		Context:    context.Background(),
+		Context:    ictx.Context,
 		Sequence:   key,
 		Key:        strconv.FormatUint(key, 10),
 		Properties: map[string]string{},
@@ -102,7 +103,6 @@ func WithProperty(key, value string) PublishOption {
 type SubscribeOption func(*SubscribeOptions)
 
 type SubscribeOptions struct {
-	context.Context
 	Component   string
 	Group       string
 	Concurrency int
@@ -113,17 +113,10 @@ type SubscribeOptions struct {
 
 var EmptySubscribeOptions = func() *SubscribeOptions {
 	return &SubscribeOptions{
-		Context:     context.Background(),
 		Group:       DefaultGroup,
 		Concurrency: DefaultConcurrency,
 		MaxRetry:    DefaultMaxRetry,
 		Idempotent:  IdempotentImplementor(),
-	}
-}
-
-func WithConsumeContext(ctx context.Context) SubscribeOption {
-	return func(opts *SubscribeOptions) {
-		opts.Context = ctx
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	ictx "github.com/appootb/substratum/v2/internal/context"
 	md "github.com/appootb/substratum/v2/metadata"
 	"github.com/appootb/substratum/v2/proto/go/common"
 	"github.com/appootb/substratum/v2/proto/go/permission"
@@ -119,5 +120,5 @@ func WithMetadata(incomingMD *common.Metadata, keyID int64) context.Context {
 		md.KeyToken:       val,
 	})
 	outgoingMD.Set(md.KeyOriginalIP, incomingMD.GetClientIp(), iphelper.LocalIP())
-	return metadata.NewOutgoingContext(context.Background(), outgoingMD)
+	return metadata.NewOutgoingContext(ictx.Context, outgoingMD)
 }

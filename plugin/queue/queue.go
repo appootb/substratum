@@ -1,8 +1,9 @@
 package queue
 
 import (
+	sctx "github.com/appootb/substratum/v2/context"
+	ictx "github.com/appootb/substratum/v2/internal/context"
 	"github.com/appootb/substratum/v2/logger"
-	"github.com/appootb/substratum/v2/plugin/context"
 	"github.com/appootb/substratum/v2/queue"
 )
 
@@ -63,8 +64,6 @@ func (m *Queue) Subscribe(topic string, handler queue.Consumer, opts ...queue.Su
 }
 
 func (m *Queue) process(topic string, ch <-chan queue.MessageWrapper, h queue.Consumer, opts *queue.SubscribeOptions) {
-	ctx := context.WithImplementContext(opts.Context, opts.Component)
-
 	for {
 		var (
 			err    error
@@ -73,7 +72,7 @@ func (m *Queue) process(topic string, ch <-chan queue.MessageWrapper, h queue.Co
 		)
 
 		select {
-		case <-opts.Context.Done():
+		case <-ictx.Context.Done():
 			return
 		case msg = <-ch:
 		}
@@ -91,7 +90,7 @@ func (m *Queue) process(topic string, ch <-chan queue.MessageWrapper, h queue.Co
 			goto ProcessEnd
 		}
 
-		err = h.Handle(ctx, msg)
+		err = h.Handle(sctx.ServerContext(opts.Component), msg)
 		if err == nil {
 			msg.End()
 			status = queue.Succeeded

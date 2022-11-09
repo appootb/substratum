@@ -2,8 +2,9 @@ package timer
 
 import (
 	"container/list"
-	"context"
 	"time"
+
+	ictx "github.com/appootb/substratum/v2/internal/context"
 )
 
 type eventType int
@@ -20,8 +21,6 @@ type event struct {
 }
 
 type wheel struct {
-	ctx      context.Context
-	stop     context.CancelFunc
 	interval time.Duration
 	ticker   *time.Ticker
 
@@ -33,17 +32,16 @@ type wheel struct {
 }
 
 var (
-	defaultWheel = newWheel(context.Background(), time.Second, 600)
+	defaultWheel = newWheel(time.Second, 600)
 )
 
-func newWheel(ctx context.Context, interval time.Duration, slotNum int) *wheel {
+func newWheel(interval time.Duration, slotNum int) *wheel {
 	w := &wheel{
 		interval: interval,
 		slots:    make([]*list.List, slotNum),
 		timers:   make(map[interface{}]int),
 		eventCh:  make(chan *event, 100),
 	}
-	w.ctx, w.stop = context.WithCancel(ctx)
 	for i := 0; i < slotNum; i++ {
 		w.slots[i] = list.New()
 	}
@@ -76,7 +74,7 @@ func (w *wheel) resetTimer(t *wheelTimer) {
 func (w *wheel) loop() {
 	for {
 		select {
-		case <-w.ctx.Done():
+		case <-ictx.Context.Done():
 			w.ticker.Stop()
 			return
 

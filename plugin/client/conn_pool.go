@@ -1,9 +1,11 @@
 package client
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/appootb/substratum/v2/balancer"
 	"github.com/appootb/substratum/v2/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
@@ -33,6 +35,7 @@ func (p *ConnPool) NewConn(target string) *grpc.ClientConn {
 	// TODO: support more schema
 	cli, err := grpc.Dial(target,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"loadBalancingConfig":[{"%s":{}}]}`, balancer.Implementor().Name())),
 		grpc.WithConnectParams(grpc.ConnectParams{
 			Backoff: backoff.Config{
 				BaseDelay:  time.Second,

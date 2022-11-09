@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	pctx "github.com/appootb/substratum/v2/plugin/context"
+	sctx "github.com/appootb/substratum/v2/context"
 )
 
 type handlerWrapper struct {
@@ -19,8 +19,8 @@ func (h *handlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}()
-	ctx := pctx.WithImplementContext(r.Context(), h.component)
-	h.handler.ServeHTTP(w, r.WithContext(ctx))
+	//
+	h.handler.ServeHTTP(w, r.WithContext(sctx.WithServerContext(r.Context(), h.component)))
 }
 
 type httpServeMux struct {
@@ -43,7 +43,7 @@ func (h *httpServeMux) HandleFunc(pattern string, handler func(http.ResponseWrit
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}()
-		ctx := pctx.WithImplementContext(r.Context(), h.component)
-		handler(w, r.WithContext(ctx))
+		//
+		handler(w, r.WithContext(sctx.WithServerContext(r.Context(), h.component)))
 	})
 }
