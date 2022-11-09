@@ -1,9 +1,5 @@
 package discovery
 
-import (
-	"time"
-)
-
 var (
 	impl Discovery
 )
@@ -19,12 +15,12 @@ func RegisterImplementor(svc Discovery) {
 }
 
 type Discovery interface {
-	// RegisteredNode returns service unique ID and rpc address registered for the component.
-	RegisteredNode(component string) (int64, string)
+	// PassthroughAddr returns service unique ID and rpc address registered for the component.
+	PassthroughAddr(component string) (int64, string)
 
-	// RegisterNode registers rpc address of the component node.
-	RegisterNode(component, rpcAddr string, rpcSvc []string, ttl time.Duration) (int64, error)
+	// Register rpc address of the component service address.
+	Register(component, addr string, opts ...Option) (int64, error)
 
-	// GetNodes returns rpc service nodes.
-	GetNodes(svc string) map[string]int
+	// GetAddresses returns rpc service addresses.
+	GetAddresses(service string) []string
 }

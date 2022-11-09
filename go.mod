@@ -3,7 +3,6 @@ module github.com/appootb/substratum
 go 1.14
 
 require (
-	github.com/appootb/grc v0.1.2
 	github.com/elastic/go-elasticsearch/v6 v6.8.10
 	github.com/elastic/go-elasticsearch/v7 v7.15.0
 	github.com/gbrlsnchs/jwt/v3 v3.0.1

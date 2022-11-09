@@ -1,13 +1,8 @@
 package task
 
-import (
-	"context"
-)
-
 type Option func(options *Options)
 
 type Options struct {
-	context.Context
 	Component string
 	Product   string
 	Name      string
@@ -17,7 +12,6 @@ type Options struct {
 
 var EmptyOptions = func() *Options {
 	return &Options{
-		Context:   context.Background(),
 		Singleton: false,
 		Argument:  nil,
 	}
@@ -38,12 +32,6 @@ func WithProduct(product string) Option {
 func WithName(name string) Option {
 	return func(opts *Options) {
 		opts.Name = name
-	}
-}
-
-func WithContext(ctx context.Context) Option {
-	return func(opts *Options) {
-		opts.Context = ctx
 	}
 }
 

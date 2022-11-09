@@ -3,7 +3,8 @@ package pool
 import (
 	"context"
 
-	pctx "github.com/appootb/substratum/plugin/context"
+	sctx "github.com/appootb/substratum/context"
+	ictx "github.com/appootb/substratum/internal/context"
 )
 
 const (
@@ -22,12 +23,6 @@ func (fn AsyncFunc) Handle(ctx context.Context, arg interface{}) {
 }
 
 type AsyncOption func(pool *AsyncPool)
-
-func WithAsyncContext(ctx context.Context) AsyncOption {
-	return func(pool *AsyncPool) {
-		pool.ctx = ctx
-	}
-}
 
 func WithAsyncConcurrency(concurrency int) AsyncOption {
 	return func(pool *AsyncPool) {
@@ -54,9 +49,6 @@ func WithAsyncProduct(product string) AsyncOption {
 }
 
 type AsyncPool struct {
-	ctx  context.Context
-	stop context.CancelFunc
-
 	concurrency int
 	chanLength  int
 	component   string
@@ -67,7 +59,6 @@ type AsyncPool struct {
 
 func NewAsync(handler AsyncHandler, opts ...AsyncOption) *AsyncPool {
 	pool := &AsyncPool{
-		ctx:         context.Background(),
 		concurrency: DefaultAsyncConcurrency,
 		chanLength:  DefaultAsyncChanLength,
 	}
@@ -75,7 +66,6 @@ func NewAsync(handler AsyncHandler, opts ...AsyncOption) *AsyncPool {
 		o(pool)
 	}
 	pool.ch = make(chan interface{}, pool.chanLength)
-	pool.ctx, pool.stop = context.WithCancel(pool.ctx)
 	for i := 0; i < pool.concurrency; i++ {
 		go pool.run(handler)
 	}
@@ -91,17 +81,13 @@ func (pool *AsyncPool) Add(data interface{}) bool {
 	}
 }
 
-func (pool *AsyncPool) Stop() {
-	pool.stop()
-}
-
 func (pool *AsyncPool) run(h AsyncHandler) {
 	for {
 		select {
 		case d := <-pool.ch:
-			ctx := pctx.WithImplementContext(pool.ctx, pool.component, pool.product)
-			h.Handle(ctx, d)
-		case <-pool.ctx.Done():
+			h.Handle(sctx.ServerContext(pool.component), d)
+
+		case <-ictx.Context.Done():
 			return
 		}
 	}

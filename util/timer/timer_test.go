@@ -1,7 +1,6 @@
 package timer
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -12,7 +11,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	defaultWheel = newWheel(context.Background(), time.Millisecond, 1000)
+	defaultWheel = newWheel(time.Millisecond, 1000)
 
 	// call flag.Parse() here if TestMain uses flags
 	os.Exit(m.Run())

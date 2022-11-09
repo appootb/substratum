@@ -6,8 +6,9 @@ import (
 	"reflect"
 	"time"
 
+	sctx "github.com/appootb/substratum/context"
+	ictx "github.com/appootb/substratum/internal/context"
 	"github.com/appootb/substratum/logger"
-	"github.com/appootb/substratum/plugin/context"
 	"github.com/appootb/substratum/task"
 	"github.com/appootb/substratum/util/scheduler"
 	"github.com/appootb/substratum/util/timer"
@@ -51,13 +52,11 @@ func (c *Task) reflectName(exec task.Executor) string {
 
 func (c *Task) exec(schedule scheduler.Schedule, exec task.Executor, opts *task.Options) {
 Reset:
-	ctx := opts.Context
+	ctx := ictx.Context
 	if opts.Singleton {
 		// Blocked before acquired the locker.
 		ctx = task.LockerImplementor().Lock(ctx, opts.Name)
 	}
-
-	ctx = context.WithImplementContext(ctx, opts.Component, opts.Product)
 
 	for {
 		now := time.Now()
@@ -66,7 +65,7 @@ Reset:
 		select {
 		case <-ctx.Done():
 			select {
-			case <-opts.Done():
+			case <-ictx.Context.Done():
 				if opts.Singleton {
 					task.LockerImplementor().Unlock(opts.Name)
 				}
@@ -77,7 +76,7 @@ Reset:
 			}
 
 		case <-timer.After(next.Sub(now)):
-			err := exec.Execute(ctx, opts.Argument)
+			err := exec.Execute(sctx.ServerContext(opts.Component), opts.Argument)
 			if err != nil {
 				logger.Error(ErrorLog, logger.Content{
 					LogError:    err.Error(),

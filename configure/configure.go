@@ -16,5 +16,5 @@ func RegisterImplementor(cfg Configure) {
 
 type Configure interface {
 	// Register the configuration pointer.
-	Register(component string, v interface{}) error
+	Register(component string, v interface{}, opts ...Option) error
 }

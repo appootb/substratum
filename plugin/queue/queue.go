@@ -4,7 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/appootb/substratum/plugin/context"
+	sctx "github.com/appootb/substratum/context"
+	ictx "github.com/appootb/substratum/internal/context"
 	"github.com/appootb/substratum/queue"
 )
 
@@ -48,7 +49,7 @@ func (m *Queue) Subscribe(name string, handler queue.Consumer, opts ...queue.Sub
 		return err
 	}
 	messageChan := make(chan queue.MessageWrapper)
-	if err := queue.BackendImplementor().Read(options.Context, name, options.Topic, messageChan); err != nil {
+	if err := queue.BackendImplementor().Read(ictx.Context, name, options.Topic, messageChan); err != nil {
 		return err
 	}
 	for i := 0; i < options.Concurrency; i++ {
@@ -58,8 +59,6 @@ func (m *Queue) Subscribe(name string, handler queue.Consumer, opts ...queue.Sub
 }
 
 func (m *Queue) process(ch <-chan queue.MessageWrapper, h queue.Consumer, opts *queue.SubscribeOptions) {
-	ctx := context.WithImplementContext(opts.Context, opts.Component, opts.Product)
-
 	for {
 		var (
 			err    error
@@ -68,7 +67,7 @@ func (m *Queue) process(ch <-chan queue.MessageWrapper, h queue.Consumer, opts *
 		)
 
 		select {
-		case <-opts.Context.Done():
+		case <-ictx.Context.Done():
 			return
 		case msg = <-ch:
 		}
@@ -86,7 +85,7 @@ func (m *Queue) process(ch <-chan queue.MessageWrapper, h queue.Consumer, opts *
 			goto ProcessEnd
 		}
 
-		err = h.Handle(ctx, msg)
+		err = h.Handle(sctx.ServerContext(opts.Component), msg)
 		if err == nil {
 			msg.End()
 			status = queue.Succeeded

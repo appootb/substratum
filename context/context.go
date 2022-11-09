@@ -5,6 +5,7 @@ import (
 
 	"github.com/appootb/substratum/client"
 	"github.com/appootb/substratum/discovery"
+	ictx "github.com/appootb/substratum/internal/context"
 	"github.com/appootb/substratum/logger"
 	"github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/queue"
@@ -13,7 +14,19 @@ import (
 	"github.com/appootb/substratum/task"
 )
 
-func WithImplementContext(ctx context.Context, component string, product ...string) context.Context {
+func Context() context.Context {
+	return ictx.Context
+}
+
+func Cancel() {
+	ictx.Cancel()
+}
+
+func ServerContext(component string, product ...string) context.Context {
+	return WithServerContext(ictx.Context, component, product...)
+}
+
+func WithServerContext(ctx context.Context, component string, product ...string) context.Context {
 	if len(product) > 0 && product[0] != "" {
 		ctx = metadata.ContextWithProduct(ctx, product[0])
 	}

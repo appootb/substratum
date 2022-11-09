@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/appootb/substratum/plugin/auth"
+	"github.com/appootb/substratum/plugin/balancer"
 	"github.com/appootb/substratum/plugin/client"
 	"github.com/appootb/substratum/plugin/configure"
 	"github.com/appootb/substratum/plugin/credential"
@@ -31,6 +32,8 @@ func Register() {
 		credential.Init()
 		// Discovery
 		discovery.Init()
+		// Balancer
+		balancer.Init()
 		// Errors
 		errors.Init()
 		// Logger

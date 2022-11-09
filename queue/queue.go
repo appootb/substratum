@@ -60,7 +60,6 @@ func WithPublishDelay(delay time.Duration) PublishOption {
 type SubscribeOption func(*SubscribeOptions)
 
 type SubscribeOptions struct {
-	context.Context
 	Component   string
 	Product     string
 	Topic       string
@@ -71,17 +70,10 @@ type SubscribeOptions struct {
 
 var EmptySubscribeOptions = func() *SubscribeOptions {
 	return &SubscribeOptions{
-		Context:     context.Background(),
 		Topic:       DefaultTopic,
 		Concurrency: DefaultConcurrency,
 		MaxRetry:    DefaultMaxRetry,
 		Idempotent:  IdempotentImplementor(),
-	}
-}
-
-func WithConsumeContext(ctx context.Context) SubscribeOption {
-	return func(opts *SubscribeOptions) {
-		opts.Context = ctx
 	}
 }
 
