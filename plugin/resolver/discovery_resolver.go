@@ -19,20 +19,14 @@ type DiscoveryResolver struct {
 //
 // It could be called multiple times concurrently.
 func (r *DiscoveryResolver) ResolveNow(_ resolver.ResolveNowOptions) {
-	nodes := discovery.Implementor().GetAddresses(r.service)
-	if len(nodes) == 0 {
+	addresses := discovery.Implementor().GetAddresses(r.service)
+	if len(addresses) == 0 {
 		r.cc.ReportError(errors.New(codes.NotFound, r.service))
 		return
 	}
 	//
-	addrs := make([]resolver.Address, 0, len(nodes))
-	for _, node := range nodes {
-		addrs = append(addrs, resolver.Address{
-			Addr: node,
-		})
-	}
 	_ = r.cc.UpdateState(resolver.State{
-		Addresses: addrs,
+		Addresses: addresses,
 	})
 }
 

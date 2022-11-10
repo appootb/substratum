@@ -49,7 +49,7 @@ func (b *DiscoveryBuilder) Scheme() string {
 	return DefaultSchema
 }
 
-func (b *DiscoveryBuilder) UpdateAddresses(service string, addresses []string) error {
+func (b *DiscoveryBuilder) UpdateAddresses(service string, addresses []resolver.Address) error {
 	b.RLock()
 	defer b.RUnlock()
 	r, ok := b.serviceResolvers[service]
@@ -57,14 +57,8 @@ func (b *DiscoveryBuilder) UpdateAddresses(service string, addresses []string) e
 		return nil
 	}
 	//
-	addrs := make([]resolver.Address, 0, len(addresses))
-	for _, addr := range addresses {
-		addrs = append(addrs, resolver.Address{
-			Addr: addr,
-		})
-	}
 	return r.cc.UpdateState(resolver.State{
-		Addresses: addrs,
+		Addresses: addresses,
 	})
 }
 

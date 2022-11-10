@@ -11,7 +11,8 @@ import (
 	"github.com/appootb/substratum/v2/discovery"
 	ictx "github.com/appootb/substratum/v2/internal/context"
 	"github.com/appootb/substratum/v2/logger"
-	"github.com/appootb/substratum/v2/resolver"
+	builder "github.com/appootb/substratum/v2/resolver"
+	"google.golang.org/grpc/resolver"
 )
 
 func Init() {
@@ -96,7 +97,7 @@ func (m *Discovery) Register(component, addr string, opts ...discovery.Option) (
 }
 
 // GetAddresses returns rpc service addresses.
-func (m *Discovery) GetAddresses(service string) []string {
+func (m *Discovery) GetAddresses(service string) []resolver.Address {
 	parts := strings.Split(service, ".")
 	//
 	var nodes map[string]*NodeInfo
@@ -104,10 +105,10 @@ func (m *Discovery) GetAddresses(service string) []string {
 		nodes = cache.(map[string]*NodeInfo)
 	}
 	if nodes == nil || len(nodes) == 0 {
-		return []string{}
+		return []resolver.Address{}
 	}
 	//
-	addrs := make([]string, 0, len(nodes))
+	addresses := make([]resolver.Address, 0, len(nodes))
 	if len(parts) > 1 {
 		for _, info := range nodes {
 			if info.Metadata == nil || len(info.Metadata) == 0 {
@@ -118,18 +119,22 @@ func (m *Discovery) GetAddresses(service string) []string {
 				if service != name {
 					continue
 				}
-				addrs = append(addrs, info.Address)
+				addresses = append(addresses, resolver.Address{
+					Addr: info.Address,
+				})
 			}
 		}
-		if len(addrs) > 0 {
-			return addrs
+		if len(addresses) > 0 {
+			return addresses
 		}
 	}
 	// Get component by default
 	for _, info := range nodes {
-		addrs = append(addrs, info.Address)
+		addresses = append(addresses, resolver.Address{
+			Addr: info.Address,
+		})
 	}
-	return addrs
+	return addresses
 }
 
 func (m *Discovery) initialize() error {
@@ -183,20 +188,22 @@ func (m *Discovery) updateService(path, service string) error {
 		return err
 	}
 	//
-	addrs := make([]string, 0, len(kvs.KVs))
 	svc := make(map[string]*NodeInfo, len(kvs.KVs))
+	addresses := make([]resolver.Address, 0, len(kvs.KVs))
 	for _, kv := range kvs.KVs {
 		var n NodeInfo
 		if err = json.Unmarshal([]byte(kv.Value), &n); err != nil {
 			return err
 		}
 		svc[n.Address] = &n
-		addrs = append(addrs, n.Address)
+		addresses = append(addresses, resolver.Address{
+			Addr: n.Address,
+		})
 	}
 	//
 	m.rc.Store(service, svc)
 	//
-	return resolver.Implementor().UpdateAddresses(service, addrs)
+	return builder.Implementor().UpdateAddresses(service, addresses)
 }
 
 func (m *Discovery) watchEvent(path string, ch discovery.EventChan) {

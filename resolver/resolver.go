@@ -19,6 +19,6 @@ func RegisterImplementor(r Resolver) {
 type Resolver interface {
 	resolver.Builder
 
-	UpdateAddresses(service string, addresses []string) error
+	UpdateAddresses(service string, addresses []resolver.Address) error
 	ReportAddressError(service string, err error)
 }

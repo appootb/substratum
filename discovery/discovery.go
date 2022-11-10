@@ -1,5 +1,7 @@
 package discovery
 
+import "google.golang.org/grpc/resolver"
+
 var (
 	impl Discovery
 )
@@ -22,5 +24,5 @@ type Discovery interface {
 	Register(component, addr string, opts ...Option) (int64, error)
 
 	// GetAddresses returns rpc service addresses.
-	GetAddresses(service string) []string
+	GetAddresses(service string) []resolver.Address
 }
