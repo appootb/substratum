@@ -11,6 +11,8 @@ func Init() {
 	if storage.Implementor() == nil {
 		storage.RegisterImplementor(&Manager{})
 	}
+	//
+	storage.RegisterCommonDialectImplementor("", &emptyDialect{})
 }
 
 type Manager struct {

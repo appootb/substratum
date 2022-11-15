@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/appootb/substratum/v2/discovery"
@@ -20,7 +19,7 @@ func Init() {
 		discovery.RegisterBackendImplementor(newDebug())
 	}
 	if discovery.Implementor() == nil {
-		discovery.RegisterImplementor(&Discovery{})
+		discovery.RegisterImplementor(newDiscovery())
 	}
 }
 
@@ -42,9 +41,17 @@ func (info *NodeInfo) String() string {
 	return string(v)
 }
 
-type Discovery struct {
-	initialized int32
+func newDiscovery() discovery.Discovery {
+	impl := &Discovery{}
+	if err := impl.refresh(); err != nil {
+		logger.Fatal("discovery initialize failed", logger.Content{
+			"error": err.Error(),
+		})
+	}
+	return impl
+}
 
+type Discovery struct {
 	lc sync.Map // Local registered service
 	rc sync.Map // Remote registered service
 }
@@ -63,10 +70,6 @@ func (m *Discovery) Register(component, addr string, opts ...discovery.Option) (
 	options := discovery.EmptyOptions()
 	for _, o := range opts {
 		o(options)
-	}
-	//
-	if err := m.initialize(); err != nil {
-		return 0, err
 	}
 	//
 	idKey := fmt.Sprintf("%s/%s", ServiceNodeIDKey, component)
@@ -137,11 +140,7 @@ func (m *Discovery) GetAddresses(service string) []resolver.Address {
 	return addresses
 }
 
-func (m *Discovery) initialize() error {
-	if atomic.AddInt32(&m.initialized, 1) != 1 {
-		return nil
-	}
-	//
+func (m *Discovery) refresh() error {
 	// Get services.
 	path := ServicePrefix + "/"
 	version, err := m.getServices(path)
@@ -177,7 +176,9 @@ func (m *Discovery) getServices(path string) (uint64, error) {
 		svc[n.Address] = &n
 	}
 	for name, svc := range services {
-		m.rc.Store(name, svc)
+		if err = m.updateResolver(name, svc); err != nil {
+			return 0, err
+		}
 	}
 	return pairs.Version, nil
 }
@@ -189,21 +190,30 @@ func (m *Discovery) updateService(path, service string) error {
 	}
 	//
 	svc := make(map[string]*NodeInfo, len(kvs.KVs))
-	addresses := make([]resolver.Address, 0, len(kvs.KVs))
 	for _, kv := range kvs.KVs {
 		var n NodeInfo
 		if err = json.Unmarshal([]byte(kv.Value), &n); err != nil {
 			return err
 		}
 		svc[n.Address] = &n
-		addresses = append(addresses, resolver.Address{
-			Addr: n.Address,
-		})
 	}
 	//
-	m.rc.Store(service, svc)
+	return m.updateResolver(service, svc)
+}
+
+func (m *Discovery) updateResolver(service string, nodes map[string]*NodeInfo) error {
+	m.rc.Store(service, nodes)
 	//
-	return builder.Implementor().UpdateAddresses(service, addresses)
+	addresses := make([]resolver.Address, 0, len(nodes))
+	for _, info := range nodes {
+		addresses = append(addresses, resolver.Address{
+			Addr: info.Address,
+		})
+	}
+	if len(addresses) > 0 && builder.Implementor() != nil {
+		return builder.Implementor().UpdateAddresses(service, addresses)
+	}
+	return nil
 }
 
 func (m *Discovery) watchEvent(path string, ch discovery.EventChan) {
