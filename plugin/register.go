@@ -30,18 +30,18 @@ func Register() {
 		configure.Init()
 		// Credential
 		credential.Init()
-		// Discovery
-		discovery.Init()
 		// Balancer
 		balancer.Init()
+		// Discovery
+		discovery.Init()
+		// Resolver
+		resolver.Init()
 		// Errors
 		errors.Init()
 		// Logger
 		logger.Init()
 		// Queue
 		queue.Init()
-		// Resolver
-		resolver.Init()
 		// Storage
 		storage.Init()
 		// Task
