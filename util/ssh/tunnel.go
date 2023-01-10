@@ -3,9 +3,14 @@ package ssh
 import (
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/ssh"
+)
+
+var (
+	tunnels sync.Map
 )
 
 type Tunnel struct {
@@ -15,6 +20,11 @@ type Tunnel struct {
 // NewTunnel returns ssh tunnel client
 // param: <user>:<password>@<host>[:port]
 func NewTunnel(v string) *Tunnel {
+	val, ok := tunnels.Load(v)
+	if ok {
+		return val.(*Tunnel)
+	}
+	//
 	var (
 		username, password, hostname string
 	)
@@ -42,9 +52,11 @@ func NewTunnel(v string) *Tunnel {
 	if err != nil {
 		panic("SSH_TUNNEL err:" + err.Error())
 	}
-	return &Tunnel{
+	tunnel := &Tunnel{
 		client: client,
 	}
+	tunnels.Store(v, tunnel)
+	return tunnel
 }
 
 func (m *Tunnel) Dial(network, addr string) (net.Conn, error) {

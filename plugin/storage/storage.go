@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"net"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -13,6 +14,7 @@ import (
 	es6 "github.com/elastic/go-elasticsearch/v6"
 	es7 "github.com/elastic/go-elasticsearch/v7"
 	"github.com/go-redis/redis/v8"
+	"github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 )
 
@@ -31,13 +33,24 @@ type Storage struct {
 }
 
 func (s *Storage) InitDB(configs []storage.Config, opts ...storage.SQLOption) error {
+	if metadata.SSHTunnel != "" {
+		mysql.RegisterDial("tcp+ssh", func(addr string) (net.Conn, error) {
+			dialer := ssh.NewTunnel(metadata.SSHTunnel)
+			return dialer.Dial("tcp", addr)
+		})
+	}
+	//
 	for i, cfg := range configs {
 		dialect, err := cfg.Dialect()
 		if err != nil {
 			return err
 		}
 		//
-		db, err := gorm.Open(string(dialect.Type()), dialect.URL())
+		addr := dialect.URL()
+		if metadata.SSHTunnel != "" && cfg.Type() == storage.DialectMySQL {
+			addr = strings.ReplaceAll(addr, "@tcp(", "@tcp+ssh(")
+		}
+		db, err := gorm.Open(string(dialect.Type()), addr)
 		if err != nil {
 			return err
 		}
@@ -120,6 +133,11 @@ func (s *Storage) InitRedis(configs []storage.Config, opts ...storage.RedisOptio
 		}
 		for _, o := range opts {
 			o(options)
+		}
+		// ssh: tcpChan: deadline not supported
+		if metadata.SSHTunnel != "" {
+			options.ReadTimeout = -1
+			options.WriteTimeout = -1
 		}
 		s.mu.Lock()
 		s.caches = append(s.caches, redis.NewClient(options))
