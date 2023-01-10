@@ -40,7 +40,8 @@ const (
 )
 
 var (
-	Debug = os.Getenv("DEBUG")
+	Debug     = os.Getenv("DEBUG")
+	SSHTunnel = os.Getenv("SSH_TUNNEL")
 )
 
 func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
