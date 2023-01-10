@@ -117,6 +117,8 @@ func (s *Storage) InitElasticSearch(config storage.Config, opts ...storage.Elast
 func (s *Storage) InitRedis(configs []storage.Config, opts ...storage.RedisOption) error {
 	if metadata.SSHTunnel != "" {
 		opts = append(opts, func(opt *redis.Options) {
+			opt.ReadTimeout = -1
+			opt.WriteTimeout = -1
 			opt.Dialer = func(ctx context.Context, network, addr string) (net.Conn, error) {
 				dialer := ssh.NewTunnel(metadata.SSHTunnel)
 				return dialer.Dial(network, addr)
