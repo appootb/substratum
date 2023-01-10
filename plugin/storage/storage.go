@@ -1,11 +1,15 @@
 package storage
 
 import (
+	"context"
+	"net"
 	"sync"
 	"sync/atomic"
 
+	"github.com/appootb/substratum/metadata"
 	"github.com/appootb/substratum/storage"
 	"github.com/appootb/substratum/util/hash"
+	"github.com/appootb/substratum/util/ssh"
 	es6 "github.com/elastic/go-elasticsearch/v6"
 	es7 "github.com/elastic/go-elasticsearch/v7"
 	"github.com/go-redis/redis/v8"
@@ -95,6 +99,15 @@ func (s *Storage) InitElasticSearch(config storage.Config, opts ...storage.Elast
 }
 
 func (s *Storage) InitRedis(configs []storage.Config, opts ...storage.RedisOption) error {
+	if metadata.SSHTunnel != "" {
+		opts = append(opts, func(opt *redis.Options) {
+			opt.Dialer = func(ctx context.Context, network, addr string) (net.Conn, error) {
+				dialer := ssh.NewTunnel(metadata.SSHTunnel)
+				return dialer.Dial(network, addr)
+			}
+		})
+	}
+	//
 	for _, cfg := range configs {
 		dialect, err := cfg.Dialect()
 		if err != nil {
