@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/appootb/substratum/v2/errors"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type clientSeedInfo struct {
@@ -38,14 +38,14 @@ func (s *ClientSeed) Get(accountID uint64, keyID int64) ([]byte, error) {
 	key := fmt.Sprintf("%d-%d", accountID, keyID)
 	val, ok := s.Load(key)
 	if !ok {
-		return nil, errors.New(codes.Unauthenticated, "substratum: client key not found:"+key)
+		return nil, status.Error(codes.Unauthenticated, "substratum: client key not found:"+key)
 	}
 	info := val.(*clientSeedInfo)
 	if time.Now().After(info.NotAfter) {
-		return nil, errors.New(codes.Unauthenticated, "substratum: client key expired")
+		return nil, status.Error(codes.Unauthenticated, "substratum: client key expired")
 	}
 	if !info.NotBefore.IsZero() && time.Now().Before(info.NotBefore) {
-		return nil, errors.New(codes.FailedPrecondition, info.LockMessage)
+		return nil, status.Error(codes.FailedPrecondition, info.LockMessage)
 	}
 	return info.PrivateKey, nil
 }

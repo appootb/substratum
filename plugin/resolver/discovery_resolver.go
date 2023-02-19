@@ -2,9 +2,9 @@ package resolver
 
 import (
 	"github.com/appootb/substratum/v2/discovery"
-	"github.com/appootb/substratum/v2/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/resolver"
+	"google.golang.org/grpc/status"
 )
 
 type DiscoveryResolver struct {
@@ -21,7 +21,7 @@ type DiscoveryResolver struct {
 func (r *DiscoveryResolver) ResolveNow(_ resolver.ResolveNowOptions) {
 	addresses := discovery.Implementor().GetAddresses(r.service)
 	if len(addresses) == 0 {
-		r.cc.ReportError(errors.New(codes.NotFound, r.service))
+		r.cc.ReportError(status.Error(codes.Unavailable, r.service))
 		return
 	}
 	//
