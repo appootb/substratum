@@ -19,11 +19,11 @@ type Base struct {
 	UpdatedAt time.Time `gorm:"not null"`
 }
 
-func (m Base) Context() context.Context {
+func (m *Base) Context() context.Context {
 	return m.ctx
 }
 
-func (m Base) DB(readOnly bool) *gorm.DB {
+func (m *Base) DB(readOnly bool) *gorm.DB {
 	if readOnly {
 		return m.ro.WithContext(m.ctx)
 	} else {
@@ -31,7 +31,7 @@ func (m Base) DB(readOnly bool) *gorm.DB {
 	}
 }
 
-func (m Base) Tx(fn func(tx *gorm.DB) error, opts ...*sql.TxOptions) error {
+func (m *Base) Tx(fn func(tx *gorm.DB) error, opts ...*sql.TxOptions) error {
 	return m.rw.WithContext(m.ctx).Transaction(fn, opts...)
 }
 

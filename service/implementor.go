@@ -52,6 +52,19 @@ type Authenticator interface {
 	Authenticate(ctx context.Context, serviceMethod string) (*secret.Info, error)
 }
 
+type Method struct {
+	// FullMethod is the full service method string.
+	FullMethod string
+	// IsClientStream indicates whether the service is a client streaming RPC.
+	IsClientStream bool
+	// IsServerStream indicates whether the service is a server streaming RPC.
+	IsServerStream bool
+	// IsHttpGateway indicates whether the service is a http request.
+	IsHttpGateway bool
+}
+
+type serviceMethodKey struct{}
+
 type componentKey struct{}
 
 type secretKey struct{}
@@ -70,7 +83,12 @@ func UnaryServerInterceptor(v Authenticator) grpc.UnaryServerInterceptor {
 			}
 			return nil, status.Errorf(codes.PermissionDenied, err.Error())
 		}
-		return handler(context.WithValue(ContextWithComponentName(ctx, v.ServiceComponentName(info.FullMethod)),
+		return handler(context.WithValue(
+			ContextWithComponentName(
+				ContextWithServiceMethod(ctx, &Method{
+					FullMethod: info.FullMethod,
+				}),
+				v.ServiceComponentName(info.FullMethod)),
 			secretKey{}, secretInfo), req)
 	}
 }
@@ -93,9 +111,10 @@ func StreamServerInterceptor(v Authenticator) grpc.StreamServerInterceptor {
 			return status.Errorf(codes.PermissionDenied, err.Error())
 		}
 		wrapper := &ctxWrapper{
-			ServerStream: stream,
-			secret:       secretInfo,
-			component:    v.ServiceComponentName(info.FullMethod),
+			ServerStream:     stream,
+			StreamServerInfo: info,
+			secret:           secretInfo,
+			component:        v.ServiceComponentName(info.FullMethod),
 		}
 		return handler(srv, wrapper)
 	}
@@ -103,13 +122,33 @@ func StreamServerInterceptor(v Authenticator) grpc.StreamServerInterceptor {
 
 type ctxWrapper struct {
 	grpc.ServerStream
+	*grpc.StreamServerInfo
 	secret    *secret.Info
 	component string
 }
 
 func (s *ctxWrapper) Context() context.Context {
 	ctx := s.ServerStream.Context()
-	return context.WithValue(ContextWithComponentName(ctx, s.component), secretKey{}, s.secret)
+	return context.WithValue(
+		ContextWithComponentName(
+			ContextWithServiceMethod(ctx, &Method{
+				FullMethod:     s.StreamServerInfo.FullMethod,
+				IsClientStream: s.StreamServerInfo.IsClientStream,
+				IsServerStream: s.StreamServerInfo.IsServerStream,
+			}),
+			s.component),
+		secretKey{}, s.secret)
+}
+
+func ContextWithServiceMethod(ctx context.Context, method *Method) context.Context {
+	return context.WithValue(ctx, serviceMethodKey{}, method)
+}
+
+func ServiceMethodFromContext(ctx context.Context) *Method {
+	if method := ctx.Value(serviceMethodKey{}); method != nil {
+		return method.(*Method)
+	}
+	return &Method{}
 }
 
 func ContextWithComponentName(ctx context.Context, component string) context.Context {

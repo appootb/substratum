@@ -5,6 +5,7 @@ import (
 	"runtime/debug"
 
 	sctx "github.com/appootb/substratum/v2/context"
+	"github.com/appootb/substratum/v2/service"
 )
 
 type handlerWrapper struct {
@@ -20,7 +21,11 @@ func (h *handlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	//
-	h.handler.ServeHTTP(w, r.WithContext(sctx.WithServerContext(r.Context(), h.component)))
+	ctx := service.ContextWithServiceMethod(r.Context(), &service.Method{
+		FullMethod:    r.URL.Path,
+		IsHttpGateway: true,
+	})
+	h.handler.ServeHTTP(w, r.WithContext(sctx.WithServerContext(ctx, h.component)))
 }
 
 type httpServeMux struct {
@@ -44,6 +49,10 @@ func (h *httpServeMux) HandleFunc(pattern string, handler func(http.ResponseWrit
 			}
 		}()
 		//
-		handler(w, r.WithContext(sctx.WithServerContext(r.Context(), h.component)))
+		ctx := service.ContextWithServiceMethod(r.Context(), &service.Method{
+			FullMethod:    r.URL.Path,
+			IsHttpGateway: true,
+		})
+		handler(w, r.WithContext(sctx.WithServerContext(ctx, h.component)))
 	})
 }

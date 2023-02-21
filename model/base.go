@@ -28,43 +28,47 @@ func New(opts ...Option) Base {
 	return base
 }
 
-func (m Base) RpcContext(keyID int64) context.Context {
+func (m *Base) RpcContext(keyID int64) context.Context {
 	return client.WithContext(m.Context(), keyID)
 }
 
-func (m Base) Context() context.Context {
+func (m *Base) Context() context.Context {
 	return m.ctx
 }
 
-func (m Base) Metadata() *common.Metadata {
+func (m *Base) Metadata() *common.Metadata {
 	return metadata.IncomingMetadata(m.ctx)
 }
 
-func (m Base) AccountSecret() *secret.Info {
+func (m *Base) AccountSecret() *secret.Info {
 	return service.AccountSecretFromContext(m.ctx)
 }
 
-func (m Base) Discovery() discovery.Discovery {
+func (m *Base) ServiceMethod() *service.Method {
+	return service.ServiceMethodFromContext(m.ctx)
+}
+
+func (m *Base) Discovery() discovery.Discovery {
 	return discovery.ContextDiscovery(m.ctx)
 }
 
-func (m Base) Logger() *logger.Helper {
+func (m *Base) Logger() *logger.Helper {
 	return logger.ContextLogger(m.ctx)
 }
 
-func (m Base) Storage() storage.Storage {
+func (m *Base) Storage() storage.Storage {
 	component := service.ComponentNameFromContext(m.Context())
 	return storage.ContextStorage(m.ctx, component)
 }
 
-func (m Base) ClientConn(target string) *grpc.ClientConn {
+func (m *Base) ClientConn(target string) *grpc.ClientConn {
 	return client.ContextConnPool(m.ctx).Get(target)
 }
 
-func (m Base) MessageQueue() queue.Queue {
+func (m *Base) MessageQueue() queue.Queue {
 	return queue.ContextQueueService(m.ctx)
 }
 
-func (m Base) CronTask() task.Task {
+func (m *Base) CronTask() task.Task {
 	return task.ContextTaskService(m.ctx)
 }
