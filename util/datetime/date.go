@@ -5,41 +5,55 @@ import (
 	"time"
 )
 
-type Date time.Time
+const (
+	DefaultDateLayout = "2006-01-02"
+)
 
-func (dt Date) Time() time.Time {
-	return time.Time(dt)
+type Date struct {
+	payload time.Time
+	layout  string
 }
 
-func (dt Date) String() string {
-	return time.Time(dt).Format("2006-01-02")
-}
-
-func (dt *Date) parse(v string) error {
-	ts, err := time.ParseInLocation("2006-01-02", v, time.Local)
-	if err != nil {
-		return err
+func NewDate(ts time.Time, format ...string) *Date {
+	layout := DefaultDateLayout
+	if len(format) > 0 && format[0] != "" {
+		layout = format[0]
 	}
-	*dt = Date(ts)
+	return &Date{
+		payload: ts,
+		layout:  layout,
+	}
+}
+
+func (d *Date) Time() time.Time {
+	return d.payload
+}
+
+func (d *Date) String() string {
+	return d.payload.Format(d.layout)
+}
+
+func (d *Date) parse(v string) (err error) {
+	d.payload, err = time.ParseInLocation(d.layout, v, time.Local)
 	return nil
 }
 
-func (dt Date) MarshalURL() (string, error) {
-	return dt.String(), nil
+func (d *Date) MarshalURL() (string, error) {
+	return d.payload.String(), nil
 }
 
-func (dt *Date) UnmarshalURL(v string) error {
-	return dt.parse(v)
+func (d *Date) UnmarshalURL(v string) error {
+	return d.parse(v)
 }
 
-func (dt Date) MarshalJSON() ([]byte, error) {
-	return json.Marshal(dt.String())
+func (d *Date) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.String())
 }
 
-func (dt *Date) UnmarshalJSON(v []byte) error {
+func (d *Date) UnmarshalJSON(v []byte) error {
 	var s string
 	if err := json.Unmarshal(v, &s); err != nil {
 		return err
 	}
-	return dt.parse(s)
+	return d.parse(s)
 }
