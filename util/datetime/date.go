@@ -34,6 +34,9 @@ func (d *Date) String() string {
 }
 
 func (d *Date) parse(v string) (err error) {
+	if d.layout == "" {
+		d.layout = DefaultDateLayout
+	}
 	d.payload, err = time.ParseInLocation(d.layout, v, time.Local)
 	return nil
 }
