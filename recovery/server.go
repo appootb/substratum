@@ -3,11 +3,11 @@ package recovery
 import (
 	"context"
 	"fmt"
-	"runtime/debug"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"runtime/debug"
+	"strings"
 )
 
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
@@ -33,6 +33,6 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 }
 
 func toPanicError(r, req interface{}, m string) error {
-	fmt.Printf("path: %s\t request:%+v\tpanic:%+v\n%s", m, req, r, debug.Stack())
+	fmt.Printf("path: %s\t request:%+v\tpanic:%+v\n%s", m, req, r, strings.ReplaceAll(string(debug.Stack()), "\n", ""))
 	return status.Errorf(codes.Internal, "%v", r)
 }
