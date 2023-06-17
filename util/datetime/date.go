@@ -34,6 +34,9 @@ func (d *Date) String() string {
 }
 
 func (d *Date) parse(v string) (err error) {
+	if v == "" {
+		return
+	}
 	if d.layout == "" {
 		d.layout = DefaultDateLayout
 	}

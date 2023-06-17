@@ -34,6 +34,9 @@ func (dt *DateTime) String() string {
 }
 
 func (dt *DateTime) parse(v string) (err error) {
+	if v == "" {
+		return
+	}
 	if dt.layout == "" {
 		dt.layout = DefaultDateTimeLayout
 	}
