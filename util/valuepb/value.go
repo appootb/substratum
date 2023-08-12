@@ -8,6 +8,17 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+func New(val interface{}) (*structpb.Value, error) {
+	switch v := val.(type) {
+	case int64:
+		return Int64Value(v), nil
+	case uint64:
+		return Uint64Value(v), nil
+	default:
+		return structpb.NewValue(v)
+	}
+}
+
 func BoolValue(b bool) *structpb.Value {
 	return &structpb.Value{
 		Kind: &structpb.Value_BoolValue{
