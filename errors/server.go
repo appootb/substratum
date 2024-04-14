@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	md "github.com/appootb/substratum/v2/metadata"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -28,7 +29,7 @@ func RegisterImplementor(prompter Prompter) {
 }
 
 type Prompter interface {
-	Translate(code int32) string
+	Translate(lang string, code int32) string
 }
 
 func UnaryResponseInterceptor() grpc.UnaryServerInterceptor {
@@ -51,9 +52,15 @@ func UnaryResponseInterceptor() grpc.UnaryServerInterceptor {
 			return resp, err
 		}
 
+		//
+		locale := "en"
+		if incomingMD := md.IncomingMetadata(ctx); incomingMD != nil {
+			locale = incomingMD.GetLocale()
+		}
+
 		// Update error message.
 		if se, ok := err.(*StatusError); ok {
-			if message := Implementor().Translate(se.Code); message != "" {
+			if message := Implementor().Translate(locale, se.Code); message != "" {
 				se.Message = message
 			}
 			outgoingMD.Set("code", strconv.Itoa(int(se.Code)))
@@ -61,7 +68,7 @@ func UnaryResponseInterceptor() grpc.UnaryServerInterceptor {
 			return resp, status.ErrorProto((*spb.Status)(se))
 		} else if s, ok := status.FromError(err); ok {
 			sp := s.Proto()
-			if message := Implementor().Translate(sp.GetCode()); message != "" {
+			if message := Implementor().Translate(locale, sp.GetCode()); message != "" {
 				sp.Message = message
 			}
 			outgoingMD.Set("code", strconv.Itoa(int(sp.GetCode())))

@@ -12,6 +12,6 @@ func Init() {
 
 type Debug struct{}
 
-func (m Debug) Translate(_ int32) string {
+func (m Debug) Translate(_ string, _ int32) string {
 	return ""
 }

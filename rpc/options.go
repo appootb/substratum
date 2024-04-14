@@ -72,9 +72,9 @@ func WithDefaultUnaryInterceptors(fns ...grpc.UnaryServerInterceptor) ServerOpti
 	return func(options *ServerOptions) {
 		options.unaryChains = append(options.unaryChains,
 			recovery.UnaryServerInterceptor(),
+			metadata.UnaryServerInterceptor(),
 			errors.UnaryResponseInterceptor(),
 			monitor.UnaryServerInterceptor(),
-			metadata.UnaryServerInterceptor(),
 			auth.UnaryServerInterceptor(),
 			logger.UnaryServerInterceptor(),
 			validator.UnaryServerInterceptor(),
@@ -98,9 +98,9 @@ func WithDefaultStreamInterceptors(fns ...grpc.StreamServerInterceptor) ServerOp
 	return func(options *ServerOptions) {
 		options.streamChains = append(options.streamChains,
 			recovery.StreamServerInterceptor(),
+			metadata.StreamServerInterceptor(),
 			errors.StreamServerInterceptor(),
 			monitor.StreamServerInterceptor(),
-			metadata.StreamServerInterceptor(),
 			auth.StreamServerInterceptor(),
 			logger.StreamServerInterceptor(),
 			validator.StreamServerInterceptor(),
