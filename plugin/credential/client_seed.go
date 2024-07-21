@@ -68,6 +68,9 @@ func (s *ClientSeed) RevokeAll(accountID uint64) error {
 }
 
 func (s *ClientSeed) Lock(accountID uint64, reason string, duration time.Duration) error {
+	if duration <= 0 {
+		duration = time.Hour * 24 * 365 * 100
+	}
 	key := fmt.Sprintf("%d-", accountID)
 	s.Range(func(k, v interface{}) bool {
 		if strings.HasPrefix(k.(string), key) {
