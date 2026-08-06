@@ -2,8 +2,8 @@ package server
 
 import (
 	"net/http"
-	"runtime/debug"
 
+	"github.com/appootb/substratum/v2/recovery"
 	sctx "github.com/appootb/substratum/v2/context"
 	"github.com/appootb/substratum/v2/service"
 )
@@ -16,7 +16,7 @@ type handlerWrapper struct {
 func (h *handlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if result := recover(); result != nil {
-			debug.PrintStack()
+			_ = recovery.RecoverStatus(result)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}()
@@ -44,7 +44,7 @@ func (h *httpServeMux) HandleFunc(pattern string, handler func(http.ResponseWrit
 	h.serveMux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if result := recover(); result != nil {
-				debug.PrintStack()
+				_ = recovery.RecoverStatus(result)
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}()
