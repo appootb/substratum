@@ -16,7 +16,7 @@ import (
 	"github.com/appootb/substratum/v2/task"
 	"google.golang.org/grpc"
 
-	validator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/validator"
 )
 
 // UnaryPhase selects where custom unary interceptors are merged into the

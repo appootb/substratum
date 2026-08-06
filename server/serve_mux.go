@@ -8,10 +8,10 @@ import (
 
 	"github.com/appootb/substratum/v2/gateway"
 	"github.com/appootb/substratum/v2/logger"
+	"github.com/appootb/substratum/v2/monitor"
 	"github.com/appootb/substratum/v2/rpc"
 	"github.com/appootb/substratum/v2/service"
 	"github.com/appootb/substratum/v2/util/iphelper"
-	prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
@@ -75,7 +75,7 @@ func (m *ServeMux) GatewayMux() *runtime.ServeMux {
 
 func (m *ServeMux) Serve() {
 	if m.metrics {
-		prometheus.Register(m.rpcSrv)
+		monitor.InitializeMetrics(m.rpcSrv)
 	}
 	//
 	wg := sync.WaitGroup{}
