@@ -16,6 +16,9 @@ func Implementor() Token {
 
 // RegisterImplementor registers the token service implementor.
 func RegisterImplementor(token Token) {
+	if impl != nil {
+		panic("token: implementor already registered")
+	}
 	impl = token
 }
 

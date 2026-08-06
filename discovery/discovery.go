@@ -13,6 +13,9 @@ func Implementor() Discovery {
 
 // RegisterImplementor registers the discovery service implementor.
 func RegisterImplementor(svc Discovery) {
+	if impl != nil {
+		panic("discovery: implementor already registered")
+	}
 	impl = svc
 }
 

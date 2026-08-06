@@ -17,6 +17,9 @@ func Implementor() ConnPool {
 
 // RegisterImplementor registers the gRPC connection pool service implementor.
 func RegisterImplementor(cp ConnPool) {
+	if impl != nil {
+		panic("client: implementor already registered")
+	}
 	impl = cp
 }
 

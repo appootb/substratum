@@ -11,6 +11,9 @@ func Implementor() Configure {
 
 // RegisterImplementor registers the configuration service implementor.
 func RegisterImplementor(cfg Configure) {
+	if impl != nil {
+		panic("configure: implementor already registered")
+	}
 	impl = cfg
 }
 

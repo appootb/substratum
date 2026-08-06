@@ -15,6 +15,9 @@ func CommonDialectImplementor(schema configure.Schema) CommonDialect {
 
 // RegisterCommonDialectImplementor registers common storage Dialector.
 func RegisterCommonDialectImplementor(schema configure.Schema, dialect CommonDialect) {
+	if _, ok := commonImpls[schema]; ok {
+		panic("storage: common dialect already registered for schema")
+	}
 	commonImpls[schema] = dialect
 }
 

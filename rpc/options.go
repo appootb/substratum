@@ -3,22 +3,9 @@ package rpc
 import (
 	"time"
 
-	"github.com/appootb/substratum/v2/auth"
-	"github.com/appootb/substratum/v2/client"
-	"github.com/appootb/substratum/v2/discovery"
-	"github.com/appootb/substratum/v2/errors"
-	"github.com/appootb/substratum/v2/logger"
-	"github.com/appootb/substratum/v2/metadata"
-	"github.com/appootb/substratum/v2/monitor"
-	"github.com/appootb/substratum/v2/queue"
-	"github.com/appootb/substratum/v2/recovery"
-	"github.com/appootb/substratum/v2/storage"
-	"github.com/appootb/substratum/v2/task"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/tap"
-
-	validator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
 )
 
 type ServerOption func(*ServerOptions)
@@ -68,52 +55,32 @@ func WithDefaultKeepaliveOption() ServerOption {
 	}
 }
 
-func WithDefaultUnaryInterceptors(fns ...grpc.UnaryServerInterceptor) ServerOption {
+// WithDefaultUnaryInterceptors installs the framework unary chain merged with
+// phase interceptors registered before plugin.Register finishes. Prefer
+// RegisterUnary from plugin Init; BuildInterceptorChains runs in plugin.Register.
+func WithDefaultUnaryInterceptors() ServerOption {
 	return func(options *ServerOptions) {
-		options.unaryChains = append(options.unaryChains,
-			recovery.UnaryServerInterceptor(),
-			metadata.UnaryServerInterceptor(),
-			errors.UnaryResponseInterceptor(),
-			monitor.UnaryServerInterceptor(),
-			auth.UnaryServerInterceptor(),
-			logger.UnaryServerInterceptor(),
-			validator.UnaryServerInterceptor(),
-			client.UnaryServerInterceptor(),
-			discovery.UnaryServerInterceptor(),
-			storage.UnaryServerInterceptor(),
-			queue.UnaryServerInterceptor(),
-			task.UnaryServerInterceptor(),
-		)
-		options.unaryChains = append(options.unaryChains, fns...)
+		options.unaryChains = append(options.unaryChains, UnaryChain()...)
 	}
 }
 
+// WithUnaryInterceptors appends interceptors after the full default chain.
+// Prefer RegisterUnary for plugin-style registration.
 func WithUnaryInterceptors(fns ...grpc.UnaryServerInterceptor) ServerOption {
 	return func(options *ServerOptions) {
 		options.unaryChains = append(options.unaryChains, fns...)
 	}
 }
 
-func WithDefaultStreamInterceptors(fns ...grpc.StreamServerInterceptor) ServerOption {
+// WithDefaultStreamInterceptors installs the framework stream chain merged with
+// phase interceptors registered before plugin.Register finishes.
+func WithDefaultStreamInterceptors() ServerOption {
 	return func(options *ServerOptions) {
-		options.streamChains = append(options.streamChains,
-			recovery.StreamServerInterceptor(),
-			metadata.StreamServerInterceptor(),
-			errors.StreamServerInterceptor(),
-			monitor.StreamServerInterceptor(),
-			auth.StreamServerInterceptor(),
-			logger.StreamServerInterceptor(),
-			validator.StreamServerInterceptor(),
-			client.StreamServerInterceptor(),
-			discovery.StreamServerInterceptor(),
-			storage.StreamServerInterceptor(),
-			queue.StreamServerInterceptor(),
-			task.StreamServerInterceptor(),
-		)
-		options.streamChains = append(options.streamChains, fns...)
+		options.streamChains = append(options.streamChains, StreamChain()...)
 	}
 }
 
+// WithStreamInterceptors appends interceptors after the full default stream chain.
 func WithStreamInterceptors(fns ...grpc.StreamServerInterceptor) ServerOption {
 	return func(options *ServerOptions) {
 		options.streamChains = append(options.streamChains, fns...)

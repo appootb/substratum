@@ -25,6 +25,9 @@ func Implementor() Prompter {
 
 // RegisterImplementor registers the error prompter service implementor.
 func RegisterImplementor(prompter Prompter) {
+	if impl != nil {
+		panic("errors: implementor already registered")
+	}
 	impl = prompter
 }
 

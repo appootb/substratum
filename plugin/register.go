@@ -16,6 +16,7 @@ import (
 	"github.com/appootb/substratum/v2/plugin/storage"
 	"github.com/appootb/substratum/v2/plugin/task"
 	"github.com/appootb/substratum/v2/plugin/token"
+	"github.com/appootb/substratum/v2/rpc"
 )
 
 var (
@@ -50,5 +51,7 @@ func Register() {
 		token.Init()
 		// Auth
 		auth.Init()
+		// Interceptor chains (after plugins may RegisterUnary/RegisterStream).
+		rpc.BuildInterceptorChains()
 	})
 }

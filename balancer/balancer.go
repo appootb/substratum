@@ -15,5 +15,8 @@ func Implementor() balancer.Builder {
 
 // RegisterImplementor registers the balancer builder service implementor.
 func RegisterImplementor(svc balancer.Builder) {
+	if impl != nil {
+		panic("balancer: implementor already registered")
+	}
 	impl = svc
 }

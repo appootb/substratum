@@ -16,6 +16,9 @@ func Implementor() service.Authenticator {
 
 // RegisterImplementor register the authenticator service implementor.
 func RegisterImplementor(auth service.Authenticator) {
+	if impl != nil {
+		panic("auth: implementor already registered")
+	}
 	impl = auth
 }
 

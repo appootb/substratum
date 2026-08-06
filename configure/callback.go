@@ -11,6 +11,9 @@ func CallbackImplementor() Callback {
 
 // RegisterCallbackImplementor registers the value updated callback service implementor.
 func RegisterCallbackImplementor(callback Callback) {
+	if callbackImpl != nil {
+		panic("configure: callback implementor already registered")
+	}
 	callbackImpl = callback
 }
 

@@ -17,6 +17,9 @@ func Implementor() Logger {
 
 // RegisterImplementor registers the logger service implementor.
 func RegisterImplementor(log Logger) {
+	if impl != nil {
+		panic("logger: implementor already registered")
+	}
 	impl = log
 }
 

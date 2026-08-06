@@ -13,6 +13,9 @@ func BackendImplementor() Backend {
 
 // RegisterBackendImplementor registers the discovery backend service implementor.
 func RegisterBackendImplementor(backend Backend) {
+	if backendImpl != nil {
+		panic("discovery: backend implementor already registered")
+	}
 	backendImpl = backend
 }
 

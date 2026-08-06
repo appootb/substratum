@@ -11,6 +11,9 @@ func BackendImplementor() Backend {
 
 // RegisterBackendImplementor registers the configuration backend service implementor.
 func RegisterBackendImplementor(backend Backend) {
+	if backendImpl != nil {
+		panic("configure: backend implementor already registered")
+	}
 	backendImpl = backend
 }
 

@@ -33,6 +33,9 @@ func Implementor() Queue {
 
 // RegisterImplementor registers the queue service implementor.
 func RegisterImplementor(s Queue) {
+	if impl != nil {
+		panic("queue: implementor already registered")
+	}
 	impl = s
 }
 

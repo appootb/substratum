@@ -16,6 +16,9 @@ func SQLDialectImplementor() SQLDialect {
 
 // RegisterSQLDialectImplementor registers gorm sql Dialector.
 func RegisterSQLDialectImplementor(sql SQLDialect) {
+	if sqlImpl != nil {
+		panic("storage: sql dialect implementor already registered")
+	}
 	sqlImpl = sql
 }
 

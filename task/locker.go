@@ -13,6 +13,9 @@ func LockerImplementor() Locker {
 
 // RegisterLockerImplementor registers the task locker service implementor.
 func RegisterLockerImplementor(locker Locker) {
+	if lockerImpl != nil {
+		panic("task: locker implementor already registered")
+	}
 	lockerImpl = locker
 }
 

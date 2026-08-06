@@ -11,6 +11,9 @@ func BackendImplementor() Backend {
 
 // RegisterBackendImplementor registers the queue backend service implementor.
 func RegisterBackendImplementor(backend Backend) {
+	if backendImpl != nil {
+		panic("queue: backend implementor already registered")
+	}
 	backendImpl = backend
 }
 

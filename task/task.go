@@ -13,6 +13,9 @@ func Implementor() Task {
 
 // RegisterImplementor registers the task service implementor.
 func RegisterImplementor(c Task) {
+	if impl != nil {
+		panic("task: implementor already registered")
+	}
 	impl = c
 }
 

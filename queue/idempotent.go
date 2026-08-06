@@ -11,6 +11,9 @@ func IdempotentImplementor() Idempotent {
 
 // RegisterIdempotentImplementor registers the idempotent service implementor.
 func RegisterIdempotentImplementor(idempotent Idempotent) {
+	if idempotentImpl != nil {
+		panic("queue: idempotent implementor already registered")
+	}
 	idempotentImpl = idempotent
 }
 

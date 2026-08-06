@@ -11,6 +11,9 @@ func Implementor() Manager {
 
 // RegisterImplementor registers the storage manage service implementor.
 func RegisterImplementor(mgr Manager) {
+	if impl != nil {
+		panic("storage: implementor already registered")
+	}
 	impl = mgr
 }
 

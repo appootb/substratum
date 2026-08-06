@@ -14,6 +14,9 @@ func ClientImplementor() Client {
 
 // RegisterClientImplementor registers the client-side seed service implementor.
 func RegisterClientImplementor(cli Client) {
+	if clientImpl != nil {
+		panic("credential: client implementor already registered")
+	}
 	clientImpl = cli
 }
 
@@ -24,6 +27,9 @@ func ServerImplementor() Server {
 
 // RegisterServerImplementor registers the server-side seed service implementor.
 func RegisterServerImplementor(svr Server) {
+	if serverImpl != nil {
+		panic("credential: server implementor already registered")
+	}
 	serverImpl = svr
 }
 

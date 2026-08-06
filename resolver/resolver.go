@@ -13,6 +13,9 @@ func Implementor() Resolver {
 
 // RegisterImplementor registers the gRPC resolver service implementor.
 func RegisterImplementor(r Resolver) {
+	if impl != nil {
+		panic("resolver: implementor already registered")
+	}
 	impl = r
 }
 
