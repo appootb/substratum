@@ -1,3 +1,4 @@
+// Package metadata parses client device and request metadata from gRPC incoming headers.
 package metadata
 
 import (
@@ -12,6 +13,7 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
+// Well-known metadata header keys carried on RPC requests.
 const (
 	KeyProduct     = "prd"
 	KeyPackage     = "pkg"
@@ -43,10 +45,14 @@ const (
 )
 
 var (
+	// EnvDevelop gates whether the "dev" metadata flag is honored (when non-empty).
 	EnvDevelop = os.Getenv("DEVELOPMENT")
+	// EnvTesting gates whether the "test" metadata flag is honored (when non-empty).
 	EnvTesting = os.Getenv("TESTING")
 )
 
+// ParseIncomingMetadata builds common.Metadata from gRPC incoming metadata.
+// Returns nil when the context has no incoming metadata.
 func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 	var md url.Values
 	if v, ok := metadata.FromIncomingContext(ctx); !ok {

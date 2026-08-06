@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// gRPCServerBuilder builds a process-wide gRPC server interceptor chain once.
 type gRPCServerBuilder struct {
 	once sync.Once
 
@@ -14,6 +15,7 @@ type gRPCServerBuilder struct {
 	streamInterceptor grpc.StreamServerInterceptor
 }
 
+// New creates a *grpc.Server with the composed unary/stream interceptors from opts.
 func (b *gRPCServerBuilder) New(opts *ServerOptions) *grpc.Server {
 	b.once.Do(func() {
 		if len(opts.unaryChains) > 0 {
@@ -35,14 +37,18 @@ func (b *gRPCServerBuilder) New(opts *ServerOptions) *grpc.Server {
 
 var builder = &gRPCServerBuilder{}
 
+// New creates a gRPC server using the package-level builder and opts.
 func New(opts *ServerOptions) *grpc.Server {
 	return builder.New(opts)
 }
 
+// ChainUnaryServer returns the composed unary interceptor after the first New call.
+// Used by local gateway handlers that need the same chain as the gRPC server.
 func ChainUnaryServer() grpc.UnaryServerInterceptor {
 	return builder.unaryInterceptor
 }
 
+// ChainStreamServer returns the composed stream interceptor after the first New call.
 func ChainStreamServer() grpc.StreamServerInterceptor {
 	return builder.streamInterceptor
 }

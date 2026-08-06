@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// IsEmpty reports whether err represents a missing cache or DB record
+// (redis.Nil or gorm.ErrRecordNotFound), including wrapped errors.
 func IsEmpty(err error) bool {
 	if err == redis.Nil || err == gorm.ErrRecordNotFound {
 		return true

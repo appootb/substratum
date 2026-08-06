@@ -6,6 +6,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// SQLOption customizes gorm.Config and/or the opened *gorm.DB during InitDB.
+// Config-side options receive a non-nil cfg and nil db; DB-side options the reverse.
 type SQLOption func(*gorm.Config, *gorm.DB)
 
 // WithDBDebug starts debug mode.

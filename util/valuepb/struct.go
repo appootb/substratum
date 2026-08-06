@@ -5,6 +5,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+// StructValue builds a struct Value from a Go map via JSON marshal/unmarshal.
+// On failure it returns an empty struct Value rather than an error.
 func StructValue(kvs map[string]interface{}) *structpb.Value {
 	var wrapper *structpb.Struct
 	val, err := jsonpb.Marshal(kvs)
@@ -30,6 +32,7 @@ Error:
 	}
 }
 
+// StructFields returns the field map of a struct Value, or an empty map if v is not a struct.
 func StructFields(v *structpb.Value) map[string]*structpb.Value {
 	sv, ok := v.GetKind().(*structpb.Value_StructValue)
 	if !ok || sv.StructValue == nil {

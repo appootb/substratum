@@ -1,3 +1,4 @@
+// Package hash provides a simple non-cryptographic checksum used for sharding keys.
 package hash
 
 import (
@@ -6,7 +7,8 @@ import (
 	"strconv"
 )
 
-// Sum returns the checksum of the key.
+// Sum returns a stable int64 for key. Numeric types use their value; numeric
+// strings are parsed; other strings and types use a string checksum.
 func Sum(key interface{}) (val int64) {
 	var err error
 
@@ -24,7 +26,7 @@ func Sum(key interface{}) (val int64) {
 	case reflect.Uint:
 		val = int64(key.(uint))
 	case reflect.Uint8:
-		val = int64(key.(int8))
+		val = int64(key.(uint8))
 	case reflect.Uint16:
 		val = int64(key.(uint16))
 	case reflect.Uint32:

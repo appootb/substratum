@@ -143,6 +143,18 @@ func TestLRUPeek(t *testing.T) {
 	}
 }
 
+func TestLRUPeekExpired(t *testing.T) {
+	c := New(LRU, WithSize(2))
+	c.Set(1, 1, time.Nanosecond)
+	time.Sleep(time.Millisecond)
+	if v, ok := c.Peek(1, true); !ok || v != 1 {
+		t.Fatalf("withExpired: want 1, got %v ok=%v", v, ok)
+	}
+	if _, ok := c.Peek(1, false); ok {
+		t.Fatal("without withExpired: should not return expired entry")
+	}
+}
+
 func TestLRUTimeout(t *testing.T) {
 	c := New(LRU, WithSize(2))
 

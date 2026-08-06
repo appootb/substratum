@@ -1,3 +1,4 @@
+// Package monitor exposes gRPC server Prometheus metrics interceptors.
 package monitor
 
 import (
@@ -6,18 +7,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-// serverMetrics replaces the deprecated github.com/grpc-ecosystem/go-grpc-prometheus
-// DefaultServerMetrics singleton.
+// serverMetrics is the process-wide gRPC server metrics collector
+// (replaces the deprecated go-grpc-prometheus DefaultServerMetrics singleton).
 var serverMetrics = func() *grpcprom.ServerMetrics {
 	m := grpcprom.NewServerMetrics()
 	prometheus.MustRegister(m)
 	return m
 }()
 
+// UnaryServerInterceptor returns the Prometheus unary interceptor.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return serverMetrics.UnaryServerInterceptor()
 }
 
+// StreamServerInterceptor returns the Prometheus stream interceptor.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return serverMetrics.StreamServerInterceptor()
 }

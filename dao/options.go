@@ -11,8 +11,11 @@ import (
 	"gorm.io/gorm"
 )
 
+// Option configures a Base instance.
 type Option func(*Base)
 
+// WithContext attaches ctx and resolves read/write DB handles from storage in context.
+// When develop metadata is set, both handles run in Debug mode.
 func WithContext(ctx context.Context) Option {
 	return func(base *Base) {
 		base.ctx = ctx
@@ -26,6 +29,7 @@ func WithContext(ctx context.Context) Option {
 	}
 }
 
+// WithDB uses tx for both read and write paths (typical inside a transaction).
 func WithDB(ctx context.Context, tx *gorm.DB) Option {
 	return func(base *Base) {
 		base.ctx = ctx
@@ -34,18 +38,21 @@ func WithDB(ctx context.Context, tx *gorm.DB) Option {
 	}
 }
 
+// WithPrimaryKey sets the model primary key.
 func WithPrimaryKey(pk uint64) Option {
 	return func(base *Base) {
 		base.ID = pk
 	}
 }
 
+// WithSnowflake sets CreatedAt from a snowflake ID timestamp.
 func WithSnowflake(id uint64) Option {
 	return func(base *Base) {
 		base.CreatedAt = snowflake.Timestamp(id)
 	}
 }
 
+// WithCreatedTime sets CreatedAt explicitly.
 func WithCreatedTime(timestamp time.Time) Option {
 	return func(base *Base) {
 		base.CreatedAt = timestamp

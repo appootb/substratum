@@ -2,6 +2,7 @@ package valuepb
 
 import "google.golang.org/protobuf/types/known/structpb"
 
+// BoolListValue encodes l as a list Value of bools.
 func BoolListValue(l []bool) *structpb.Value {
 	values := make([]*structpb.Value, 0, len(l))
 	for _, b := range l {
@@ -16,6 +17,7 @@ func BoolListValue(l []bool) *structpb.Value {
 	}
 }
 
+// BoolList decodes a list Value into []bool; non-list kinds yield an empty slice.
 func BoolList(v *structpb.Value) []bool {
 	kind, ok := v.GetKind().(*structpb.Value_ListValue)
 	if !ok || kind.ListValue == nil {
@@ -29,6 +31,7 @@ func BoolList(v *structpb.Value) []bool {
 	return list
 }
 
+// Int64ListValue encodes l as a list Value of int64 string numbers.
 func Int64ListValue(l []int64) *structpb.Value {
 	values := make([]*structpb.Value, 0, len(l))
 	for _, v := range l {
@@ -43,6 +46,7 @@ func Int64ListValue(l []int64) *structpb.Value {
 	}
 }
 
+// Int64List decodes a list Value into []int64.
 func Int64List(v *structpb.Value) []int64 {
 	kind, ok := v.GetKind().(*structpb.Value_ListValue)
 	if !ok || kind.ListValue == nil {
@@ -56,6 +60,7 @@ func Int64List(v *structpb.Value) []int64 {
 	return list
 }
 
+// Uint64ListValue encodes l as a list Value of uint64 string numbers.
 func Uint64ListValue(l []uint64) *structpb.Value {
 	values := make([]*structpb.Value, 0, len(l))
 	for _, v := range l {
@@ -70,6 +75,7 @@ func Uint64ListValue(l []uint64) *structpb.Value {
 	}
 }
 
+// Uint64List decodes a list Value into []uint64.
 func Uint64List(v *structpb.Value) []uint64 {
 	kind, ok := v.GetKind().(*structpb.Value_ListValue)
 	if !ok || kind.ListValue == nil {
@@ -83,6 +89,7 @@ func Uint64List(v *structpb.Value) []uint64 {
 	return list
 }
 
+// Int32ListValue encodes l as a list Value of int32 values.
 func Int32ListValue(l []int32) *structpb.Value {
 	values := make([]*structpb.Value, 0, len(l))
 	for _, v := range l {
@@ -97,6 +104,7 @@ func Int32ListValue(l []int32) *structpb.Value {
 	}
 }
 
+// Int32List decodes a list Value into []int32.
 func Int32List(v *structpb.Value) []int32 {
 	kind, ok := v.GetKind().(*structpb.Value_ListValue)
 	if !ok || kind.ListValue == nil {
@@ -110,6 +118,7 @@ func Int32List(v *structpb.Value) []int32 {
 	return list
 }
 
+// Uint32ListValue encodes l as a list Value of uint32 values.
 func Uint32ListValue(l []uint32) *structpb.Value {
 	values := make([]*structpb.Value, 0, len(l))
 	for _, v := range l {
@@ -124,6 +133,7 @@ func Uint32ListValue(l []uint32) *structpb.Value {
 	}
 }
 
+// Uint32List decodes a list Value into []uint32.
 func Uint32List(v *structpb.Value) []uint32 {
 	kind, ok := v.GetKind().(*structpb.Value_ListValue)
 	if !ok || kind.ListValue == nil {
@@ -137,6 +147,7 @@ func Uint32List(v *structpb.Value) []uint32 {
 	return list
 }
 
+// Float64ListValue encodes l as a list Value of float64 numbers.
 func Float64ListValue(l []float64) *structpb.Value {
 	values := make([]*structpb.Value, 0, len(l))
 	for _, v := range l {
@@ -151,6 +162,7 @@ func Float64ListValue(l []float64) *structpb.Value {
 	}
 }
 
+// Float64List decodes a list Value into []float64.
 func Float64List(v *structpb.Value) []float64 {
 	kind, ok := v.GetKind().(*structpb.Value_ListValue)
 	if !ok || kind.ListValue == nil {
@@ -164,6 +176,7 @@ func Float64List(v *structpb.Value) []float64 {
 	return list
 }
 
+// Float32ListValue encodes l as a list Value of float32 numbers.
 func Float32ListValue(l []float32) *structpb.Value {
 	values := make([]*structpb.Value, 0, len(l))
 	for _, v := range l {
@@ -178,6 +191,7 @@ func Float32ListValue(l []float32) *structpb.Value {
 	}
 }
 
+// Float32List decodes a list Value into []float32.
 func Float32List(v *structpb.Value) []float32 {
 	kind, ok := v.GetKind().(*structpb.Value_ListValue)
 	if !ok || kind.ListValue == nil {
@@ -191,6 +205,7 @@ func Float32List(v *structpb.Value) []float32 {
 	return list
 }
 
+// StringListValue encodes l as a list Value of strings.
 func StringListValue(l []string) *structpb.Value {
 	values := make([]*structpb.Value, 0, len(l))
 	for _, v := range l {
@@ -205,6 +220,7 @@ func StringListValue(l []string) *structpb.Value {
 	}
 }
 
+// StringList decodes a list Value into []string.
 func StringList(v *structpb.Value) []string {
 	kind, ok := v.GetKind().(*structpb.Value_ListValue)
 	if !ok || kind.ListValue == nil {

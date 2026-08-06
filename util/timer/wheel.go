@@ -18,6 +18,7 @@ const (
 type event struct {
 	typ eventType
 	wt  *wheelTimer
+	dur time.Duration // used by add/reset; duration is applied on the wheel goroutine
 }
 
 type wheel struct {
@@ -26,21 +27,28 @@ type wheel struct {
 
 	pos    int
 	slots  []*list.List
-	timers map[interface{}]int
+	timers map[*wheelTimer]int // timer → slot index
 
 	eventCh chan *event
 }
 
 var (
+	// defaultWheel: 1s tick × 600 slots ≈ 10 minutes per full circle before multi-circle.
 	defaultWheel = newWheel(time.Second, 600)
 )
 
 func newWheel(interval time.Duration, slotNum int) *wheel {
+	if interval <= 0 {
+		interval = time.Second
+	}
+	if slotNum <= 0 {
+		slotNum = 600
+	}
 	w := &wheel{
 		interval: interval,
 		slots:    make([]*list.List, slotNum),
-		timers:   make(map[interface{}]int),
-		eventCh:  make(chan *event, 100),
+		timers:   make(map[*wheelTimer]int),
+		eventCh:  make(chan *event, 1024),
 	}
 	for i := 0; i < slotNum; i++ {
 		w.slots[i] = list.New()
@@ -50,25 +58,16 @@ func newWheel(interval time.Duration, slotNum int) *wheel {
 	return w
 }
 
-func (w *wheel) addTimer(t *wheelTimer) {
-	w.eventCh <- &event{
-		typ: add,
-		wt:  t,
-	}
+func (w *wheel) addTimer(t *wheelTimer, d time.Duration) {
+	w.eventCh <- &event{typ: add, wt: t, dur: d}
 }
 
 func (w *wheel) removeTimer(t *wheelTimer) {
-	w.eventCh <- &event{
-		typ: remove,
-		wt:  t,
-	}
+	w.eventCh <- &event{typ: remove, wt: t}
 }
 
-func (w *wheel) resetTimer(t *wheelTimer) {
-	w.eventCh <- &event{
-		typ: reset,
-		wt:  t,
-	}
+func (w *wheel) resetTimer(t *wheelTimer, d time.Duration) {
+	w.eventCh <- &event{typ: reset, wt: t, dur: d}
 }
 
 func (w *wheel) loop() {
@@ -84,12 +83,16 @@ func (w *wheel) loop() {
 		case evt := <-w.eventCh:
 			switch evt.typ {
 			case add:
-				w.add(evt.wt)
+				w.add(evt.wt, evt.dur)
 			case remove:
 				w.remove(evt.wt)
 			case reset:
 				w.remove(evt.wt)
-				w.add(evt.wt)
+				if evt.dur < 0 {
+					w.fire(evt.wt)
+				} else {
+					w.add(evt.wt, evt.dur)
+				}
 			}
 		}
 	}
@@ -108,7 +111,6 @@ func (w *wheel) tickerHandler() {
 			continue
 		}
 
-		// Fire event
 		w.fire(wt)
 
 		next := el.Next()
@@ -120,42 +122,76 @@ func (w *wheel) tickerHandler() {
 
 func (w *wheel) fire(t *wheelTimer) {
 	if t.f != nil {
-		go t.f()
+		f := t.f
+		go f()
 		return
 	}
-
+	if t.c == nil {
+		return
+	}
 	select {
 	case t.c <- time.Now():
 	default:
 	}
 }
 
-func (w *wheel) add(t *wheelTimer) {
-	multi := int(t.dur.Nanoseconds() / w.interval.Nanoseconds())
-	pos := (w.pos + multi) % len(w.slots)
-	t.circle = multi / len(w.slots)
-	w.slots[pos].PushBack(t)
-	w.timers[t] = pos
-}
+// add schedules t to fire after d. Must run on the wheel loop goroutine.
+func (w *wheel) add(t *wheelTimer, d time.Duration) {
+	// If already present (should not happen for well-formed use), drop old slot entry.
+	if _, ok := w.timers[t]; ok {
+		w.removeFromSlot(t)
+	}
 
-func (w *wheel) remove(t *wheelTimer) {
-	pos, ok := w.timers[t]
-	if !ok {
-		select {
-		case <-t.c:
-		default:
-		}
+	t.dur = d
+	if d < 0 {
+		w.fire(t)
 		return
 	}
-	//
+
+	// Use integer division on duration units to avoid float; keep math in int64
+	// so large delays do not overflow int on 32-bit platforms mid-calculation.
+	interval := int64(w.interval)
+	if interval <= 0 {
+		interval = int64(time.Second)
+	}
+	multi := int64(d) / interval
+	if multi < 0 {
+		multi = 0
+	}
+	n := int64(len(w.slots))
+	pos := (int64(w.pos) + multi) % n
+	t.circle = int(multi / n)
+	w.slots[pos].PushBack(t)
+	w.timers[t] = int(pos)
+}
+
+// remove unschedules t and drains any pending channel notification.
+func (w *wheel) remove(t *wheelTimer) {
+	w.removeFromSlot(t)
+	w.drain(t)
+}
+
+func (w *wheel) removeFromSlot(t *wheelTimer) {
+	pos, ok := w.timers[t]
+	if !ok {
+		return
+	}
 	slot := w.slots[pos]
-	for el := slot.Front(); el != nil; {
-		wt := el.Value.(*wheelTimer)
-		if wt == t {
+	for el := slot.Front(); el != nil; el = el.Next() {
+		if el.Value.(*wheelTimer) == t {
 			slot.Remove(el)
-			delete(w.timers, t)
-			return
+			break
 		}
-		el = el.Next()
+	}
+	delete(w.timers, t)
+}
+
+func (w *wheel) drain(t *wheelTimer) {
+	if t.c == nil {
+		return
+	}
+	select {
+	case <-t.c:
+	default:
 	}
 }

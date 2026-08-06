@@ -347,3 +347,74 @@ func TestOverflowSleep(t *testing.T) {
 		t.Fatalf("negative timeout didn't fire")
 	}
 }
+
+func TestResetNoDataRace(t *testing.T) {
+	// Concurrent Reset must not race with the wheel reading duration.
+	t0 := NewTimer(time.Hour)
+	var wg sync.WaitGroup
+	for i := 0; i < 32; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			t0.Reset(time.Duration(i+1) * time.Millisecond)
+		}(i)
+	}
+	wg.Wait()
+	t0.Stop()
+}
+
+func TestResetDrainsPendingTick(t *testing.T) {
+	t0 := NewTimer(10 * time.Millisecond)
+	<-t0.Done()
+	// Channel has been read; fire again path: schedule short, wait fire, reset without reading.
+	t0.Reset(10 * time.Millisecond)
+	<-t0.Done()
+	t0.Reset(time.Hour)
+	select {
+	case <-t0.Done():
+		t.Fatal("Reset should drain prior tick; Done must not be ready immediately")
+	case <-time.After(30 * time.Millisecond):
+		// OK: no stale event
+	}
+	t0.Stop()
+}
+
+func TestAfterFuncNilSafe(t *testing.T) {
+	// Must not panic when callback is nil.
+	tm := AfterFunc(5*time.Millisecond, nil)
+	time.Sleep(20 * time.Millisecond)
+	tm.Stop()
+
+	tm = AfterFunc(-1, nil) // immediate path
+	tm.Stop()
+}
+
+func TestStopDrainsChannel(t *testing.T) {
+	t0 := NewTimer(5 * time.Millisecond)
+	<-t0.Done()
+	t0.Stop() // already fired; drain should be harmless
+	t0.Reset(time.Hour)
+	select {
+	case <-t0.Done():
+		t.Fatal("unexpected immediate fire after Stop+Reset")
+	default:
+	}
+	t0.Stop()
+}
+
+func TestWrapperStopDoesNotBlock(t *testing.T) {
+	st := time.NewTimer(time.Millisecond)
+	<-st.C
+	w := NewWrapper(st)
+	// Stop after fire: must not hang even if C already received.
+	done := make(chan struct{})
+	go func() {
+		w.Stop()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("Wrapper.Stop blocked")
+	}
+}

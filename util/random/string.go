@@ -17,7 +17,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-// String generates random string using masking with source.
+// String returns a string of n random alphanumeric characters [0-9a-zA-Z].
 func String(n int) string {
 	b := make([]byte, n)
 	l := len(letterBytes)

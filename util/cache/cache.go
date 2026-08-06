@@ -1,80 +1,77 @@
+// Package cache provides process-local caches with TTL and pluggable eviction
+// (LRU, LFU). GetOrLoad single-flights concurrent loads for the same key.
 package cache
 
-import (
-	"container/list"
-	"time"
-)
+import "time"
 
+// EvictType selects the eviction policy for New.
 type EvictType string
 
 const (
+	// LRU is least-recently-used eviction.
 	LRU EvictType = "lru"
-	LFU           = "lfu"
-	ARC           = "arc"
+	// LFU is least-frequently-used eviction.
+	LFU EvictType = "lfu"
+	// ARC is reserved (not implemented).
+	ARC EvictType = "arc"
 )
 
 const (
+	// DefaultSize is used when WithSize is omitted or non-positive.
 	DefaultSize = 100
 )
 
 const (
-	DurationPersistence = -1
-	DurationMemoryLock  = 0
+	// DurationPersistence means the entry does not expire by time.
+	DurationPersistence time.Duration = -1
+	// DurationMemoryLock means do not store (GetOrLoad single-flight only / Set deletes).
+	DurationMemoryLock time.Duration = 0
 )
 
-// Cache is the interface for LRU/ARC cache.
+// Cache is the interface for process-local caches.
 type Cache interface {
-	// Set key-value pair with an expiration.
+	// Set stores key-value with an expiration.
+	// expire > 0 is a TTL; DurationPersistence keeps the entry until evicted;
+	// expire == 0 deletes the key.
 	Set(key, value interface{}, expire time.Duration)
 
-	// Get value from the cache by the key.
+	// Get returns the value and true if present and not expired.
+	// Successful Get updates eviction metadata (recency or frequency).
 	Get(key interface{}) (interface{}, bool)
 
-	// GetOrLoad gets value from the cache or load by loader.
+	// GetOrLoad returns a cached value or loads it via loader (single-flight per key).
 	GetOrLoad(key interface{}, loader LoaderFunc) (interface{}, error)
 
-	// Peek returns value without updating the "recently used"-ness of the key.
+	// Peek returns the value without updating eviction metadata.
+	// withExpired=true allows returning soft-expired entries still in memory.
 	Peek(key interface{}, withExpired ...bool) (interface{}, bool)
 
-	// Del the specified key from the cache.
+	// Del removes the key. Reports whether it was present (including soft-expired).
 	Del(key interface{}) bool
 
-	// Contain checks if a key exists in the cache.
+	// Contain reports whether a non-expired entry exists (does not update metadata).
 	Contain(key interface{}) bool
 
-	// Len returns the number of items in the cache.
+	// Len returns the number of non-expired entries, or all internal entries when withExpired.
 	Len(withExpired ...bool) int
 
-	// Keys returns a slice of the keys in the cache.
+	// Keys returns keys (order is policy-specific). withExpired includes soft-expired.
 	Keys(withExpired ...bool) []interface{}
 
-	// Purge clears the cache entities.
+	// Purge removes all entries.
 	Purge()
 }
 
-func New(evictType EvictType, opts ...Option) (c Cache) {
-	//
-	b := base{
-		size:      DefaultSize,
-		evictList: list.New(),
-	}
-	for _, o := range opts {
-		o(&b)
-	}
-	b.items = make(map[interface{}]*list.Element, b.size+1)
-	//
+// New creates a cache of the given eviction type.
+// Unsupported types return nil. Size defaults to DefaultSize.
+func New(evictType EvictType, opts ...Option) Cache {
+	o := buildOptions(opts...)
 	switch evictType {
 	case LRU:
-		c = &LRUCache{
-			base: &b,
-		}
+		return newLRUCache(o.size)
+	case LFU:
+		return newLFUCache(o.size)
 	default:
 		return nil
 	}
-	//
-	b.loaderLock = syncLocker{
-		cache: c,
-		m:     make(map[interface{}]*caller),
-	}
-	return c
 }

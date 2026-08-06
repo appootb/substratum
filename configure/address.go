@@ -6,8 +6,10 @@ import (
 	"strings"
 )
 
+// Schema identifies a storage or middleware backend URI scheme.
 type Schema string
 
+// Supported configuration address schemes.
 const (
 	SQLite     Schema = "sqlite"
 	MySQL      Schema = "mysql"
@@ -26,12 +28,15 @@ const (
 	RocketMQ Schema = "rocketmq"
 )
 
+// Dialect builds a driver-specific DSN/URL from a parsed Address.
 type Dialect interface {
 	URL() string
 }
 
+// AddrParams holds query parameters from a configuration URI.
 type AddrParams map[string]string
 
+// Encode joins parameters as k=v pairs separated by sep.
 func (m AddrParams) Encode(sep string) string {
 	if m == nil || len(m) == 0 {
 		return ""
@@ -44,6 +49,7 @@ func (m AddrParams) Encode(sep string) string {
 	return strings.Join(params, sep)
 }
 
+// Address is a parsed configuration URI (scheme://user:pass@host:port/path?q=v).
 type Address struct {
 	Schema    Schema     `json:"schema"`
 	Username  string     `json:"username"`
@@ -55,6 +61,7 @@ type Address struct {
 	RawValue  string     `json:"raw"`
 }
 
+// Set parses addr into the Address fields. Invalid URLs leave the receiver unchanged.
 func (c *Address) Set(addr string) {
 	uri, err := url.Parse(addr)
 	if err != nil {

@@ -1,3 +1,5 @@
+// Package recovery provides gRPC server interceptors that recover from panics
+// and convert them into Internal status errors with a stack dump.
 package recovery
 
 import (
@@ -9,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// UnaryServerInterceptor returns a unary interceptor that recovers from panics.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(func(p any) error {
 		debug.PrintStack()
@@ -16,6 +19,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	}))
 }
 
+// StreamServerInterceptor returns a stream interceptor that recovers from panics.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(func(p any) error {
 		debug.PrintStack()

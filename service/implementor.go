@@ -81,7 +81,7 @@ func UnaryServerInterceptor(v Authenticator) grpc.UnaryServerInterceptor {
 			}); ok {
 				return nil, err
 			}
-			return nil, status.Errorf(codes.PermissionDenied, err.Error())
+			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
 		return handler(context.WithValue(
 			ContextWithComponentName(
@@ -108,7 +108,7 @@ func StreamServerInterceptor(v Authenticator) grpc.StreamServerInterceptor {
 			}); ok {
 				return err
 			}
-			return status.Errorf(codes.PermissionDenied, err.Error())
+			return status.Error(codes.PermissionDenied, err.Error())
 		}
 		wrapper := &ctxWrapper{
 			ServerStream:     stream,
