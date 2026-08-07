@@ -8,51 +8,52 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
+	"github.com/appootb/jwt"
 	"github.com/appootb/substratum/v2/credential"
 	"github.com/appootb/substratum/v2/proto/go/common"
 	"github.com/appootb/substratum/v2/proto/go/permission"
 	"github.com/appootb/substratum/v2/proto/go/secret"
 	"github.com/appootb/substratum/v2/token"
-	"github.com/gbrlsnchs/jwt/v3"
-	"github.com/gbrlsnchs/jwt/v3/jwtutil"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
+	// UnsupportedAlgorithm is returned when secret.Algorithm is not mapped to a JWT JWA.
 	UnsupportedAlgorithm = errors.New("substratum: algorithm not supported")
 )
 
+// Init registers JwtToken as the default token implementor when none is set.
 func Init() {
 	if token.Implementor() == nil {
 		token.RegisterImplementor(&JwtToken{})
 	}
 }
 
+// JwtToken implements token.Token using github.com/appootb/jwt.
 type JwtToken struct{}
 
 func (t *JwtToken) sign(s *secret.Info, key []byte) (string, error) {
 	issuedAt := s.GetIssuedAt().AsTime().In(time.Local)
-	payload := &jwt.Payload{
+	claims := &jwt.RegisteredClaims{
 		Issuer:         s.GetIssuer(),
 		Subject:        s.GetSubject().String(),
-		Audience:       s.GetRoles(),
-		ExpirationTime: jwt.NumericDate(s.GetExpiredAt().AsTime().In(time.Local)),
-		NotBefore:      jwt.NumericDate(issuedAt.Add(-time.Minute)),
-		IssuedAt:       jwt.NumericDate(issuedAt),
-		JWTID:          strconv.FormatUint(s.GetAccount(), 10),
+		Audience:       jwt.Audience(s.GetRoles()),
+		ExpirationTime: jwt.NewNumericDate(s.GetExpiredAt().AsTime().In(time.Local)),
+		NotBefore:      jwt.NewNumericDate(issuedAt.Add(-time.Minute)),
+		IssuedAt:       jwt.NewNumericDate(issuedAt),
 	}
 	alg, err := t.getAlgorithm(s.GetAlgorithm(), key)
 	if err != nil {
 		return "", err
 	}
-	contentType := jwt.ContentType(s.GetType().String())
-	keyID := jwt.KeyID(fmt.Sprintf("%v-%v", s.GetAccount(), s.GetKeyId()))
-	val, err := jwt.Sign(payload, alg, contentType, keyID)
+	val, err := jwt.Sign(claims, alg,
+		jwt.WithContentType(s.GetType().String()),
+		jwt.WithAccountID(s.GetAccount()),
+		jwt.WithKeyID(strconv.FormatInt(s.GetKeyId(), 10)),
+	)
 	if err != nil {
 		return "", err
 	}
@@ -68,27 +69,28 @@ func (t *JwtToken) getAlgorithm(alg secret.Algorithm, key []byte) (jwt.Algorithm
 		if err != nil {
 			return nil, err
 		}
-		return jwt.NewRS512(jwt.RSAPrivateKey(priv), jwt.RSAPublicKey(&priv.PublicKey)), nil
+		return jwt.NewRS512(priv, &priv.PublicKey), nil
 	case secret.Algorithm_PSS:
 		priv, err := x509.ParsePKCS1PrivateKey(key)
 		if err != nil {
 			return nil, err
 		}
-		return jwt.NewPS512(jwt.RSAPrivateKey(priv), jwt.RSAPublicKey(&priv.PublicKey)), nil
+		return jwt.NewPS512(priv, &priv.PublicKey), nil
 	case secret.Algorithm_ECDSA:
 		priv, err := x509.ParseECPrivateKey(key)
 		if err != nil {
 			return nil, err
 		}
-		return jwt.NewES512(jwt.ECDSAPrivateKey(priv), jwt.ECDSAPublicKey(&priv.PublicKey)), nil
+		return jwt.NewES512(priv, &priv.PublicKey), nil
 	case secret.Algorithm_EdDSA:
 		priv := ed25519.PrivateKey(key)
-		return jwt.NewEd25519(jwt.Ed25519PrivateKey(priv), jwt.Ed25519PublicKey(priv.Public().([]byte))), nil
+		return jwt.NewEdDSA(priv, priv.Public().(ed25519.PublicKey)), nil
 	default:
 		return nil, UnsupportedAlgorithm
 	}
 }
 
+// NewSecretKey generates a new private key blob for alg.
 func (t *JwtToken) NewSecretKey(alg secret.Algorithm) ([]byte, error) {
 	switch alg {
 	case secret.Algorithm_HMAC:
@@ -167,74 +169,85 @@ func (t *JwtToken) Parse(md *common.Metadata) (*secret.Info, error) {
 }
 
 // ParseRaw parses a token string.
-func (t *JwtToken) ParseRaw(token string) (*secret.Info, error) {
+// Verification resolves the signing key from the JOSE header (account + kid + cty) first.
+func (t *JwtToken) ParseRaw(raw string) (*secret.Info, error) {
 	var (
 		accountID uint64
 		keyID     int64
 		alg       secret.Algorithm
 	)
-	resolver := &jwtutil.Resolver{
-		New: func(header jwt.Header) (jwt.Algorithm, error) {
-			var (
-				err error
-				key []byte
-			)
-			keyIDs := strings.Split(header.KeyID, "-")
-			if len(keyIDs) != 2 {
-				return nil, jwt.ErrAlgValidation
-			}
-			accountID, _ = strconv.ParseUint(keyIDs[0], 10, 64)
-			keyID, _ = strconv.ParseInt(keyIDs[1], 10, 64)
-			if header.ContentType == secret.Type_SERVER.String() {
-				key, err = credential.ServerImplementor().Get(keyID)
-			} else {
-				key, err = credential.ClientImplementor().Get(accountID, keyID)
-			}
-			if err != nil {
-				return nil, err
-			}
-			switch header.Algorithm {
-			case "HS512":
-				alg = secret.Algorithm_HMAC
-			case "RS512":
-				alg = secret.Algorithm_RSA
-			case "PS512":
-				alg = secret.Algorithm_PSS
-			case "ES512":
-				alg = secret.Algorithm_ECDSA
-			case "Ed25519":
-				alg = secret.Algorithm_EdDSA
-			default:
-				alg = secret.Algorithm_None
-			}
-			return t.getAlgorithm(alg, key)
-		},
-	}
-	// Verify
 	now := time.Now()
-	payload := jwt.Payload{}
-	validator := jwt.ValidatePayload(&payload,
-		jwt.NotBeforeValidator(now),
-		jwt.ExpirationTimeValidator(now))
-	header, err := jwt.Verify([]byte(token), resolver, &payload, validator)
+	var claims jwt.RegisteredClaims
+	header, err := jwt.VerifyWithKeyFunc([]byte(raw), func(h *jwt.Header) (jwt.Algorithm, error) {
+		if h.KeyID == "" {
+			return nil, jwt.ErrMalformed
+		}
+		parsedKeyID, parseErr := strconv.ParseInt(h.KeyID, 10, 64)
+		if parseErr != nil {
+			return nil, jwt.ErrMalformed
+		}
+		accountID = h.AccountID
+		keyID = parsedKeyID
+
+		var (
+			key []byte
+			err error
+		)
+		if h.ContentType == secret.Type_SERVER.String() {
+			key, err = credential.ServerImplementor().Get(keyID)
+		} else {
+			key, err = credential.ClientImplementor().Get(accountID, keyID)
+		}
+		if err != nil {
+			return nil, err
+		}
+		switch h.Algorithm {
+		case "HS512":
+			alg = secret.Algorithm_HMAC
+		case "RS512":
+			alg = secret.Algorithm_RSA
+		case "PS512":
+			alg = secret.Algorithm_PSS
+		case "ES512":
+			alg = secret.Algorithm_ECDSA
+		case "EdDSA":
+			alg = secret.Algorithm_EdDSA
+		default:
+			return nil, jwt.ErrInvalidAlgorithm
+		}
+		return t.getAlgorithm(alg, key)
+	}, &claims,
+		jwt.NotBeforeValidator(now, 0),
+		jwt.ExpirationValidator(now, 0),
+	)
 	if err != nil {
 		return nil, err
 	}
+
 	sub := permission.Subject_NONE
-	if i, err := strconv.Atoi(payload.Subject); err != nil {
-		sub = permission.Subject(permission.Subject_value[payload.Subject])
+	if i, err := strconv.Atoi(claims.Subject); err != nil {
+		sub = permission.Subject(permission.Subject_value[claims.Subject])
 	} else {
 		sub = permission.Subject(i)
 	}
+
+	var issuedAt, expiredAt time.Time
+	if !claims.IssuedAt.IsZero() {
+		issuedAt = claims.IssuedAt.Time
+	}
+	if !claims.ExpirationTime.IsZero() {
+		expiredAt = claims.ExpirationTime.Time
+	}
+
 	return &secret.Info{
 		Type:      secret.Type(secret.Type_value[header.ContentType]),
 		Algorithm: alg,
 		Subject:   sub,
-		Issuer:    payload.Issuer,
+		Issuer:    claims.Issuer,
 		Account:   accountID,
 		KeyId:     keyID,
-		Roles:     payload.Audience,
-		IssuedAt:  timestamppb.New(payload.IssuedAt.Time),
-		ExpiredAt: timestamppb.New(payload.ExpirationTime.Time),
+		Roles:     claims.Audience,
+		IssuedAt:  timestamppb.New(issuedAt),
+		ExpiredAt: timestamppb.New(expiredAt),
 	}, nil
 }

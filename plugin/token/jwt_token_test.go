@@ -1,14 +1,15 @@
 package token
 
 import (
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/appootb/jwt"
 	"github.com/appootb/substratum/v2/plugin/credential"
 	"github.com/appootb/substratum/v2/proto/go/permission"
 	"github.com/appootb/substratum/v2/proto/go/secret"
 	"github.com/appootb/substratum/v2/util/hash"
-	"github.com/gbrlsnchs/jwt/v3"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -37,7 +38,9 @@ func TestJwtToken_Generate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(s)
+	if s.GetAccount() != 123456789 || s.GetIssuer() != "appootb" {
+		t.Fatalf("%+v", s)
+	}
 }
 
 func TestJwtToken_Expire(t *testing.T) {
@@ -57,7 +60,7 @@ func TestJwtToken_Expire(t *testing.T) {
 		t.Fatal(err)
 	}
 	s, err := j.ParseRaw(token)
-	if err != jwt.ErrExpValidation {
+	if !errors.Is(err, jwt.ErrTokenExpired) {
 		t.Fatal(s, err)
 	}
 }
@@ -79,7 +82,7 @@ func TestJwtToken_Before(t *testing.T) {
 		t.Fatal(err)
 	}
 	s, err := j.ParseRaw(token)
-	if err != jwt.ErrNbfValidation {
+	if !errors.Is(err, jwt.ErrTokenNotValidYet) {
 		t.Fatal(s, err)
 	}
 }
