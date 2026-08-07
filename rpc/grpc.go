@@ -56,39 +56,54 @@ func ChainStreamServer() grpc.StreamServerInterceptor {
 // chainUnaryServer composes unary interceptors (left-to-right), replacing
 // go-grpc-middleware v1 ChainUnaryServer which was removed in v2 in favor of
 // grpc.ChainUnaryInterceptor (ServerOption only; gateway still needs one interceptor).
+//
+// Uses a single per-request continuation closure instead of allocating one
+// closure per interceptor on every RPC. Each interceptor must call next
+// synchronously and exactly once per invocation; do not retain or reuse next.
 func chainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
 	n := len(interceptors)
-	if n == 0 {
+	switch n {
+	case 0:
 		return nil
+	case 1:
+		return interceptors[0]
 	}
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		chained := handler
-		for i := n - 1; i >= 0; i-- {
-			interceptor := interceptors[i]
-			next := chained
-			chained = func(currentCtx context.Context, currentReq interface{}) (interface{}, error) {
-				return interceptor(currentCtx, currentReq, info, next)
+		i := 0
+		var next grpc.UnaryHandler
+		next = func(currentCtx context.Context, currentReq interface{}) (interface{}, error) {
+			if i == n {
+				return handler(currentCtx, currentReq)
 			}
+			curr := interceptors[i]
+			i++
+			return curr(currentCtx, currentReq, info, next)
 		}
-		return chained(ctx, req)
+		return next(ctx, req)
 	}
 }
 
 // chainStreamServer composes stream interceptors (left-to-right).
+// Same single-continuation strategy and next-call contract as chainUnaryServer.
 func chainStreamServer(interceptors ...grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
 	n := len(interceptors)
-	if n == 0 {
+	switch n {
+	case 0:
 		return nil
+	case 1:
+		return interceptors[0]
 	}
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		chained := handler
-		for i := n - 1; i >= 0; i-- {
-			interceptor := interceptors[i]
-			next := chained
-			chained = func(currentSrv interface{}, currentStream grpc.ServerStream) error {
-				return interceptor(currentSrv, currentStream, info, next)
+		i := 0
+		var next grpc.StreamHandler
+		next = func(currentSrv interface{}, currentStream grpc.ServerStream) error {
+			if i == n {
+				return handler(currentSrv, currentStream)
 			}
+			curr := interceptors[i]
+			i++
+			return curr(currentSrv, currentStream, info, next)
 		}
-		return chained(srv, ss)
+		return next(srv, ss)
 	}
 }

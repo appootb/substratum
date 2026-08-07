@@ -25,12 +25,13 @@ func TestBuildUnaryChainPhaseOrder(t *testing.T) {
 	RegisterUnary(UnaryBeforeHandler, mark("before_handler"))
 
 	chain := BuildUnaryChain()
-	if len(chain) != 16 {
-		t.Fatalf("chain length=%d want 16", len(chain))
+	// 8 framework interceptors + 4 phase markers.
+	if len(chain) != 12 {
+		t.Fatalf("chain length=%d want 12", len(chain))
 	}
 
-	// 4 framework interceptors sit between outermost and before_auth.
-	if chain[0] == nil || chain[5] == nil || chain[7] == nil || chain[15] == nil {
+	// outermost@0, before_auth@5, after_auth@7, before_handler@11
+	if chain[0] == nil || chain[5] == nil || chain[7] == nil || chain[11] == nil {
 		t.Fatal("custom phase interceptors missing at expected indices")
 	}
 
@@ -40,7 +41,7 @@ func TestBuildUnaryChainPhaseOrder(t *testing.T) {
 	}
 	// Nest only custom phase interceptors to verify relative order.
 	chained := chain[0]
-	for _, next := range []grpc.UnaryServerInterceptor{chain[5], chain[7], chain[15]} {
+	for _, next := range []grpc.UnaryServerInterceptor{chain[5], chain[7], chain[11]} {
 		cur := next
 		prev := chained
 		chained = func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, h grpc.UnaryHandler) (interface{}, error) {
@@ -100,11 +101,12 @@ func TestBuildInterceptorChainsBuildsBoth(t *testing.T) {
 	if frozenUnaryChain == nil || frozenStreamChain == nil {
 		t.Fatal("expected both chains built")
 	}
-	if len(frozenUnaryChain) != 12 {
-		t.Fatalf("unary chain length=%d want 12", len(frozenUnaryChain))
+	// recovery, metadata, errors, monitor, auth, logger, validator, implementors
+	if len(frozenUnaryChain) != 8 {
+		t.Fatalf("unary chain length=%d want 8", len(frozenUnaryChain))
 	}
-	if len(frozenStreamChain) != 12 {
-		t.Fatalf("stream chain length=%d want 12", len(frozenStreamChain))
+	if len(frozenStreamChain) != 8 {
+		t.Fatalf("stream chain length=%d want 8", len(frozenStreamChain))
 	}
 }
 
@@ -120,7 +122,8 @@ func TestBuildStreamChainIncludesPhases(t *testing.T) {
 	})
 
 	chain := BuildStreamChain()
-	if len(chain) != 14 {
-		t.Fatalf("stream chain length=%d want 14", len(chain))
+	// 8 framework + outermost + after_auth
+	if len(chain) != 10 {
+		t.Fatalf("stream chain length=%d want 10", len(chain))
 	}
 }

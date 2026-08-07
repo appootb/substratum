@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	md "github.com/appootb/substratum/v2/metadata"
 	"github.com/appootb/substratum/v2/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -34,7 +33,7 @@ type loggerKey struct{}
 
 func ContextWithLogger(ctx context.Context) context.Context {
 	return context.WithValue(ctx, loggerKey{}, &Helper{
-		md:     md.IncomingMetadata(ctx),
+		md:     metadataForLog(ctx),
 		Logger: impl,
 	})
 }
@@ -51,10 +50,8 @@ func ContextLogger(ctx context.Context) *Helper {
 // UnaryServerInterceptor returns a new unary server interceptor for access log.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		var (
-			ts     = time.Now()
-			logger = newHelper(ctx)
-		)
+		ts := time.Now()
+		logger := newHelper(ctx)
 		resp, err := handler(context.WithValue(ctx, loggerKey{}, logger), req)
 		consumed := time.Since(ts)
 		_ = grpc.SetHeader(ctx, metadata.MD{
@@ -69,11 +66,9 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			LogSecret:   RedactSecret(service.AccountSecretFromContext(ctx)),
 		}
 		if err != nil {
-			// Error log.
 			log[LogError] = err.Error()
 			logger.Error(ErrorLog, log)
 		} else {
-			// Access log.
 			logger.Info(AccessLog, log)
 		}
 		return resp, err
@@ -94,11 +89,9 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 			LogSecret: RedactSecret(service.AccountSecretFromContext(stream.Context())),
 		}
 		if err != nil {
-			// Error log.
 			log[LogError] = err.Error()
 			logger.Error(ErrorLog, log)
 		} else {
-			// Streaming log.
 			logger.Info(StreamingLog, log)
 		}
 		return err
@@ -124,11 +117,9 @@ func (s *ctxWrapper) SendMsg(m interface{}) error {
 		LogSecret:     RedactSecret(service.AccountSecretFromContext(s.ServerStream.Context())),
 	}
 	if err != nil {
-		// Error log.
 		log[LogError] = err.Error()
 		s.logger.Error(ErrorLog, log)
 	} else {
-		// Downstream log.
 		s.logger.Info(DownstreamLog, log)
 	}
 	return err
@@ -142,11 +133,9 @@ func (s *ctxWrapper) RecvMsg(m interface{}) error {
 		LogSecret:   RedactSecret(service.AccountSecretFromContext(s.ServerStream.Context())),
 	}
 	if err != nil {
-		// Error log.
 		log[LogError] = err.Error()
 		s.logger.Error(ErrorLog, log)
 	} else {
-		// Upstream log.
 		s.logger.Info(UpstreamLog, log)
 	}
 	return err

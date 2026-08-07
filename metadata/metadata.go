@@ -3,7 +3,6 @@ package metadata
 
 import (
 	"context"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -52,100 +51,124 @@ var (
 	EnvTesting = os.Getenv("TESTING")
 )
 
+// mdFirst returns the first value for key, or "".
+// gRPC lowercases keys; callers should pass lowercase constants.
+func mdFirst(md metadata.MD, key string) string {
+	vs := md[key]
+	if len(vs) == 0 {
+		return ""
+	}
+	return vs[0]
+}
+
 // ParseIncomingMetadata builds common.Metadata from gRPC incoming metadata.
 // Returns nil when the context has no incoming metadata.
+//
+// Prefer attaching via UnaryServerInterceptor / StreamServerInterceptor and
+// reading with IncomingMetadata, which parses lazily once per request.
 func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
-	var md url.Values
-	if v, ok := metadata.FromIncomingContext(ctx); !ok {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
 		return nil
-	} else {
-		md = url.Values(v)
 	}
+	return parseFromMD(md, peerAddr(ctx))
+}
+
+// parseFromMD maps gRPC metadata values into common.Metadata.
+// peerIP is used when x-forwarded-for is absent.
+func parseFromMD(md metadata.MD, peerIP string) *common.Metadata {
 	// Platform
 	platform := common.Platform_PLATFORM_UNSPECIFIED
-	if md.Has(KeyPlatform) {
-		if i, err := strconv.Atoi(md.Get(KeyPlatform)); err != nil {
-			platform = common.Platform(common.Platform_value[strings.ToUpper(md.Get(KeyPlatform))])
+	if plf := mdFirst(md, KeyPlatform); plf != "" {
+		if i, err := strconv.Atoi(plf); err != nil {
+			platform = common.Platform(common.Platform_value[strings.ToUpper(plf)])
 		} else {
 			platform = common.Platform(i)
 		}
 	}
 	// Network
 	network := common.Network_NETWORK_UNSPECIFIED
-	if md.Has(KeyNetwork) {
-		if i, err := strconv.Atoi(md.Get(KeyNetwork)); err != nil {
-			network = common.Network(common.Network_value[strings.ToUpper(md.Get(KeyNetwork))])
+	if net := mdFirst(md, KeyNetwork); net != "" {
+		if i, err := strconv.Atoi(net); err != nil {
+			network = common.Network(common.Network_value[strings.ToUpper(net)])
 		} else {
 			network = common.Network(i)
 		}
 	}
 	// Timestamp
 	timestamp := int64(0)
-	if md.Has(KeyTimestamp) {
-		timestamp, _ = strconv.ParseInt(md.Get(KeyTimestamp), 10, 64)
+	if ts := mdFirst(md, KeyTimestamp); ts != "" {
+		timestamp, _ = strconv.ParseInt(ts, 10, 64)
 	}
 	// Emulator
 	emulator := false
-	if md.Has(KeyIsEmulator) {
-		emulator, _ = strconv.ParseBool(md.Get(KeyIsEmulator))
+	if v := mdFirst(md, KeyIsEmulator); v != "" {
+		emulator, _ = strconv.ParseBool(v)
 	}
 	// Develop
 	develop := false
-	if md.Has(KeyIsDevelop) && EnvDevelop != "" {
-		develop, _ = strconv.ParseBool(md.Get(KeyIsDevelop))
+	if EnvDevelop != "" {
+		if v := mdFirst(md, KeyIsDevelop); v != "" {
+			develop, _ = strconv.ParseBool(v)
+		}
 	}
 	// Testing
 	testing := false
-	if md.Has(KeyIsTesting) && EnvTesting != "" {
-		testing, _ = strconv.ParseBool(md.Get(KeyIsTesting))
+	if EnvTesting != "" {
+		if v := mdFirst(md, KeyIsTesting); v != "" {
+			testing, _ = strconv.ParseBool(v)
+		}
 	}
 	// Client IP
-	clientIP := ""
-	if md.Has(KeyOriginalIP) {
-		clientIP = md.Get(KeyOriginalIP)
-	} else if p, ok := peer.FromContext(ctx); ok {
-		clientIP = p.Addr.String()
+	clientIP := mdFirst(md, KeyOriginalIP)
+	if clientIP == "" {
+		clientIP = peerIP
 	}
 	// User agent
-	userAgent := ""
-	if md.Has(KeyUserAgent) {
-		userAgent = md.Get(KeyUserAgent)
-	} else {
-		userAgent = md.Get(KeyIANAUserAgent)
+	userAgent := mdFirst(md, KeyUserAgent)
+	if userAgent == "" {
+		userAgent = mdFirst(md, KeyIANAUserAgent)
 	}
 
-	token := md.Get(KeyToken)
+	token := mdFirst(md, KeyToken)
 	if token == "" {
-		if auth := md.Get(KeyAuthorization); strings.HasPrefix(auth, "Bearer ") {
+		if auth := mdFirst(md, KeyAuthorization); strings.HasPrefix(auth, "Bearer ") {
 			token = strings.TrimPrefix(auth, "Bearer ")
 		}
 	}
 
 	return &common.Metadata{
-		Product:     md.Get(KeyProduct),
-		Package:     md.Get(KeyPackage),
-		Version:     md.Get(KeyVersion),
-		OsVersion:   md.Get(KeyOSVersion),
-		Brand:       md.Get(KeyBrand),
-		Model:       md.Get(KeyModel),
-		DeviceId:    md.Get(KeyDeviceID),
-		Fingerprint: md.Get(KeyFingerprint),
-		Locale:      md.Get(KeyLocale),
-		Latitude:    md.Get(KeyLatitude),
-		Longitude:   md.Get(KeyLongitude),
+		Product:     mdFirst(md, KeyProduct),
+		Package:     mdFirst(md, KeyPackage),
+		Version:     mdFirst(md, KeyVersion),
+		OsVersion:   mdFirst(md, KeyOSVersion),
+		Brand:       mdFirst(md, KeyBrand),
+		Model:       mdFirst(md, KeyModel),
+		DeviceId:    mdFirst(md, KeyDeviceID),
+		Fingerprint: mdFirst(md, KeyFingerprint),
+		Locale:      mdFirst(md, KeyLocale),
+		Latitude:    mdFirst(md, KeyLatitude),
+		Longitude:   mdFirst(md, KeyLongitude),
 		Platform:    platform,
 		Network:     network,
 		Timestamp:   timestamp,
-		TraceId:     md.Get(KeyTraceID),
+		TraceId:     mdFirst(md, KeyTraceID),
 		IsEmulator:  emulator,
 		IsDevelop:   develop,
 		IsTesting:   testing,
-		Channel:     md.Get(KeyChannel),
-		Uuid:        md.Get(KeyUUID),
-		Imei:        md.Get(KeyIMEI),
-		DeviceMac:   md.Get(KeyDeviceMac),
+		Channel:     mdFirst(md, KeyChannel),
+		Uuid:        mdFirst(md, KeyUUID),
+		Imei:        mdFirst(md, KeyIMEI),
+		DeviceMac:   mdFirst(md, KeyDeviceMac),
 		ClientIp:    clientIP,
 		UserAgent:   userAgent,
 		Token:       token,
 	}
+}
+
+func peerAddr(ctx context.Context) string {
+	if p, ok := peer.FromContext(ctx); ok && p.Addr != nil {
+		return p.Addr.String()
+	}
+	return ""
 }

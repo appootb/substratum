@@ -4,19 +4,14 @@ import (
 	"fmt"
 
 	"github.com/appootb/substratum/v2/auth"
-	"github.com/appootb/substratum/v2/client"
-	"github.com/appootb/substratum/v2/discovery"
+	sctx "github.com/appootb/substratum/v2/context"
 	"github.com/appootb/substratum/v2/errors"
 	"github.com/appootb/substratum/v2/logger"
 	"github.com/appootb/substratum/v2/metadata"
 	"github.com/appootb/substratum/v2/monitor"
-	"github.com/appootb/substratum/v2/queue"
 	"github.com/appootb/substratum/v2/recovery"
-	"github.com/appootb/substratum/v2/storage"
-	"github.com/appootb/substratum/v2/task"
-	"google.golang.org/grpc"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/validator"
+	"google.golang.org/grpc"
 )
 
 // UnaryPhase selects where custom unary interceptors are merged into the
@@ -122,11 +117,8 @@ func BuildUnaryChain() []grpc.UnaryServerInterceptor {
 	chain = append(chain,
 		logger.UnaryServerInterceptor(),
 		validator.UnaryServerInterceptor(),
-		client.UnaryServerInterceptor(),
-		discovery.UnaryServerInterceptor(),
-		storage.UnaryServerInterceptor(),
-		queue.UnaryServerInterceptor(),
-		task.UnaryServerInterceptor(),
+		// Attach client/discovery/storage/queue/task implementors in one step.
+		sctx.UnaryServerInterceptor(),
 	)
 	appendPhase(UnaryBeforeHandler)
 	frozenUnaryChain = chain
@@ -155,11 +147,7 @@ func BuildStreamChain() []grpc.StreamServerInterceptor {
 	chain = append(chain,
 		logger.StreamServerInterceptor(),
 		validator.StreamServerInterceptor(),
-		client.StreamServerInterceptor(),
-		discovery.StreamServerInterceptor(),
-		storage.StreamServerInterceptor(),
-		queue.StreamServerInterceptor(),
-		task.StreamServerInterceptor(),
+		sctx.StreamServerInterceptor(),
 	)
 	appendPhase(StreamBeforeHandler)
 	frozenStreamChain = chain

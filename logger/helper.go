@@ -6,6 +6,7 @@ import (
 
 	"github.com/appootb/substratum/v2/metadata"
 	"github.com/appootb/substratum/v2/proto/go/common"
+	"google.golang.org/protobuf/proto"
 )
 
 type Helper struct {
@@ -14,12 +15,21 @@ type Helper struct {
 }
 
 func newHelper(ctx context.Context) *Helper {
-	md := metadata.IncomingMetadata(ctx)
-	md.Token = ""
 	return &Helper{
 		Logger: impl,
-		md:     md,
+		md:     metadataForLog(ctx),
 	}
+}
+
+// metadataForLog clones request metadata for logging with Token cleared.
+func metadataForLog(ctx context.Context) *common.Metadata {
+	src := metadata.IncomingMetadata(ctx)
+	if src == nil {
+		return nil
+	}
+	cp := proto.Clone(src).(*common.Metadata)
+	cp.Token = ""
+	return cp
 }
 
 func (h *Helper) Debug(msg string, c Content) {
