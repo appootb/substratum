@@ -64,6 +64,9 @@ func TestMetadataForLogDoesNotMutateSource(t *testing.T) {
 
 func TestUnaryAccessLogIncludesPayloads(t *testing.T) {
 	c := withCapture(t)
+	SetAccessLogEnabled(true)
+	t.Cleanup(func() { SetAccessLogEnabled(true) })
+
 	ctx := withParsedMD(t, md.KeyProduct, "p")
 	req := map[string]string{"k": "v"}
 	resp := map[string]string{"ok": "1"}
@@ -85,5 +88,26 @@ func TestUnaryAccessLogIncludesPayloads(t *testing.T) {
 	}
 	if c.last[LogPath] != "/svc/Method" {
 		t.Fatalf("path=%v", c.last[LogPath])
+	}
+}
+
+func TestSetAccessLogEnabledSkipsInterceptor(t *testing.T) {
+	c := withCapture(t)
+	SetAccessLogEnabled(false)
+	t.Cleanup(func() { SetAccessLogEnabled(true) })
+
+	if AccessLogEnabled() {
+		t.Fatal("expected disabled")
+	}
+	ctx := withParsedMD(t, md.KeyProduct, "p")
+	interceptor := UnaryServerInterceptor()
+	_, err := interceptor(ctx, "req", &grpc.UnaryServerInfo{FullMethod: "/svc/Method"}, func(ctx context.Context, req interface{}) (interface{}, error) {
+		return "ok", nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.lastMsg != "" {
+		t.Fatalf("expected no access log, got %q", c.lastMsg)
 	}
 }

@@ -42,6 +42,7 @@ import (
 //   - Baseline / chain composition cost
 //   - Per-interceptor cost (isolated)
 //   - Default 8-interceptor stack (anonymous + JWT)
+//   - Full stack with access log + metrics disabled (NoObs)
 //   - In-process gRPC (bufconn): no interceptor vs full stack
 
 const (
@@ -399,4 +400,46 @@ func BenchmarkGRPC_FullStack_JWT(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		invokeBench(b, conn, benchMethodAuthed, md)
 	}
+}
+
+// BenchmarkGRPC_FullStack_Anonymous_NoObs is the full stack with access log and
+// metrics disabled (framework floor without observability interceptors).
+func BenchmarkGRPC_FullStack_Anonymous_NoObs(b *testing.B) {
+	ensureBenchDeps(b)
+	logger.SetAccessLogEnabled(false)
+	monitor.SetMetricsEnabled(false)
+	b.Cleanup(func() {
+		logger.SetAccessLogEnabled(true)
+		monitor.SetMetricsEnabled(true)
+	})
+
+	chain := chainUnaryServer(defaultFrameworkInterceptors(benchAuth)...)
+	conn, cleanup := startBenchServer(b, chain)
+	defer cleanup()
+
+	md := metadata.Pairs(
+		mdpkg.KeyProduct, "bench",
+		mdpkg.KeyPackage, "pkg",
+		mdpkg.KeyVersion, "1",
+		mdpkg.KeyPlatform, fmt.Sprintf("%d", int(common.Platform_PLATFORM_SERVER)),
+		mdpkg.KeyLocale, "en",
+		mdpkg.KeyUserAgent, "bench",
+	)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		invokeBench(b, conn, benchMethodAnonymous, md)
+	}
+}
+
+func BenchmarkFullStack_Anonymous_NoObs(b *testing.B) {
+	ensureBenchDeps(b)
+	logger.SetAccessLogEnabled(false)
+	monitor.SetMetricsEnabled(false)
+	b.Cleanup(func() {
+		logger.SetAccessLogEnabled(true)
+		monitor.SetMetricsEnabled(true)
+	})
+	chain := chainUnaryServer(defaultFrameworkInterceptors(benchAuth)...)
+	runUnary(b, chain, fullMetadataCtx(""), benchInfo(benchMethodAnonymous), &emptypb.Empty{})
 }

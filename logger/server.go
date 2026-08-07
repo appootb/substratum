@@ -48,8 +48,12 @@ func ContextLogger(ctx context.Context) *Helper {
 }
 
 // UnaryServerInterceptor returns a new unary server interceptor for access log.
+// When access logging is disabled (see SetAccessLogEnabled), the interceptor is a no-op.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if !AccessLogEnabled() {
+			return handler(ctx, req)
+		}
 		ts := time.Now()
 		logger := newHelper(ctx)
 		resp, err := handler(context.WithValue(ctx, loggerKey{}, logger), req)
@@ -76,8 +80,12 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 }
 
 // StreamServerInterceptor returns a new streaming server interceptor for access log.
+// When access logging is disabled (see SetAccessLogEnabled), the interceptor is a no-op.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		if !AccessLogEnabled() {
+			return handler(srv, stream)
+		}
 		logger := newHelper(stream.Context())
 		err := handler(srv, &ctxWrapper{
 			ServerStream: stream,
