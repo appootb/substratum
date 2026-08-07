@@ -185,7 +185,14 @@ func (t *JwtToken) Parse(md *common.Metadata) (*secret.Info, error) {
 
 // ParseRaw parses a token string.
 // Verification resolves the signing key from the JOSE header (account + kid + cty) first.
+// Successful results are cached in-process for a short TTL (see SetParseCacheEnabled).
 func (t *JwtToken) ParseRaw(raw string) (*secret.Info, error) {
+	return cachedParseRaw(raw, func() (*secret.Info, error) {
+		return t.parseRawUncached(raw)
+	})
+}
+
+func (t *JwtToken) parseRawUncached(raw string) (*secret.Info, error) {
 	var (
 		accountID uint64
 		keyID     int64
