@@ -66,7 +66,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			LogConsumed: consumed,
 			LogRequest:  req,
 			LogResponse: resp,
-			LogSecret:   service.AccountSecretFromContext(ctx),
+			LogSecret:   RedactSecret(service.AccountSecretFromContext(ctx)),
 		}
 		if err != nil {
 			// Error log.
@@ -91,7 +91,7 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 		})
 		log := Content{
 			LogPath:   info.FullMethod,
-			LogSecret: service.AccountSecretFromContext(stream.Context()),
+			LogSecret: RedactSecret(service.AccountSecretFromContext(stream.Context())),
 		}
 		if err != nil {
 			// Error log.
@@ -121,7 +121,7 @@ func (s *ctxWrapper) SendMsg(m interface{}) error {
 	log := Content{
 		LogPath:       s.info.FullMethod,
 		LogDownstream: m,
-		LogSecret:     service.AccountSecretFromContext(s.ServerStream.Context()),
+		LogSecret:     RedactSecret(service.AccountSecretFromContext(s.ServerStream.Context())),
 	}
 	if err != nil {
 		// Error log.
@@ -139,7 +139,7 @@ func (s *ctxWrapper) RecvMsg(m interface{}) error {
 	log := Content{
 		LogPath:     s.info.FullMethod,
 		LogUpstream: m,
-		LogSecret:   service.AccountSecretFromContext(s.ServerStream.Context()),
+		LogSecret:   RedactSecret(service.AccountSecretFromContext(s.ServerStream.Context())),
 	}
 	if err != nil {
 		// Error log.
