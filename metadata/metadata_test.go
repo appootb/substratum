@@ -70,3 +70,13 @@ func TestParseIncomingMetadataUserAgentFallback(t *testing.T) {
 		t.Fatalf("ua=%q", got.UserAgent)
 	}
 }
+
+func TestParseIncomingMetadataAuthorizationBearer(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+		"Authorization", "Bearer jwt-token-value",
+	))
+	parsed := ParseIncomingMetadata(ctx)
+	if parsed.GetToken() != "jwt-token-value" {
+		t.Fatalf("expected bearer token, got %q", parsed.GetToken())
+	}
+}

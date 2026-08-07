@@ -42,6 +42,7 @@ const (
 
 	KeyIANAUserAgent = "user-agent"
 	KeyOriginalIP    = "x-forwarded-for"
+	KeyAuthorization = "authorization"
 )
 
 var (
@@ -113,6 +114,13 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		userAgent = md.Get(KeyIANAUserAgent)
 	}
 
+	token := md.Get(KeyToken)
+	if token == "" {
+		if auth := md.Get(KeyAuthorization); strings.HasPrefix(auth, "Bearer ") {
+			token = strings.TrimPrefix(auth, "Bearer ")
+		}
+	}
+
 	return &common.Metadata{
 		Product:     md.Get(KeyProduct),
 		Package:     md.Get(KeyPackage),
@@ -138,6 +146,6 @@ func ParseIncomingMetadata(ctx context.Context) *common.Metadata {
 		DeviceMac:   md.Get(KeyDeviceMac),
 		ClientIp:    clientIP,
 		UserAgent:   userAgent,
-		Token:       md.Get(KeyToken),
+		Token:       token,
 	}
 }

@@ -93,10 +93,21 @@ func URLQueryMetadata(_ context.Context, r *http.Request) metadata.MD {
 			md.KeyPlatform, md.KeyNetwork,
 			md.KeyTimestamp, md.KeyTraceID,
 			md.KeyIsEmulator, md.KeyIsDevelop, md.KeyIsTesting,
-			md.KeyChannel, md.KeyUUID, md.KeyIMEI, md.KeyDeviceMac, md.KeyUserAgent,
-			md.KeyToken:
+			md.KeyChannel, md.KeyUUID, md.KeyIMEI, md.KeyDeviceMac, md.KeyUserAgent:
 			queryMD[k] = v
 		}
+	}
+	return queryMD
+}
+
+// WebsocketQueryMetadata returns metadata for WebSocket handshake requests.
+// Token is read from the query string because browsers cannot set custom headers
+// during the WebSocket upgrade. Use this in WebSocket handlers instead of
+// URLQueryMetadata.
+func WebsocketQueryMetadata(ctx context.Context, r *http.Request) metadata.MD {
+	queryMD := URLQueryMetadata(ctx, r)
+	if v, ok := r.URL.Query()[md.KeyToken]; ok {
+		queryMD[md.KeyToken] = v
 	}
 	return queryMD
 }
