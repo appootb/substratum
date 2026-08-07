@@ -82,7 +82,7 @@ func (n *AlgorithmAuth) Authenticate(ctx context.Context, serviceMethod string) 
 		return nil, status.Error(codes.Unauthenticated, "token required")
 	}
 
-	// Parse the token.
+	// Parse the token. Route by request platform; parser checks JWT cty matches.
 	var (
 		err        error
 		secretInfo *secret.Info

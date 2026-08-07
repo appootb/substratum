@@ -7,6 +7,7 @@ import (
 
 	"github.com/appootb/jwt"
 	"github.com/appootb/substratum/v2/plugin/credential"
+	"github.com/appootb/substratum/v2/proto/go/common"
 	"github.com/appootb/substratum/v2/proto/go/permission"
 	"github.com/appootb/substratum/v2/proto/go/secret"
 	"github.com/appootb/substratum/v2/util/hash"
@@ -40,6 +41,43 @@ func TestJwtToken_Generate(t *testing.T) {
 	}
 	if s.GetAccount() != 123456789 || s.GetIssuer() != "appootb" {
 		t.Fatalf("%+v", s)
+	}
+}
+
+func TestJwtToken_ParseTypeMismatch(t *testing.T) {
+	j := &JwtToken{}
+	now := time.Now()
+	raw, err := j.Generate(&secret.Info{
+		Type:      secret.Type_SERVER,
+		Algorithm: secret.Algorithm_HMAC,
+		Issuer:    "appootb",
+		Account:   123456789,
+		KeyId:     hash.Sum("TestJwtToken_ParseTypeMismatch"),
+		Subject:   permission.Subject_SERVER,
+		IssuedAt:  timestamppb.New(now),
+		ExpiredAt: timestamppb.New(now.Add(time.Hour)),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = j.Parse(&common.Metadata{
+		Token:    raw,
+		Platform: common.Platform_PLATFORM_MOBILE,
+	})
+	if !errors.Is(err, ErrTokenTypeMismatch) {
+		t.Fatalf("expected ErrTokenTypeMismatch, got %v", err)
+	}
+
+	info, err := j.Parse(&common.Metadata{
+		Token:    raw,
+		Platform: common.Platform_PLATFORM_SERVER,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.GetType() != secret.Type_SERVER {
+		t.Fatalf("expected SERVER, got %v", info.GetType())
 	}
 }
 

@@ -23,6 +23,8 @@ import (
 var (
 	// UnsupportedAlgorithm is returned when secret.Algorithm is not mapped to a JWT JWA.
 	UnsupportedAlgorithm = errors.New("substratum: algorithm not supported")
+	// ErrTokenTypeMismatch is returned when JWT cty does not match the request platform.
+	ErrTokenTypeMismatch = errors.New("substratum: token type mismatch")
 )
 
 // Init registers JwtToken as the default token implementor when none is set.
@@ -164,8 +166,21 @@ func (t *JwtToken) Refresh(s *secret.Info) (string, error) {
 }
 
 // Parse the metadata.
+// After verification, JWT cty must match the request platform:
+// PLATFORM_SERVER expects Type_SERVER, otherwise Type_CLIENT.
 func (t *JwtToken) Parse(md *common.Metadata) (*secret.Info, error) {
-	return t.ParseRaw(md.GetToken())
+	info, err := t.ParseRaw(md.GetToken())
+	if err != nil {
+		return nil, err
+	}
+	expected := secret.Type_CLIENT
+	if md.GetPlatform()&common.Platform_PLATFORM_SERVER == common.Platform_PLATFORM_SERVER {
+		expected = secret.Type_SERVER
+	}
+	if info.GetType() != expected {
+		return nil, ErrTokenTypeMismatch
+	}
+	return info, nil
 }
 
 // ParseRaw parses a token string.
