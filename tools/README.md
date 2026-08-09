@@ -16,6 +16,7 @@ tools/
     protoc-gen-markdown/
     protoc-gen-dart-export/
   example/                      # end-to-end sample protos + Makefile
+  Dockerfile                    # appootb/grpc-runner image (build from repo root)
   go.mod                        # nested module: github.com/appootb/substratum/v2/tools
 ```
 
@@ -78,6 +79,38 @@ See [`example/README.md`](example/README.md) for the proto2/proto3 coverage matr
 (`Validate` / `ValidateAll`, HTTP, WebSocket, permission subjects).
 
 Rules must use the `appootb.validate` package (not upstream `validate.rules`).
+
+## Docker image (`appootb/grpc-runner`)
+
+The former [`appootb/grpc-runner`](https://github.com/appootb/grpc-runner) image is built from
+[`tools/Dockerfile`](Dockerfile) in this repository (CI: `.github/workflows/docker-publish.yml`).
+
+It bundles `protoc`, official/language plugins, and the four substratum generators above, plus
+include trees for `appootb` / `googleapis` / `grpc-gateway` protos.
+
+Local build (from the **repository root**):
+
+```bash
+docker build -f tools/Dockerfile -t appootb/grpc-runner:local .
+```
+
+Usage (same as before):
+
+```bash
+docker run --rm -v "$PWD":/mnt -it appootb/grpc-runner:master protoc \
+  -Iproto \
+  -I/usr/local/include \
+  -I/go/src/github.com/googleapis/googleapis \
+  -I/go/src/github.com/appootb/substratum/proto \
+  --go_out=paths=source_relative:go \
+  --go-grpc_out=paths=source_relative:go \
+  --grpc-gateway_out=logtostderr=true,paths=source_relative:go \
+  --ootb_out=lang=go,paths=source_relative:go \
+  --validate_out=lang=go,paths=source_relative:go \
+  proto/*.proto
+```
+
+Published tags: `master` / `latest` on pushes to `master`, plus semver from `v*.*.*` and `tools/v*.*.*` tags.
 
 ## Module layout
 

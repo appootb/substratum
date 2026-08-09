@@ -21,6 +21,7 @@ Work on `master` after `v2.0.4` (dependency upgrades, security hardening, and fr
 - JWT `cty` must match request platform; token plugin on `github.com/appootb/jwt`
 - Util improvements: LFU cache, timers, pools, and expanded tests
 - Nested `tools/` module (from `appootb/grpc-gen`): `protoc-gen-ootb`, `protoc-gen-validate`, `protoc-gen-markdown`, `protoc-gen-dart-export`
+- `tools/Dockerfile` + `.github/workflows/docker-publish.yml` (from `appootb/grpc-runner`): multi-arch `appootb/grpc-runner` image built from this monorepo
 - `protoc-gen-validate` aligned with PGV v1.3.3 Go features: `ValidateAll` / `MultiError`, `ignore_empty`, proto3 optional (`SyntheticOneOfFields`), compile-time rule checks
 - `appootb.validate` proto gains `ignore_empty` on scalar/string/bytes/repeated/map/any rules (keeps custom `error` field option)
 - `protoc-gen-ootb`: FullMethod/subjects align with go-grpc proto method names; `FEATURE_PROTO3_OPTIONAL`; `DEBUG_OOTB`; sorted targets; skip files without services; websocket url/streaming checks

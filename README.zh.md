@@ -28,7 +28,8 @@
 - **代码生成工具**
   - 嵌套模块 [`tools/`](./tools) 在 `tools/cmd/` 下提供 `protoc-gen-ootb`、`protoc-gen-validate`、`protoc-gen-markdown`、`protoc-gen-dart-export`
   - 安装：`go install github.com/appootb/substratum/v2/tools/cmd/protoc-gen-ootb@latest`（其余二进制同理）
-  - 原仓库：[appootb/grpc-gen](https://github.com/appootb/grpc-gen)
+  - Docker 镜像 [`appootb/grpc-runner`](https://hub.docker.com/r/appootb/grpc-runner) 由 [`tools/Dockerfile`](./tools/Dockerfile) 构建（原仓库 [appootb/grpc-runner](https://github.com/appootb/grpc-runner)）
+  - 生成器原仓库：[appootb/grpc-gen](https://github.com/appootb/grpc-gen)
 
 ## 快速开始
 

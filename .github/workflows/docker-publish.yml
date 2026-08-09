@@ -1,0 +1,68 @@
+# Build and publish the grpc-runner image (protoc + plugins).
+# Formerly: https://github.com/appootb/grpc-runner
+#
+# Image: appootb/grpc-runner (name kept for existing docs / docker run invocations)
+# Dockerfile: tools/Dockerfile (build context = repository root)
+
+name: docker-publish
+
+on:
+  push:
+    branches: [master]
+    # Image tags: branch name (master), semver (v1.2.3), tools module tags (tools/v0.1.0).
+    tags:
+      - "v*.*.*"
+      - "tools/v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # Keep historical Docker Hub repository name used by docs and consumers.
+          images: |
+            appootb/grpc-runner
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=match,pattern=tools/v(.*),group=1
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Available platforms
+        run: echo "${{ steps.buildx.outputs.platforms }}"
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: tools/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

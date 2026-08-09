@@ -28,7 +28,8 @@ A foundational framework library for Go that seamlessly integrates gRPC and gRPC
 - **Code Generation Tools**
   - Nested module [`tools/`](./tools) provides `protoc-gen-ootb`, `protoc-gen-validate`, `protoc-gen-markdown`, and `protoc-gen-dart-export` under `tools/cmd/`
   - Install: `go install github.com/appootb/substratum/v2/tools/cmd/protoc-gen-ootb@latest` (and the other binaries similarly)
-  - Formerly hosted at [appootb/grpc-gen](https://github.com/appootb/grpc-gen)
+  - Docker image [`appootb/grpc-runner`](https://hub.docker.com/r/appootb/grpc-runner) is built from [`tools/Dockerfile`](./tools/Dockerfile) (formerly [appootb/grpc-runner](https://github.com/appootb/grpc-runner))
+  - Generators formerly hosted at [appootb/grpc-gen](https://github.com/appootb/grpc-gen)
 
 ## Quick Start
 

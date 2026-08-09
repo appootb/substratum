@@ -1,0 +1,10 @@
+.git
+.github
+.idea
+**/*_test.go
+**/testdata
+**/.DS_Store
+*.md
+!tools/README.md
+LICENSE
+CHANGELOG.md
