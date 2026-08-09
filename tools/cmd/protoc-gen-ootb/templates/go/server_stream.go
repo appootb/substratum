@@ -15,15 +15,17 @@ const serverStreamTpl = `
 				_ = c.WriteClose(http.StatusBadRequest)
 				return
 			}
+			// protoc-gen-go-grpc v1.3+ uses GenericServerStream (no unexported *XServer wrappers).
+			ss := &grpc.GenericServerStream[{{ inputMessage . }}, {{ outputMessage . }}]{ServerStream: stream}
 			if streamInterceptor == nil {
-				err = srv.{{ name . }}(req, &{{ streamServerImpl . }}{stream})
+				err = srv.{{ name . }}(req, ss)
 				if err != nil {
 					_ = c.WriteClose(http.StatusInternalServerError)
 				}
 				return
 			}
 			handler := func(_ interface{}, stream grpc.ServerStream) error {
-				return srv.{{ name . }}(req, &{{ streamServerImpl . }}{stream})
+				return srv.{{ name . }}(req, &grpc.GenericServerStream[{{ inputMessage . }}, {{ outputMessage . }}]{ServerStream: stream})
 			}
 			info := &grpc.StreamServerInfo{
 				FullMethod:     "{{ fullMethod . }}",

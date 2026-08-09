@@ -14,11 +14,10 @@ func Register(tpl *template.Template, params pgs.Parameters) {
 
 	tpl.Funcs(map[string]interface{}{
 		"package":          fns.PackageName,
-		"serverName":       fns.ServerName,
-		"serviceName":      fns.serviceName,
-		"serverStream":     fns.ServerStream,
-		"streamServerImpl": fns.streamServerImpl,
-		"name":             fns.Name,
+		"serverName":   fns.ServerName,
+		"serviceName":  fns.serviceName,
+		"serverStream": fns.ServerStream,
+		"name":         fns.Name,
 		"hasWebApi":        fns.hasWebApi,
 		"hasWebStream":     fns.hasWebStream,
 		"isWebStream":      fns.isWebStream,

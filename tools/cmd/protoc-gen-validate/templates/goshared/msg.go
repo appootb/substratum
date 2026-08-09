@@ -290,6 +290,76 @@ var _ interface{
 	{{ if has .Rules.Values.GetString_ "Pattern" }} {{ if .Rules.Values.GetString_.Pattern }}
 		var {{ lookup .Field "Pattern" }} = regexp.MustCompile({{ lit .Rules.Values.GetString_.GetPattern }})
 	{{ end }}{{ end }}
+	{{ if has .Rules.Values.GetString_ "In" }} {{ if .Rules.Values.GetString_.In }}
+		var {{ lookup .Field "InLookup" }} = map[string]struct{}{
+			{{- range .Rules.Values.GetString_.In }}
+				{{ inKey $f . }}: {},
+			{{- end }}
+		}
+	{{ end }}{{ end }}
+	{{ if has .Rules.Values.GetString_ "NotIn" }} {{ if .Rules.Values.GetString_.NotIn }}
+		var {{ lookup .Field "NotInLookup" }} = map[string]struct{}{
+			{{- range .Rules.Values.GetString_.NotIn }}
+				{{ inKey $f . }}: {},
+			{{- end }}
+		}
+	{{ end }}{{ end }}
+	{{ if has .Rules.Values.GetEnum "In" }} {{ if .Rules.Values.GetEnum.In }}
+		var {{ lookup .Field "InLookup" }} = map[{{ inType .Field .Rules.Values.GetEnum.In }}]struct{}{
+			{{- range .Rules.Values.GetEnum.In }}
+				{{ inKey $f . }}: {},
+			{{- end }}
+		}
+	{{ end }}{{ end }}
+	{{ if has .Rules.Values.GetEnum "NotIn" }} {{ if .Rules.Values.GetEnum.NotIn }}
+		var {{ lookup .Field "NotInLookup" }} = map[{{ inType .Field .Rules.Values.GetEnum.NotIn }}]struct{}{
+			{{- range .Rules.Values.GetEnum.NotIn }}
+				{{ inKey $f . }}: {},
+			{{- end }}
+		}
+	{{ end }}{{ end }}
+	{{ if has .Rules.Values.GetInt32 "In" }} {{ if .Rules.Values.GetInt32.In }}
+		var {{ lookup .Field "InLookup" }} = map[int32]struct{}{
+			{{- range .Rules.Values.GetInt32.In }}
+				{{ inKey $f . }}: {},
+			{{- end }}
+		}
+	{{ end }}{{ end }}
+	{{ if has .Rules.Values.GetInt32 "NotIn" }} {{ if .Rules.Values.GetInt32.NotIn }}
+		var {{ lookup .Field "NotInLookup" }} = map[int32]struct{}{
+			{{- range .Rules.Values.GetInt32.NotIn }}
+				{{ inKey $f . }}: {},
+			{{- end }}
+		}
+	{{ end }}{{ end }}
+	{{ if has .Rules.Values.GetInt64 "In" }} {{ if .Rules.Values.GetInt64.In }}
+		var {{ lookup .Field "InLookup" }} = map[int64]struct{}{
+			{{- range .Rules.Values.GetInt64.In }}
+				{{ inKey $f . }}: {},
+			{{- end }}
+		}
+	{{ end }}{{ end }}
+	{{ if has .Rules.Values.GetInt64 "NotIn" }} {{ if .Rules.Values.GetInt64.NotIn }}
+		var {{ lookup .Field "NotInLookup" }} = map[int64]struct{}{
+			{{- range .Rules.Values.GetInt64.NotIn }}
+				{{ inKey $f . }}: {},
+			{{- end }}
+		}
+	{{ end }}{{ end }}
+	{{ if has .Rules.Values.GetAny "In" }} {{ if .Rules.Values.GetAny.In }}
+		var {{ lookup .Field "InLookup" }} = map[string]struct{}{
+			{{- range .Rules.Values.GetAny.In }}
+				{{ inKey $f . }}: {},
+			{{- end }}
+		}
+	{{ end }}{{ end }}
+	{{ if has .Rules.Values.GetAny "NotIn" }} {{ if .Rules.Values.GetAny.NotIn }}
+		var {{ lookup .Field "NotInLookup" }} = map[string]struct{}{
+			{{- range .Rules.Values.GetAny.NotIn }}
+				{{ inKey $f . }}: {},
+			{{- end }}
+		}
+	{{ end }}{{ end }}
 	{{ end }}{{ end }}
 
 {{ end }}{{ end }}

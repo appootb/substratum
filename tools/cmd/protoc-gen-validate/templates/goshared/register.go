@@ -220,7 +220,32 @@ func (fns goSharedFuncs) oneofTypeName(f pgs.Field) pgsgo.TypeName {
 }
 
 func (fns goSharedFuncs) inType(f pgs.Field, x interface{}) string {
-	switch f.Type().ProtoType() {
+	ft := f.Type()
+	// Maps are MessageT in the descriptor; enum In/NotIn lists are []int32 and must
+	// use the Go enum type name of the key/value, not raw int32.
+	if ft.IsMap() {
+		switch x.(type) {
+		case []*durationpb.Duration:
+			return "time.Duration"
+		case []string:
+			return "string"
+		case []int64:
+			return "int64"
+		case []int32:
+			t := fns.Type(f)
+			if el := ft.Element(); el != nil && el.IsEnum() {
+				return t.Element().String()
+			}
+			if k := ft.Key(); k != nil && k.IsEnum() {
+				return t.Key().String()
+			}
+			return "int32"
+		default:
+			return pgsgo.TypeName(fmt.Sprintf("%T", x)).Element().String()
+		}
+	}
+
+	switch ft.ProtoType() {
 	case pgs.BytesT:
 		return "string"
 	case pgs.MessageT:
