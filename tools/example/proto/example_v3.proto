@@ -1,0 +1,141 @@
+// Proto3 demo for protoc-gen-validate + protoc-gen-ootb.
+//
+// Covers: proto3 optional (synthetic oneof), ignore_empty, repeated/map, nested
+// messages, oneof, well-known strings, HTTP + client-stream websocket, and
+// mixed permission subjects.
+syntax = "proto3";
+
+package example;
+
+import "appootb/api/websocket.proto";
+import "appootb/permission/method.proto";
+import "appootb/permission/policy.proto";
+import "appootb/permission/service.proto";
+import "appootb/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/appootb/substratum/v2/tools/example/proto";
+
+enum Level {
+  LEVEL_UNSPECIFIED = 0;
+  LEVEL_LOW = 1;
+  LEVEL_HIGH = 2;
+}
+
+// Profile is validated when embedded with message.required / as a field value.
+message Profile {
+  string display_name = 1 [(appootb.validate.rules).string = {min_len: 1, max_len: 64}];
+  Level level = 2 [(appootb.validate.rules).enum = {defined_only: true, not_in: [0]}];
+}
+
+// Proto3CreateRequest exercises proto3 optional presence + ignore_empty + maps.
+message Proto3CreateRequest {
+  // proto3 optional: rules run only when the field is set
+  optional string nickname = 1 [(appootb.validate.rules).string = {min_len: 2, max_len: 16}];
+
+  // plain scalar + ignore_empty (zero value skips gte)
+  int32 score = 2 [(appootb.validate.rules).int32 = {gte: 0, ignore_empty: true}];
+
+  // float range
+  double ratio = 3 [(appootb.validate.rules).double = {gte: 0, lte: 1, ignore_empty: true}];
+
+  // email / uuid
+  string email = 4 [(appootb.validate.rules).string = {email: true}];
+  string request_id = 5 [(appootb.validate.rules).string = {uuid: true}];
+
+  // repeated + unique-ish constraints via items
+  repeated string tags = 6 [
+    (appootb.validate.rules).repeated = {
+      min_items: 1,
+      max_items: 5,
+      items: {string: {min_len: 1, max_len: 12}}
+    }
+  ];
+
+  // map
+  map<string, int32> counters = 7 [
+    (appootb.validate.rules).map = {
+      max_pairs: 10,
+      keys: {string: {min_len: 1}},
+      values: {int32: {gte: 0}}
+    }
+  ];
+
+  // nested message required
+  Profile profile = 8 [(appootb.validate.rules).message = {required: true}];
+
+  // wrapper type
+  google.protobuf.StringValue note = 9 [(appootb.validate.rules).string = {max_len: 128}];
+
+  // well-known types
+  google.protobuf.Timestamp created_at = 10 [(appootb.validate.rules).timestamp = {required: true}];
+  google.protobuf.Duration ttl = 11 [(appootb.validate.rules).duration = {
+    required: true,
+    gt: {seconds: 0}
+  }];
+
+  // oneof (exactly one when required)
+  oneof payload {
+    option (appootb.validate.required) = true;
+    string text = 12 [(appootb.validate.rules).string = {min_len: 1}];
+    bytes blob = 13 [(appootb.validate.rules).bytes = {min_len: 1, max_len: 256}];
+  }
+}
+
+message Proto3CreateResponse {
+  string id = 1 [(appootb.validate.rules).string = {min_len: 1}];
+  int64 version = 2 [(appootb.validate.rules).int64 = {gte: 1}];
+}
+
+message Proto3GetRequest {
+  string id = 1 [(appootb.validate.rules).string = {min_len: 1}];
+}
+
+message Proto3Event {
+  string topic = 1 [(appootb.validate.rules).string = {min_len: 1}];
+  bytes data = 2 [(appootb.validate.rules).bytes = {max_len: 4096, ignore_empty: true}];
+}
+
+message Proto3HealthRequest {}
+message Proto3HealthResponse {
+  bool ok = 1;
+}
+
+// Proto3 API surface for ootb (HTTP + client-stream websocket).
+service ExampleV3 {
+  option (appootb.permission.service.visible) = CLIENT;
+
+  // unary HTTP + LOGGED_IN + role
+  rpc Create (Proto3CreateRequest) returns (Proto3CreateResponse) {
+    option (appootb.permission.method.required) = LOGGED_IN;
+    option (appootb.permission.policy.roles) = "editor";
+    option (google.api.http) = {
+      post: "/example/v3/create"
+      body: "*"
+    };
+  }
+
+  // guest-readable get
+  rpc Get (Proto3GetRequest) returns (Proto3CreateResponse) {
+    option (appootb.permission.method.required) = GUEST;
+    option (google.api.http) = {
+      get: "/example/v3/{id}"
+    };
+  }
+
+  // client-stream websocket (ingest events)
+  rpc Ingest (stream Proto3Event) returns (Proto3CreateResponse) {
+    option (appootb.permission.method.required) = CLIENT;
+    option (appootb.api.websocket) = {
+      url: "/example/v3/ingest"
+    };
+  }
+
+  // ANY subject
+  rpc Health (Proto3HealthRequest) returns (Proto3HealthResponse) {
+    option (appootb.permission.method.required) = ANY;
+  }
+}

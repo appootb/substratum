@@ -1,0 +1,154 @@
+// Proto2 demo for protoc-gen-validate + protoc-gen-ootb + markdown/dart-export.
+//
+// Covers: required/optional presence, custom error, ignore_empty, enum/repeated/map,
+// nested message rules, oneof required, well-known string rules, permission scopes,
+// HTTP gateway, and bidi WebSocket.
+syntax = "proto2";
+
+package example;
+
+import "appootb/api/websocket.proto";
+import "appootb/permission/method.proto";
+import "appootb/permission/policy.proto";
+import "appootb/permission/service.proto";
+import "appootb/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/appootb/substratum/v2/tools/example/proto";
+
+enum RequestType {
+  _NONE = 0;
+  TYPE1 = 1; // request type 1
+  // request type 2
+  TYPE2 = 2;
+}
+
+// Address is validated when present on Request.
+message Address {
+  optional string city = 1 [(appootb.validate.rules).string = {min_len: 1, max_len: 64}];
+  optional string zip = 2 [(appootb.validate.rules).string = {pattern: "^[0-9]{4,10}$"}];
+}
+
+// Request exercises the common proto2 validate paths.
+message Request {
+  // required + custom client-facing error
+  required int32 id = 1 [
+    (appootb.validate.rules).int32 = {gt: 0},
+    (appootb.validate.error) = "id must be positive"
+  ];
+
+  // optional presence + ignore_empty (empty string skips min/max)
+  optional string name = 2 [
+    default = "abc",
+    (appootb.validate.rules).string = {min_len: 1, max_len: 32, ignore_empty: true}
+  ];
+
+  // enum: defined_only + not_in
+  optional RequestType type = 3 [
+    (appootb.validate.rules).enum = {defined_only: true, not_in: [0]}
+  ];
+
+  // repeated items
+  repeated string tags = 4 [
+    (appootb.validate.rules).repeated = {
+      min_items: 0,
+      max_items: 10,
+      items: {string: {min_len: 1, max_len: 16}}
+    }
+  ];
+
+  // map key/value rules
+  map<string, RequestType> labels = 5 [
+    (appootb.validate.rules).map = {
+      min_pairs: 0,
+      max_pairs: 8,
+      keys: {string: {min_len: 1, max_len: 16}},
+      values: {enum: {defined_only: true, not_in: [0]}}
+    }
+  ];
+
+  // optional bool const (nil skips rules)
+  optional bool enabled = 6 [(appootb.validate.rules).bool = {const: true}];
+
+  // well-known string rules
+  optional string email = 7 [(appootb.validate.rules).string = {email: true, ignore_empty: true}];
+  optional string homepage = 8 [(appootb.validate.rules).string = {uri: true, ignore_empty: true}];
+
+  // nested message: validated when non-nil
+  optional Address address = 9;
+
+  // bytes
+  optional bytes token = 10 [(appootb.validate.rules).bytes = {min_len: 0, max_len: 64, ignore_empty: true}];
+}
+
+// Response includes embed + required oneof.
+message Response {
+  message Embed {
+    optional int32 id = 1 [(appootb.validate.rules).int32 = {gte: 0}];
+  }
+
+  optional Embed embed = 1; // embed message; validated when non-nil
+
+  oneof result {
+    option (appootb.validate.required) = true;
+    string name = 2;
+    int32 code = 3;
+  }
+}
+
+// DisabledValidate skips all generated checks for this message.
+message DisabledValidate {
+  option (appootb.validate.disabled) = true;
+  optional string anything = 1 [(appootb.validate.rules).string = {min_len: 100}];
+}
+
+// Client-facing service (VisibleScope = CLIENT).
+//
+// # markdown h1
+// > markdown test
+service example {
+  option (appootb.permission.service.visible) = CLIENT;
+
+  // unary + roles + SERVER subject
+  rpc test1 (Request) returns (Response) {
+    option (appootb.permission.method.required) = SERVER;
+    option (appootb.permission.policy.roles) = "op";
+    option (appootb.permission.policy.roles) = "op2";
+  }
+
+  // public unary (NONE)
+  rpc ping (google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (appootb.permission.method.required) = NONE;
+  }
+}
+
+// Server-facing service (VisibleScope = SERVER) with HTTP + WebSocket.
+service Example_b {
+  option (appootb.permission.service.visible) = SERVER;
+
+  // unary + HTTP gateway + PC subject
+  rpc test2 (Request) returns (google.protobuf.Empty) {
+    option (appootb.permission.method.required) = PC;
+    option (google.api.http) = {
+      post: "/example/v2/test"
+      body: "*"
+    };
+  }
+
+  // bidi stream + websocket (proto method name preserved in FullMethod)
+  rpc Test_a (stream Request) returns (stream Response) {
+    option (appootb.permission.method.required) = WEB;
+    option (appootb.api.websocket) = {
+      url: "/example/v2/stream"
+    };
+  }
+
+  // server-stream websocket
+  rpc watch (Request) returns (stream Response) {
+    option (appootb.permission.method.required) = LOGGED_IN;
+    option (appootb.api.websocket) = {
+      url: "/example/v2/watch"
+    };
+  }
+}

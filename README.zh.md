@@ -25,6 +25,11 @@
   - 轻松集成开源和自定义服务
   - 可用插件请访问：https://github.com/appootb/plugins
 
+- **代码生成工具**
+  - 嵌套模块 [`tools/`](./tools) 在 `tools/cmd/` 下提供 `protoc-gen-ootb`、`protoc-gen-validate`、`protoc-gen-markdown`、`protoc-gen-dart-export`
+  - 安装：`go install github.com/appootb/substratum/v2/tools/cmd/protoc-gen-ootb@latest`（其余二进制同理）
+  - 原仓库：[appootb/grpc-gen](https://github.com/appootb/grpc-gen)
+
 ## 快速开始
 
 1. 创建新项目：

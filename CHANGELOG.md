@@ -20,6 +20,12 @@ Work on `master` after `v2.0.4` (dependency upgrades, security hardening, and fr
 - Access-log secret redaction (`logger.RedactSecret`)
 - JWT `cty` must match request platform; token plugin on `github.com/appootb/jwt`
 - Util improvements: LFU cache, timers, pools, and expanded tests
+- Nested `tools/` module (from `appootb/grpc-gen`): `protoc-gen-ootb`, `protoc-gen-validate`, `protoc-gen-markdown`, `protoc-gen-dart-export`
+- `protoc-gen-validate` aligned with PGV v1.3.3 Go features: `ValidateAll` / `MultiError`, `ignore_empty`, proto3 optional (`SyntheticOneOfFields`), compile-time rule checks
+- `appootb.validate` proto gains `ignore_empty` on scalar/string/bytes/repeated/map/any rules (keeps custom `error` field option)
+- `protoc-gen-ootb`: FullMethod/subjects align with go-grpc proto method names; `FEATURE_PROTO3_OPTIONAL`; `DEBUG_OOTB`; sorted targets; skip files without services; websocket url/streaming checks
+- `tools/example`: richer proto2/proto3 demos for validate + ootb (HTTP/WebSocket, subjects, ignore_empty, wrappers/WKT)
+- `protoc-gen-markdown` / `protoc-gen-dart-export`: declare `FEATURE_PROTO3_OPTIONAL`
 
 ### Changed
 
@@ -27,6 +33,8 @@ Work on `master` after `v2.0.4` (dependency upgrades, security hardening, and fr
 - Interceptor chain composition uses a single per-request continuation
 - Metadata parsing is lazy (holder + first `IncomingMetadata` parse); stream parses once
 - Errors interceptor: success path only sets `timestamp` header (code/message on errors)
+- WebSocket registration codegen uses `runtime.ServeMux.HandlePath` (grpc-gateway v2 public API)
+- `tools/` layout: generators under `tools/cmd/protoc-gen-*`, sample under `tools/example/`
 
 ## [2.0.4] - 2026-08-07
 
